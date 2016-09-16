@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
     <!-- cmd_vel publisher -->
-    <node pkg="auv_ros_control" type="lis_cmdvel_boat.py" name="auv_driver" output="screen" >
+    <node pkg="robotx_control" type="lis_cmdvel_boat.py" name="auv_driver" output="screen" >
         <!--rosparam file="$(find auv_ros_bringup)/config/motor_params.yaml" command="load" /-->
     </node>
 

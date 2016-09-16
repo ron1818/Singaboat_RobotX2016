@@ -52,7 +52,31 @@
         </link>
     </xacro:macro>
 
+    <!-- support bars -->
+    <xacro:macro name="bars" params="position1 position2 sign_x sign_y sign_roll" >
+        <joint name="${position1}_${position2}_bar_joint" type="fixed">
+        <parent link="shelf_link"/>
+        <child link="${position1}_${position2}_bar_link"/>
+        <origin xyz="0 0 -${shelf_height/2}" rpy="0 0 0"/>
+    </joint>
+    <link name="${position1}_${position2}_bar_link">
+        <collision>
+            <origin xyz="${sign_x*shelf_length/2} ${sign_y*shelf_width/2} 0" rpy="${sign_roll*PI/8} 0 0"/>
+            <geometry>
+                <cylinder length="${shelf_height}" radius="0.01"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="${sign_x*shelf_length/2} ${sign_y*shelf_width/2} 0" rpy="${sign_roll*PI/8} 0 0"/>
+            <geometry>
+                <cylinder length="${shelf_height}" radius="0.01"/>
+            </geometry>
+        </visual>
 
+    </link>
+    </xacro:macro>
+
+    
     <!-- Base Link -->
     <link name="base_link">
         <collision>
@@ -116,6 +140,13 @@
                 izz="${shelf_mass / 12.0 * (shelf_width*shelf_width + shelf_thickness*shelf_thickness)}"/>
         </inertial>
     </link>
+
+    <!-- bars -->
+    <xacro:bars position1="front" position2="left" sign_x="1" sign_y="-1" sign_roll="-1"/>
+    <xacro:bars position1="front" position2="right" sign_x="1" sign_y="1" sign_roll="1"/>
+    <xacro:bars position1="rear" position2="left" sign_x="-1" sign_y="-1" sign_roll="-1"/>
+    <xacro:bars position1="rear" position2="right" sign_x="-1" sign_y="1" sign_roll="1"/>
+
 
     <!-- sensor box joint-->
     <joint name="sensor_box_joint" type="fixed">

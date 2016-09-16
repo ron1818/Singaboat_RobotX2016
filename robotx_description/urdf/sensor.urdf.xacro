@@ -84,8 +84,8 @@
 
     <xacro:spot_camera position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" yaw="0"/>
     <xacro:spot_camera position1="front" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" yaw="0"/>
-    <xacro:spot_camera position1="middle" position2="left" x="0" y="-${shelf_width/2}" yaw="${PI/2}"/>
-    <xacro:spot_camera position1="middle" position2="right" x="0" y="${shelf_width/2}" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="middle" position2="left" x="0" y="-${shelf_width/2}" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="middle" position2="right" x="0" y="${shelf_width/2}" yaw="${PI/2}"/>
     <xacro:spot_camera position1="rear" position2="left" x="-${shelf_length/2}" y="-${shelf_width/2}" yaw="${PI}"/>
     <xacro:spot_camera position1="rear" position2="right" x="-${shelf_length/2}" y="${shelf_width/2}" yaw="${PI}"/>
 

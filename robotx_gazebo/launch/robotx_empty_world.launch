@@ -6,9 +6,6 @@
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
-    <arg name="sonar_enabled" default="true"/>
-    <arg name="lidar_enabled" default="true"/>
-    <arg name="kinect_enabled" default="true"/>
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch" >
@@ -23,11 +20,7 @@
     <!--include file="$(find auv_ros_control)/launch/control.launch"/-->
 
     <!-- robot description from auv_ros_description package -->
-    <include file="$(find robotx_description)/launch/robotx_description.launch">
-        <arg name="sonar_enabled" value="$(arg sonar_enabled)"/>
-        <arg name="lidar_enabled" value="$(arg lidar_enabled)"/>
-        <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
-    </include>
+    <include file="$(find robotx_description)/launch/robotx_description.launch"/>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
