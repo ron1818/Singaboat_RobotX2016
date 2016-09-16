@@ -1,0 +1,24 @@
+<launch>
+
+    <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+    <arg name="sonar_enabled" default="true"/>
+    <arg name="lidar_enabled" default="true"/>
+    <arg name="kinect_enabled" default="true"/>
+
+    <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+    <include file="$(find auv_ros_gazebo)/launch/pond_world.launch" />
+
+    <include file="$(find auv_ros_control)/launch/control.launch"/>
+
+    <!-- robot description from auv_ros_description package -->
+    <include file="$(find auv_ros_description)/launch/description.launch">
+        <arg name="sonar_enabled" value="$(arg sonar_enabled)"/>
+        <arg name="lidar_enabled" value="$(arg lidar_enabled)"/>
+        <arg name="kinect_enabled" value="$(arg kinect_enabled)"/>
+    </include>
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
+        args="-urdf -model robot_description -param robot_description"/>
+
+</launch>

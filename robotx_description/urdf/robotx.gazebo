@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<!-- modified by ren ye on 2016-07-22 -->
+
+<robot name="auv_gazebo" xmlns:xacro="http://ros.org/wiki/xacro" >
+    <xacro:property name="update_rate" value="100"/>
+
+    <gazebo>
+        <plugin name="object_controller" filename="libgazebo_ros_planar_move.so">
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <odometryRate>20.0</odometryRate>
+            <robotBaseFrame>base_link</robotBaseFrame>
+        </plugin>
+    </gazebo>
+
+<!-- base_link -->
+    <gazebo reference="base_link">
+        <material>Gazebo/Green</material>
+        <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+    <gazebo reference="left_bouy_link">
+        <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <gazebo reference="right_bouy_link">
+        <material>Gazebo/Grey</material>
+    </gazebo>
+
+    <gazebo reference="shelf_link">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <!-- sensor box -->
+    <gazebo reference="sensor_box_link">
+        <material>Gazebo/Yellow</material>
+    </gazebo>
+
+</robot>
