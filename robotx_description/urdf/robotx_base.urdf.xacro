@@ -1,0 +1,184 @@
+<?xml version="1.0"?>
+<!-- Revolute-Revolute Manipulator -->
+<robot name="robotx" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Constants for robot dimensions -->
+    <xacro:property name="PI" value="3.1415926535897931"/>
+    <xacro:property name="shelf_mass" value="84" /> 
+    <xacro:property name="shelf_length" value="1.85" /> 
+    <xacro:property name="shelf_width" value="1.01" /> 
+    <xacro:property name="shelf_thickness" value="0.1" /> 
+    <xacro:property name="shelf_height" value="1.28" /> 
+    <xacro:property name="bouy_mass" value="35" /> 
+    <xacro:property name="bouy_length" value="4.85" /> 
+    <xacro:property name="bouy_radius" value="0.2" /> 
+    <xacro:property name="bouy_i_radius" value="0.19" /> 
+    <xacro:property name="bouy_sep" value="2.03" /> 
+
+    <xacro:property name="sensor_box_mass" value="0.5" /> 
+    <xacro:property name="sensor_box_length" value="0.2" /> 
+    <xacro:property name="sensor_box_width" value="0.4" /> 
+    <xacro:property name="sensor_box_thickness" value="0.2" /> 
+
+    <!-- Import all Gazebo-customization elements, including Gazebo colors -->
+    <!--xacro:include filename="materials.xacro" /-->
+
+
+    <!-- macro for bouys -->
+    <xacro:macro name="bouy" params="position">
+        <link name="${position}_bouy_link">
+            <collision>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+                <geometry>
+                    <cylinder length="${bouy_length}" radius="${bouy_radius}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 ${PI/2}  0"/>
+                <geometry>
+                    <cylinder length="${bouy_length}" radius="${bouy_radius}"/>
+                </geometry>
+                <material name="white"/>
+            </visual>
+
+            <inertial>
+                <mass value="${bouy_mass}"/>
+                <inertia
+                    ixx="${bouy_mass / 12.0 * (3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius) + bouy_length*bouy_length)}" ixy="0.0" ixz="0.0"
+                    iyy="${bouy_mass / 12.0 * (3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius) + bouy_length*bouy_length)}" iyz="0.0"
+                    izz="${bouy_mass / 12.0 * 3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius)}"/>
+            </inertial>
+        </link>
+    </xacro:macro>
+
+    <!-- support bars -->
+    <xacro:macro name="bars" params="position1 position2 sign_x sign_y sign_roll" >
+        <joint name="${position1}_${position2}_bar_joint" type="fixed">
+        <parent link="shelf_link"/>
+        <child link="${position1}_${position2}_bar_link"/>
+        <origin xyz="0 0 -${shelf_height/2}" rpy="0 0 0"/>
+    </joint>
+    <link name="${position1}_${position2}_bar_link">
+        <collision>
+            <origin xyz="${sign_x*shelf_length/2} ${sign_y*shelf_width/2} 0" rpy="${sign_roll*PI/8} 0 0"/>
+            <geometry>
+                <cylinder length="${shelf_height}" radius="0.01"/>
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="${sign_x*shelf_length/2} ${sign_y*shelf_width/2} 0" rpy="${sign_roll*PI/8} 0 0"/>
+            <geometry>
+                <cylinder length="${shelf_height}" radius="0.01"/>
+            </geometry>
+        </visual>
+
+    </link>
+    </xacro:macro>
+
+    
+    <!-- Base Link -->
+    <link name="base_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${bouy_length} ${bouy_sep+2*bouy_radius} 0.01"/>
+            </geometry>
+        </collision>
+    </link>
+
+    <!-- left bouy joint -->
+    <joint name="left_bouy_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="left_bouy_link"/>
+        <origin xyz="0 -${bouy_sep/2} ${bouy_radius}" rpy="0 0 0"/>
+    </joint>
+
+    <!-- left bouy Link -->
+    <xacro:bouy position="left"/>
+
+    <!-- right bouy joint -->
+    <joint name="right_bouy_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="right_bouy_link"/>
+        <origin xyz="0 ${bouy_sep/2} ${bouy_radius}" rpy="0 0 0"/>
+    </joint>
+
+    <!-- right bouy Link -->
+    <xacro:bouy position="right"/>
+
+    <!-- platform joint-->
+    <joint name="shelf_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="shelf_link"/>
+        <origin xyz="0 0 ${shelf_height}" rpy="0 0 0"/>
+    </joint>
+
+    <!-- platform -->
+    <link name="shelf_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${shelf_length} ${shelf_width} ${shelf_thickness}"/>
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${shelf_length} ${shelf_width} ${shelf_thickness}"/>
+            </geometry>
+            <material name="yellow"/>
+        </visual>
+
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="${shelf_mass}"/>
+            <inertia
+                ixx="${shelf_mass / 12.0 * (shelf_length*shelf_length + shelf_thickness*shelf_thickness)}" ixy="0.0" ixz="0.0"
+                iyy="${shelf_mass / 12.0 * (shelf_length*shelf_length + shelf_width*shelf_width)}" iyz="0.0"
+                izz="${shelf_mass / 12.0 * (shelf_width*shelf_width + shelf_thickness*shelf_thickness)}"/>
+        </inertial>
+    </link>
+
+    <!-- bars -->
+    <xacro:bars position1="front" position2="left" sign_x="1" sign_y="-1" sign_roll="-1"/>
+    <xacro:bars position1="front" position2="right" sign_x="1" sign_y="1" sign_roll="1"/>
+    <xacro:bars position1="rear" position2="left" sign_x="-1" sign_y="-1" sign_roll="-1"/>
+    <xacro:bars position1="rear" position2="right" sign_x="-1" sign_y="1" sign_roll="1"/>
+
+
+    <!-- sensor box joint-->
+    <joint name="sensor_box_joint" type="fixed">
+        <parent link="shelf_link"/>
+        <child link="sensor_box_link"/>
+        <origin xyz="0.5 0 ${sensor_box_thickness/2+shelf_thickness/2}" rpy="0 0 0"/>
+    </joint>
+
+    <!-- sensor box -->
+    <link name="sensor_box_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${sensor_box_length} ${sensor_box_width} ${sensor_box_thickness}"/>
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${sensor_box_length} ${sensor_box_width} ${sensor_box_thickness}"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="${sensor_box_mass}"/>
+            <inertia
+                ixx="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_thickness*sensor_box_thickness)}" ixy="0.0" ixz="0.0"
+                iyy="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_width*sensor_box_width)}" iyz="0.0"
+                izz="${sensor_box_mass / 12.0 * (sensor_box_width*sensor_box_width + sensor_box_thickness*sensor_box_thickness)}"/>
+        </inertial>
+    </link>
+</robot>

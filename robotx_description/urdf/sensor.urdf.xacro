@@ -1,0 +1,218 @@
+<?xml version="1.0"?>
+<!-- modified by ren ye on 2016-07-22 -->
+
+<robot name="robotx_sensors" xmlns:xacro="http://ros.org/wiki/xacro" >
+
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    <xacro:property name="shelf_length" value="1.85" /> 
+    <xacro:property name="shelf_width" value="1.01" /> 
+    <xacro:property name="shelf_thickness" value="0.1" /> 
+
+    <!-- Set up camera linkage and configuration -->
+    <xacro:macro name="spot_camera" params="position1 position2 x y yaw">
+        <joint name="${position1}_${position2}_camera_joint" type="fixed">
+            <origin xyz="${x} ${y} ${shelf_thickness/2}" rpy="0 0 ${yaw}" />
+            <parent link="camera_array_link"/>
+            <child link="${position1}_${position2}_camera_link" />
+        </joint>
+
+        <link name="${position1}_${position2}_camera_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.stl"/>
+                </geometry>
+            </collision>
+        </link>
+    </xacro:macro>
+
+    <xacro:macro name="imu" params="position1 position2 x y">
+        <joint name="${position1}_${position2}_imu_joint" type="fixed">
+            <origin xyz="0 0 ${shelf_thickness/2}" rpy="0 0 0" />
+            <parent link="imu_array_link"/>
+            <child link="${position1}_${position2}_imu_link"/>
+        </joint>
+        <link name="${position1}_${position2}_imu_link"/>
+    </xacro:macro>
+
+    <joint name="gps_joint" type="fixed">
+        <origin xyz="0 0 ${shelf_thickness*6}" rpy="0 0 0" />
+        <parent link="shelf_link"/>
+        <child link="gps_link"/>
+    </joint>
+
+    <link name="gps_link">
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="0.08" radius="0.1" />
+            </geometry>
+            <material name="white" />
+        </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="0.08" radius="0.1" />
+            </geometry>
+        </collision>
+    </link>
+
+    <joint name="imu_array_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="shelf_link"/>
+        <child link="imu_array_link"/>
+    </joint>
+    <link name="imu_array_link" />
+
+    <joint name="camera_array_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="shelf_link"/>
+        <child link="camera_array_link"/>
+    </joint>
+    <link name="camera_array_link" />
+
+    <xacro:imu position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
+    <xacro:imu position1="front" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" />
+    <xacro:imu position1="rear" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
+    <xacro:imu position1="rear" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" />
+
+    <xacro:spot_camera position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" yaw="0"/>
+    <xacro:spot_camera position1="front" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" yaw="0"/>
+    <xacro:spot_camera position1="middle" position2="left" x="0" y="-${shelf_width/2}" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="middle" position2="right" x="0" y="${shelf_width/2}" yaw="${PI/2}"/>
+    <xacro:spot_camera position1="rear" position2="left" x="-${shelf_length/2}" y="-${shelf_width/2}" yaw="${PI}"/>
+    <xacro:spot_camera position1="rear" position2="right" x="-${shelf_length/2}" y="${shelf_width/2}" yaw="${PI}"/>
+
+
+    <!--kinect camera >
+    <joint name="kinect_camera_joint" type="fixed">
+        <origin xyz="0 0 0.35" rpy="0 0 0" />
+        <parent link="base_link"/>
+        <child link="kinect_camera_link"/>
+    </joint>
+
+    <xacro:if value="$(arg kinect_enabled)" >
+        <link name="kinect_camera_link">
+            <inertial>
+                <mass value="0.01" />
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <inertia ixx="2.632e-4" ixy="0" ixz="0" iyy="2.632e-4" iyz="0" izz="1.62e-4" />
+            </inertial>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/kinect_camera/kinect_camera_simple.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/kinect_camera/kinect_camera_simple.stl"/>
+                </geometry>
+            </collision>
+        </link>
+
+        <joint name="kinect_camera_depth_joint" type="fixed">
+            <origin xyz="0.0 -0.01 0.0" rpy="0 0 0" />
+            <parent link="kinect_camera_link" />
+            <child link="kinect_camera_depth_frame"/>
+        </joint>
+
+        <link name="kinect_camera_depth_frame"/>
+
+        <joint name="kinect_camera_depth_optical_joint" type="fixed">
+            <origin xyz="0 0 0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+            <parent link="kinect_camera_depth_frame" />
+            <child link="kinect_camera_depth_optical_frame"/>
+        </joint>
+
+        <link name="kinect_camera_depth_optical_frame"/>
+
+        <joint name="kinect_camera_rgb_joint" type="fixed">
+            <origin xyz="0.0 -0.0125 0.0" rpy="0 0 0" />
+            <parent link="kinect_camera_link" />
+            <child link="kinect_camera_rgb_frame"/>
+        </joint>
+
+        <link name="kinect_camera_rgb_frame"/>
+
+        <joint name="kinect_camera_rgb_optical_joint" type="fixed">
+            <origin xyz="0 0 0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+            <parent link="kinect_camera_rgb_frame" />
+            <child link="kinect_camera_rgb_optical_frame"/>
+        </joint>
+
+        <link name="kinect_camera_rgb_optical_frame"/>
+    </xacro:if -->
+
+
+    <!-- Set up sonar linkage and configuration >
+    <xacro:if value="$(arg sonar_enabled)" >
+        <joint name="base_link_sonar_link_joint" type="fixed">
+            <origin xyz="0 0 -0.05" rpy="0 ${M_PI/2} 0" />
+            <parent link="base_link"/>
+            <child link="sonar_link" />
+        </joint>
+
+        <link name="sonar_link">
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0"/>
+                <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+            </inertial>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/sonar_sensor/max_sonar_ez4.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.02 0.02 0.02" />
+                </geometry>
+            </collision>
+        </link>
+    </xacro:if -->
+
+    <!-- Hokuyo Laser >
+    <xacro:if value="$(arg lidar_enabled)">
+        <joint name="hokuyo_joint" type="fixed">
+            <origin xyz="0.2 0.0 0.2" rpy="0 0 0"/>
+            <parent link="base_link"/>
+            <child link="hokuyo_link"/>
+        </joint>
+
+        <link name="hokuyo_link">
+            <collision>
+                <origin xyz="0 0 -0.0115" rpy="0 0 0"/>
+                <geometry>
+                    <box size="0.058 0.058 0.087"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/hokuyo_utm30lx/hokuyo_utm_30lx.dae"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="0.27" />
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <inertia ixx="2.632e-4" ixy="0" ixz="0" iyy="2.632e-4" iyz="0" izz="1.62e-4" />
+            </inertial>
+        </link>
+    </xacro:if-->
+
+</robot>
+
+
+
