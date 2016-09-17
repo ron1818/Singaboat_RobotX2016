@@ -12,11 +12,11 @@
     <xacro:macro name="spot_camera" params="position1 position2 x y yaw">
         <joint name="${position1}_${position2}_camera_joint" type="fixed">
             <origin xyz="${x} ${y} ${shelf_thickness/2}" rpy="0 0 ${yaw}" />
-            <parent link="camera_array_link"/>
-            <child link="${position1}_${position2}_camera_link" />
+            <parent link="camera/array/link"/>
+            <child link="${position1}_stereo_${position2}_camera_link" />
         </joint>
 
-        <link name="${position1}_${position2}_camera_link">
+        <link name="${position1}_stereo_${position2}_camera_link">
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
@@ -73,9 +73,9 @@
     <joint name="camera_array_joint" type="fixed">
         <origin xyz="0 0 0" rpy="0 0 0" />
         <parent link="shelf_link"/>
-        <child link="camera_array_link"/>
+        <child link="camera/array/link"/>
     </joint>
-    <link name="camera_array_link" />
+    <link name="camera/array/link" />
 
     <xacro:imu position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
     <xacro:imu position1="front" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" />

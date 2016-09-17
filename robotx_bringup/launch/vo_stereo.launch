@@ -1,0 +1,13 @@
+<launch>
+
+    <param name="/use_sim_time" value="true"/>
+
+    <!-- stereo-image-proc -->
+    <node pkg="stereo_image_proc" type="stereo_image_proc" name="front_stereo_image_proc" ns="front_stereo" />
+    <node pkg="stereo_image_proc" type="stereo_image_proc" name="rear_stereo_image_proc" ns="rear_stereo" />
+    <!-- Viso2 -->
+    <!--node pkg="viso2_ros" type="stereo_odometer" name="stereo_odometer">
+        <param name="base_link_frame_id" value="camera_array_link"/>
+    </node-->
+
+</launch>

@@ -1,10 +1,18 @@
 <launch>
 
     <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+    <param name="/use_sim_time" value="true" />
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
     <include file="$(find robotx_gazebo)/launch/robotx_empty_world.launch" />
 
     <include file="$(find robotx_control)/launch/control.launch"/>
+
+    <!--node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" >
+        <remap from="/left/image_raw" to="/front_left_camera/camera/image_raw"/>
+        <remap from="/right/image_raw" to="/front_right_camera/camera/image_raw"/>
+        <remap from="/left/camera_info" to="/front_left_camera/camera/camera_info"/>
+        <remap from="/right/camera_info" to="/front_right_camera/camera/camera_info"/>
+    </node-->
 
 </launch>
