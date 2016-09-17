@@ -8,15 +8,27 @@ it is a ROS based projects
 
 Usage
 -----
+### Installation ###
++ supports **ros-indigo** with **ubuntu 14.04LTS**
++ must install `ros-indigo-desktop-full`
++ dependencies are `robot-localization` `nmea-navsat-driver` `viso2` `gazebo`
+
+### Team work ###
 + please create pull request for each task, such as GPS, IMU, Video, etc.
 + do not create any files to the master branch, the maintainer will do the merge.
 
-Directories
------------
+
+1. fork this respository to your github account
+2. clone your forked respository to your catkin workspace
+3. create branch and do your work
+4. create pull request if you want to contribute to the main branch
+
+### Directories ###
+
 naming convention: **robotx_**
 
-suggested directories: bringup, gazebo, rviz, control, nav, msg, vision, etc.
+suggested directories: `bringup`, `gazebo`, `rviz`, `control`, `nav`, `msg`, `vision`, etc.
 
-non-ROS based projects, you can create them in arduino directory.
+non-ROS based projects, you can create them in `arduino`, `document`, `misc` directory.
 
 
