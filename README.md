@@ -39,4 +39,10 @@ suggested directories: `bringup`, `gazebo`, `rviz`, `control`, `nav`, `msg`, `vi
 
 non-ROS based projects, you can create them in `arduino`, `document`, `misc` directory.
 
-
+## Launch the program ##
+### gazebo with robot localization ###
+```bash
+roslaunch robotx_gazebo robotx_sim.launch # launch gazebo with robot_localization
+roslaunch robotx_bringup vo_stereo.launch # camera visual odometry
+roslaunch robotx_nav move_base_with_blank_map.launch # map server
+```
