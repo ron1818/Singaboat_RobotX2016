@@ -20,7 +20,7 @@
     <!--include file="$(find auv_ros_control)/launch/control.launch"/-->
 
     <!-- robot description from auv_ros_description package -->
-    <include file="$(find robotx_description)/launch/robotx_description.launch"/>
+    <include file="$(find robotx_description)/launch/description.launch"/>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
