@@ -7,7 +7,7 @@
     <gazebo>
         <plugin name="object_controller" filename="libgazebo_ros_planar_move.so">
             <commandTopic>cmd_vel</commandTopic>
-            <odometryTopic>odom</odometryTopic>
+            <odometryTopic>odom/gazebo</odometryTopic>
             <odometryFrame>odom</odometryFrame>
             <odometryRate>20.0</odometryRate>
             <robotBaseFrame>base_link</robotBaseFrame>

@@ -29,10 +29,10 @@
 
     <!-- Set up camera configuration -->
     <xacro:macro name="camera_gazebo" params="position1 position2">
-        <gazebo reference="${position1}_${position2}_camera_link" >
+        <gazebo reference="${position1}_stereo/${position2}/camera_link" >
             <sensor type="camera" name="${position1}_${position2}_camera">
                 <update_rate>30.0</update_rate>
-                <camera name="head">
+                <camera name="stereo_camera">
                     <horizontal_fov>1.3962634</horizontal_fov>
                     <image>
                         <width>640</width>
@@ -50,10 +50,10 @@
                     </noise>
                 </camera>
                 <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-                    <robotNamespace>${position1}_${position2}_camera</robotNamespace>
+                    <robotNamespace>${position1}_stereo/${position2}</robotNamespace>
                     <alwaysOn>true</alwaysOn>
                     <updateRate>30.0</updateRate>
-                    <cameraName>camera</cameraName>
+                    <cameraName>/</cameraName>
                     <imageTopicName>image_raw</imageTopicName>
                     <cameraInfoTopicName>camera_info</cameraInfoTopicName>
                     <frameName>camera_link</frameName>
@@ -80,7 +80,7 @@
     <xacro:camera_gazebo position1="rear" position2="left" />
     <xacro:camera_gazebo position1="rear" position2="right" />
 
-  <!-- camera -->
+  <!-- camera >
   <gazebo reference="front_left_camera_link">
     <sensor type="camera" name="camera1">
       <update_rate>30.0</update_rate>
@@ -116,7 +116,7 @@
         <distortionT2>0.0</distortionT2>
       </plugin>
     </sensor>
-  </gazebo>
+  </gazebo-->
         
         <!-- Set up gps configuration -->
         <gazebo>

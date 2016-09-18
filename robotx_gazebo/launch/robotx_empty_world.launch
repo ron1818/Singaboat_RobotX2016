@@ -24,6 +24,11 @@
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-urdf -model auv -param robot_description"/>
+        args="-urdf -model auv -param robot_description">
+        <!--remap from="/front_left_camera/camera/image_raw" to="/left/image_raw" />
+        <remap from="/front_right_camera/camera/image_raw" to="/right/image_raw" />
+        <remap from="/front_left_camera/camera/camera_info" to="/left/camera_info" />
+        <remap from="/front_right_camera/camera/camera_info" to="/right/camera_info" /-->
+    </node>
 
 </launch>

@@ -5,10 +5,7 @@ world_frame: odom
 sensor_timeout: 0.1
 two_d_mode: true
 
-frequency: 50
-
-magnetic_declination_radians: 0.0043
-yaw_offset: 1.5707963
+frequency: 20
 
 odom0: odometry/gps
 odom0_config: [true, true, false,

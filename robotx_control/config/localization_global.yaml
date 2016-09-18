@@ -1,14 +1,11 @@
 map_frame: map
 odom_frame: odom
 base_link_frame: base_link
-world_frame: odom
+world_frame: map
 sensor_timeout: 0.1
 two_d_mode: true
 
-frequency: 50
-
-magnetic_declination_radians: 0.0043
-yaw_offset: 1.5707963
+frequency: 10
 
 odom0: odometry/gps
 odom0_config: [true, true, false,
@@ -18,6 +15,24 @@ odom0_config: [true, true, false,
                false, false, false]
 odom0_differential: false # with GPS, must be false
 odom0_queue_size: 10
+
+odom1: front_stereo_odometer/odometry 
+odom1_config: [true, true, false,
+               false, false, true,
+               true, false, false,
+               false, false, true,
+               false, false, false]
+odom1_differential: false # with GPS, must be false
+odom1_queue_size: 10
+
+odom2: rear_stereo_odometer/odometry 
+odom2_config: [true, true, false,
+               false, false, true,
+               true, false, false,
+               false, false, true,
+               false, false, false]
+odom2_differential: false # with GPS, must be false
+odom2_queue_size: 10
 
 imu0: front_left_imu/imu/data
 imu0_config: [false, false, false,
