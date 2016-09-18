@@ -8,11 +8,4 @@
 
     <include file="$(find robotx_control)/launch/control.launch"/>
 
-    <!--node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" >
-        <remap from="/left/image_raw" to="/front_left_camera/camera/image_raw"/>
-        <remap from="/right/image_raw" to="/front_right_camera/camera/image_raw"/>
-        <remap from="/left/camera_info" to="/front_left_camera/camera/camera_info"/>
-        <remap from="/right/camera_info" to="/front_right_camera/camera/camera_info"/>
-    </node-->
-
 </launch>

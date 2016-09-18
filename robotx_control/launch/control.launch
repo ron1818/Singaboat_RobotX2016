@@ -5,7 +5,7 @@
         <rosparam command="load" file="$(find robotx_control)/config/localization.yaml" />
     </node>
 
-    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" respawn="true" output="screen" >
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" respawn="true" >
         <rosparam command="load" file="$(find robotx_control)/config/gps_navsat_transform.yaml" />
         <remap from="gps/fix" to="/navsat/fix" />
         <remap from="imu/data" to="/imu/data" />
