@@ -12,6 +12,14 @@ Usage
 + supports **ros-indigo** with **ubuntu 14.04LTS**
 + must install `ros-indigo-desktop-full`
 + dependencies are `robot-localization` `nmea-navsat-driver` `viso2` `gazebo`
++ 
+#### script to install additional packages ####
+```bash
+sudo apt-get install ros-indigo-gazebo*
+sudo apt-get install ros-indigo-amcl ros-indigo-gmapping ros-indigo-move-base ros-indigo-map*
+sudo apt-get install ros-indigo-robot-localization ros-indigo-nmea-navsat-driver
+sudo apt-get install ros-indigo-stereo-image* ros-indigo-viso2*
+```
 
 ### Team work ###
 + please create pull request for each task, such as GPS, IMU, Video, etc.
