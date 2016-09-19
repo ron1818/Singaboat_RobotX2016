@@ -14,7 +14,7 @@
     <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" respawn="true" >
         <rosparam command="load" file="$(find robotx_control)/config/gps_navsat_transform.yaml" />
         <remap from="gps/fix" to="/navsat/fix" />
-        <remap from="imu/data" to="/front_left_imu/imu/data" />
+        <remap from="imu/data" to="/middle_middle_imu/imu/data" />
     </node>
 
 </launch>

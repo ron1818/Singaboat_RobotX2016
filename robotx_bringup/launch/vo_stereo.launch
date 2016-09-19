@@ -16,26 +16,23 @@
         <remap from="stereo" to="front_stereo"/>
         <remap from="image" to="image_rect"/>
         <remap from="odometry" to="front_stereo/odometry" />
-        <param name="odom_frame_id" value="front_stereo/odom" />
+        <param name="odom_frame_id" value="odom" />
         <!--param name="base_link_frame_id" value="front_stereo/camera_link" /-->
         <param name="publish_tf" value="false" />
     </node>
 
-    <!-- stereo-image-proc -->
+    <!-- stereo-image-proc >
     <node pkg="stereo_image_proc" type="stereo_image_proc" name="rear_stereo_image_proc" ns="rear_stereo" >
         <param name="approximate_sync" value="true"/>
-        <!--rosparam file="$(arg disparity_params)" /-->
     </node>
 
-    <!-- Run the viso2_ros package -->
     <node pkg="viso2_ros" type="stereo_odometer" name="rear_stereo_odometer" output="screen">
         <param name="match_disp_tolerance" value="50" />
         <remap from="stereo" to="rear_stereo"/>
         <remap from="image" to="image_rect"/>
         <remap from="odometry" to="rear_stereo/odometry" />
-        <!--param name="odom_frame_id" value="rear_stereo/odom" /-->
         <param name="base_link_frame_id" value="rear_stereo/camera_link" />
         <param name="publish_tf" value="false" />
-    </node>
+    </node-->
 
 </launch>

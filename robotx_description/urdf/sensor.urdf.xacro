@@ -7,11 +7,12 @@
     <xacro:property name="shelf_length" value="1.85" /> 
     <xacro:property name="shelf_width" value="1.01" /> 
     <xacro:property name="shelf_thickness" value="0.1" /> 
+    <xacro:property name="camera_height" value="0.1" /> 
 
     <!-- Set up camera linkage and configuration -->
-    <xacro:macro name="spot_camera" params="position1 position2 x y yaw">
+    <xacro:macro name="spot_camera" params="position1 position2 x y z yaw">
         <joint name="${position1}_${position2}_camera_joint" type="fixed">
-            <origin xyz="${x} ${y} ${shelf_thickness/2}" rpy="0 0 ${yaw}" />
+            <origin xyz="${x} ${y} ${z+shelf_thickness/2}" rpy="0 0 ${yaw}" />
             <parent link="${position1}_stereo/camera_link"/>
             <child link="${position1}_stereo/${position2}/camera_link" />
         </joint>
@@ -91,17 +92,18 @@
     </joint>
     <link name="rear_stereo/camera_link" />
 
-    <xacro:imu position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
+    <xacro:imu position1="middle" position2="middle" x="0" y="0" />
+    <!--xacro:imu position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
     <xacro:imu position1="front" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" />
     <xacro:imu position1="rear" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
-    <xacro:imu position1="rear" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" />
+    <xacro:imu position1="rear" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" /-->
 
-    <xacro:spot_camera position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" yaw="0"/>
-    <xacro:spot_camera position1="front" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" yaw="0"/>
-    <xacro:spot_camera position1="middle" position2="left" x="0" y="-${shelf_width/2}" yaw="-${PI/2}"/>
-    <xacro:spot_camera position1="middle" position2="right" x="0" y="${shelf_width/2}" yaw="${PI/2}"/>
-    <xacro:spot_camera position1="rear" position2="left" x="-${shelf_length/2}" y="-${shelf_width/2}" yaw="${PI}"/>
-    <xacro:spot_camera position1="rear" position2="right" x="-${shelf_length/2}" y="${shelf_width/2}" yaw="${PI}"/>
+    <xacro:spot_camera position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="0"/>
+    <xacro:spot_camera position1="front" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="0"/>
+    <xacro:spot_camera position1="middle" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" z="0" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="middle" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" z="0" yaw="${PI/2}"/>
+    <xacro:spot_camera position1="rear" position2="left" x="-${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="rear" position2="right" x="-${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="${PI/2}"/>
 
 
     <!--kinect camera >

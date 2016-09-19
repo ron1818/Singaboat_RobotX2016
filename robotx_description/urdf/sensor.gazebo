@@ -68,10 +68,10 @@
         </gazebo>
     </xacro:macro>
 
-    <xacro:imu_gazebo position1="front" position2="left" />
-    <xacro:imu_gazebo position1="front" position2="right" />
+    <xacro:imu_gazebo position1="middle" position2="middle" />
+    <!--xacro:imu_gazebo position1="front" position2="right" />
     <xacro:imu_gazebo position1="rear" position2="left" />
-    <xacro:imu_gazebo position1="rear" position2="right" />
+    <xacro:imu_gazebo position1="rear" position2="right" /-->
 
     <xacro:camera_gazebo position1="front" position2="left" />
     <xacro:camera_gazebo position1="front" position2="right" />
