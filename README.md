@@ -1,6 +1,15 @@
 Singaboat RobotX2016
 ====================
 
+TASKS
+-----
+### 2016-09-19 ~~ 2016-09-23 ###
+1. yellow computer repartition and install **finished**
+2. usb devices [udev rules](http://askubuntu.com/questions/670197/udev-rules-targeting-every-usb-device)
+or follow [linorobot](https://linorobot.org/getting-started/)
+3. integrate GPS with `nmea_navsat_driver` and `navsat_transform`
+4. integrate IMU with customized code (suggest to buy newer version so that we can use `razor-imu-9dof`)
+
 Introduction
 ------------
 this repository hosts all the files for [robotx challenge 2016](http://www.robotx.org)
