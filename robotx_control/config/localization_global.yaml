@@ -16,7 +16,7 @@ odom0_config: [true, true, false,
 odom0_differential: false # with GPS, must be false
 odom0_queue_size: 10
 
-odom1: front_stereo_odometer/odometry 
+odom1: bow_stereo_odometer/odometry 
 odom1_config: [true, true, false,
                false, false, true,
                true, false, false,

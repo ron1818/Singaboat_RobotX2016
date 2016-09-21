@@ -16,7 +16,7 @@ frequency: 20
 # odom0_differential: false # with GPS, must be false
 # odom0_queue_size: 10
 
-odom0: front_stereo_odometer/odometry 
+odom0: bow_stereo_odometer/odometry 
 odom0_config: [true, true, false,
                false, false, true,
                true, false, false,

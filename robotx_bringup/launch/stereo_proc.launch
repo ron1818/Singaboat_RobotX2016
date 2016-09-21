@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="/use_sim_time" value="true"/>
+
+    <!-- Camera calibration parameters >
+    <arg name="disparity_params" default="$(find robotx_bringup)/config/disparity_params.yaml"/--> 
+
+    <!-- stereo-image-proc -->
+    <group ns="bow_stereo" >
+        <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" >
+            <param name="approximate_sync" value="true"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+    <group ns="port_stereo" >
+        <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" >
+            <param name="approximate_sync" value="true"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+    <group ns="starboard_stereo" >
+        <node pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc" >
+            <param name="approximate_sync" value="true"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+</launch>
