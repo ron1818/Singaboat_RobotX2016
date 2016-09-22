@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Revolute-Revolute Manipulator -->
+<robot name="robotx" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Constants for robot dimensions -->
+    <xacro:property name="PI" value="3.1415926535897931"/>
+
+    <!-- Import all Gazebo-customization elements, including Gazebo colors -->
+    <xacro:include filename="materials.xacro" />
+    <xacro:include filename="robotx_base.urdf.xacro" />
+    <xacro:include filename="robotx.gazebo" />
+    <xacro:include filename="sensor.urdf.xacro" />
+    <xacro:include filename="sensor.gazebo" />
+    
+</robot>

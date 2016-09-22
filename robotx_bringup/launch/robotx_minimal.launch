@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- cmd_vel publisher -->
+    <node pkg="robotx_control" type="lis_cmdvel_boat.py" name="auv_driver" output="screen" >
+        <!--rosparam file="$(find auv_ros_bringup)/config/motor_params.yaml" command="load" /-->
+    </node>
+
+    <!-- imu -->
+    <include file="$(find auv_ros_bringup)/launch/pololuv4.launch" />
+    <!-- gps -->
+    <include file="$(find auv_ros_bringup)/launch/gps_i2c.launch" />
+    <!-- sonar -->
+    <include file="$(find auv_ros_bringup)/launch/sonar_rs232.launch" />
+    <!-- robot localization -->
+    <include file="$(find auv_ros_control)/launch/control.launch" />
+    <!-- tf broadcaster -->
+    <include file="$(find auv_ros_bringup)/launch/tf_broadcaster.launch" />
+</launch>
+
+

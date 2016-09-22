@@ -1,0 +1,79 @@
+map_frame: map
+odom_frame: odom
+base_link_frame: base_link
+world_frame: odom
+sensor_timeout: 0.5
+two_d_mode: true
+
+frequency: 20
+
+# odom0: odometry/gps
+# odom0_config: [true, true, false,
+#                false, false, false,
+#                false, false, false,
+#                false, false, false,
+#                false, false, false]
+# odom0_differential: false # with GPS, must be false
+# odom0_queue_size: 10
+
+odom0: bow_stereo_odometer/odometry 
+odom0_config: [true, true, false,
+               false, false, true,
+               true, false, false,
+               false, false, true,
+               false, false, false]
+odom0_differential: false # with GPS, must be false
+odom0_queue_size: 10
+
+
+imu0: middle_middle_imu/imu/data
+imu0_config: [false, false, false,
+              true, true, true,
+              false, false, false,
+              true, true, true,
+              true, false, false]
+imu0_differential: false # with GPS, must be false
+imu0_queue_size: 10
+imu0_remove_gravitational_acceleration: true
+
+# imu0: front_left_imu/imu/data
+# imu0_config: [false, false, false,
+#               true, true, true,
+#               false, false, false,
+#               true, true, true,
+#               true, false, false]
+# imu0_differential: false # with GPS, must be false
+# imu0_queue_size: 10
+# imu0_remove_gravitational_acceleration: true
+# 
+# imu1: front_right_imu/imu/data
+# imu1_config: [false, false, false,
+#               true, true, true,
+#               false, false, false,
+#               true, true, true,
+#               true, false, false]
+# imu1_differential: false # with GPS, must be false
+# imu1_queue_size: 10
+# imu1_remove_gravitational_acceleration: true
+# 
+# imu2: rear_left_imu/imu/data
+# imu2_config: [false, false, false,
+#               true, true, true,
+#               false, false, false,
+#               true, true, true,
+#               true, false, false]
+# imu2_differential: false # with GPS, must be false
+# imu2_queue_size: 10
+# imu2_remove_gravitational_acceleration: true
+# 
+# imu3: rear_right_imu/imu/data
+# imu3_config: [false, false, false,
+#               true, true, true,
+#               false, false, false,
+#               true, true, true,
+#               true, false, false]
+# imu3_differential: false # with GPS, must be false
+# imu3_queue_size: 10
+# imu3_remove_gravitational_acceleration: true
+
+print_diagnostics: true
