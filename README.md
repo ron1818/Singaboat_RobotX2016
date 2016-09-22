@@ -3,12 +3,22 @@ Singaboat RobotX2016
 
 TASKS
 -----
+### overview ###
+![topdown list](Documents/Screenshot%20from%202016-09-22%2011:38:49.png)
+
 ### 2016-09-19 ~~ 2016-09-23 ###
 1. yellow computer repartition and install **finished**
 2. usb devices [udev rules](http://askubuntu.com/questions/670197/udev-rules-targeting-every-usb-device)
 or follow [linorobot](https://linorobot.org/getting-started/)
-3. integrate GPS with `nmea_navsat_driver` and `navsat_transform`
+3. integrate GPS with `nmea_navsat_driver` and `navsat_transform`, publish `/navsat/fix` as `sensor_msgs/NavSatFix` and `navsat/vel`
 4. integrate IMU with customized code (suggest to buy newer version so that we can use `razor-imu-9dof`)
+5. `cmd_vel` must be written and can control the motors
+
+### 2016-09-24 ~~ 2016-09-30 ###
+1. opencv on color detection and object detection, use `cv2.Canny` for edge detection and `cv2.threshold` on HSV color detection
+2. train cascade classifiers for circle, triangle and cross and apply cascade classifier
+3. calibrate camera with checkboard
+4. dry run and prepare for water test
 
 Introduction
 ------------
