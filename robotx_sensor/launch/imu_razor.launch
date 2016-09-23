@@ -1,0 +1,19 @@
+<launch>
+    <arg name="front_left_razor_config_file" default="$(find robotx_sensor)/config/front_left_imu_razor.yaml" />
+    <arg name="front_right_razor_config_file" default="$(find robotx_sensor)/config/front_right_imu_razor.yaml" />
+    <arg name="rear_left_razor_config_file" default="$(find robotx_sensor)/config/rear_left_imu_razor.yaml" />
+    <arg name="rear_right_razor_config_file" default="$(find robotx_sensor)/config/rear_right_imu_razor.yaml" />
+
+    <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" ns="front_left_imu">
+        <rosparam file="$(arg front_left_razor_config_file)" command="load"/>
+    </node>
+    <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" ns="front_right_imu">
+        <rosparam file="$(arg front_right_razor_config_file)" command="load"/>
+    </node>
+    <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" ns="rear_left_imu">
+        <rosparam file="$(arg rear_left_razor_config_file)" command="load"/>
+    </node>
+    <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen" ns="rear_right_imu">
+        <rosparam file="$(arg rear_right_razor_config_file)" command="load"/>
+    </node>
+</launch>

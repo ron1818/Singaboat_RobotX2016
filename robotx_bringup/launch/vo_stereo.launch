@@ -5,37 +5,35 @@
     <!-- Camera calibration parameters -->
     <arg name="disparity_params" default="$(find robotx_bringup)/config/disparity_params.yaml"/> 
 
-    <!-- stereo-image-proc -->
-    <node pkg="stereo_image_proc" type="stereo_image_proc" name="front_stereo_image_proc" ns="front_stereo" >
-        <param name="approximate_sync" value="true"/>
-        <!--rosparam file="$(arg disparity_params)" /-->
-    </node>
     <!-- Viso2 -->
-    <node pkg="viso2_ros" type="stereo_odometer" name="front_stereo_odometer" output="screen">
+    <node pkg="viso2_ros" type="stereo_odometer" name="bow_stereo_odometer" output="screen">
         <param name="match_disp_tolerance" value="50" />
-        <remap from="stereo" to="front_stereo"/>
+        <param name="queue_size" value="20" />
+        <param name="approximate_sync" value="true" />
+        <remap from="stereo" to="bow_stereo"/>
         <remap from="image" to="image_rect"/>
-        <remap from="odometry" to="front_stereo/odometry" />
-        <param name="odom_frame_id" value="front_stereo/odom" />
-        <!--param name="base_link_frame_id" value="front_stereo/camera_link" /-->
+        <!--remap from="odometry" to="bow_stereo/odometry" /-->
+        <param name="sensor_frame_id" value="/bow_stereo/camera_link" />
         <param name="publish_tf" value="false" />
     </node>
-
-    <!-- stereo-image-proc -->
-    <node pkg="stereo_image_proc" type="stereo_image_proc" name="rear_stereo_image_proc" ns="rear_stereo" >
-        <param name="approximate_sync" value="true"/>
-        <!--rosparam file="$(arg disparity_params)" /-->
-    </node>
-
-    <!-- Run the viso2_ros package -->
-    <node pkg="viso2_ros" type="stereo_odometer" name="rear_stereo_odometer" output="screen">
+    <node pkg="viso2_ros" type="stereo_odometer" name="port_stereo_odometer" output="screen">
         <param name="match_disp_tolerance" value="50" />
-        <remap from="stereo" to="rear_stereo"/>
+        <param name="queue_size" value="20" />
+        <param name="approximate_sync" value="true" />
+        <remap from="stereo" to="port_stereo"/>
         <remap from="image" to="image_rect"/>
-        <remap from="odometry" to="rear_stereo/odometry" />
-        <!--param name="odom_frame_id" value="rear_stereo/odom" /-->
-        <param name="base_link_frame_id" value="rear_stereo/camera_link" />
+        <!--remap from="odometry" to="port_stereo/odometry" /-->
+        <param name="sensor_frame_id" value="/port_stereo/camera_link" />
         <param name="publish_tf" value="false" />
     </node>
-
+    <node pkg="viso2_ros" type="stereo_odometer" name="starboard_stereo_odometer" output="screen">
+        <param name="match_disp_tolerance" value="50" />
+        <param name="queue_size" value="20" />
+        <param name="approximate_sync" value="true" />
+        <remap from="stereo" to="starboard_stereo"/>
+        <remap from="image" to="image_rect"/>
+        <!--remap from="odometry" to="starboard_stereo/odometry" /-->
+        <param name="sensor_frame_id" value="/starboard_stereo/camera_link" />
+        <param name="publish_tf" value="false" />
+    </node>
 </launch>

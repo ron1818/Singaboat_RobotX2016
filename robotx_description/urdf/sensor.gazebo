@@ -33,7 +33,7 @@
             <sensor type="camera" name="${position1}_${position2}_camera">
                 <update_rate>30.0</update_rate>
                 <camera name="stereo_camera">
-                    <horizontal_fov>1.3962634</horizontal_fov>
+                    <horizontal_fov>1.4137</horizontal_fov>
                     <image>
                         <width>640</width>
                         <height>480</height>
@@ -50,13 +50,13 @@
                     </noise>
                 </camera>
                 <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-                    <robotNamespace>${position1}_stereo/${position2}</robotNamespace>
+                    <!--robotNamespace>${position1}_stereo/${position2}</robotNamespace-->
                     <alwaysOn>true</alwaysOn>
                     <updateRate>30.0</updateRate>
-                    <cameraName>/</cameraName>
+                    <cameraName>${position1}_stereo/${position2}</cameraName>
                     <imageTopicName>image_raw</imageTopicName>
                     <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-                    <frameName>camera_link</frameName>
+                    <frameName>${position1}_stereo/${position2}/camera_link</frameName>
                     <hackBaseline>0.07</hackBaseline>
                     <distortionK1>0.0</distortionK1>
                     <distortionK2>0.0</distortionK2>
@@ -68,55 +68,18 @@
         </gazebo>
     </xacro:macro>
 
-    <xacro:imu_gazebo position1="front" position2="left" />
-    <xacro:imu_gazebo position1="front" position2="right" />
+    <xacro:imu_gazebo position1="middle" position2="middle" />
+    <!--xacro:imu_gazebo position1="front" position2="right" />
     <xacro:imu_gazebo position1="rear" position2="left" />
-    <xacro:imu_gazebo position1="rear" position2="right" />
+    <xacro:imu_gazebo position1="rear" position2="right" /-->
 
-    <xacro:camera_gazebo position1="front" position2="left" />
-    <xacro:camera_gazebo position1="front" position2="right" />
-    <xacro:camera_gazebo position1="middle" position2="left" />
-    <xacro:camera_gazebo position1="middle" position2="right" />
-    <xacro:camera_gazebo position1="rear" position2="left" />
-    <xacro:camera_gazebo position1="rear" position2="right" />
+    <xacro:camera_gazebo position1="bow" position2="left" />
+    <xacro:camera_gazebo position1="bow" position2="right" />
+    <xacro:camera_gazebo position1="port" position2="left" />
+    <xacro:camera_gazebo position1="port" position2="right" />
+    <xacro:camera_gazebo position1="starboard" position2="left" />
+    <xacro:camera_gazebo position1="starboard" position2="right" />
 
-  <!-- camera >
-  <gazebo reference="front_left_camera_link">
-    <sensor type="camera" name="camera1">
-      <update_rate>30.0</update_rate>
-      <camera name="head1">
-        <horizontal_fov>1.3962634</horizontal_fov>
-        <image>
-          <width>800</width>
-          <height>800</height>
-          <format>R8G8B8</format>
-        </image>
-        <clip>
-          <near>0.02</near>
-          <far>300</far>
-        </clip>
-        <noise>
-          <type>gaussian</type>
-          <mean>0.0</mean>
-          <stddev>0.007</stddev>
-        </noise>
-      </camera>
-      <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-        <alwaysOn>true</alwaysOn>
-        <updateRate>0.0</updateRate>
-        <cameraName>camera1</cameraName>
-        <imageTopicName>image_raw</imageTopicName>
-        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-        <frameName>camera_link</frameName>
-        <hackBaseline>0.07</hackBaseline>
-        <distortionK1>0.0</distortionK1>
-        <distortionK2>0.0</distortionK2>
-        <distortionK3>0.0</distortionK3>
-        <distortionT1>0.0</distortionT1>
-        <distortionT2>0.0</distortionT2>
-      </plugin>
-    </sensor>
-  </gazebo-->
         
         <!-- Set up gps configuration -->
         <gazebo>

@@ -6,7 +6,7 @@
     <arg name="kinect_enabled" default="true"/>
 
     <!-- Send the auv Robot URDF/XACRO to param server -->
-    <param name="robot_description" command="$(find xacro)/xacro '$(find auv_ros_description)/urdf/auv_standard.urdf.xacro' sonar_enabled:=$(arg sonar_enabled) lidar_enabled:=$(arg lidar_enabled) kinect_enabled:=$(arg kinect_enabled)" />
+    <param name="robot_description" command="$(find xacro)/xacro '$(find robotx_description)/urdf/robotx_standard.urdf.xacro'" />
 
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
         <param name="publish_frequency" type="double" value="20.0"/>
