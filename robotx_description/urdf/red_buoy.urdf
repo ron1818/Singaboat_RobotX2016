@@ -1,5 +1,5 @@
-<robot name="green_buoy">
-  <link name="green_buoy">
+<robot name="red_buoy">
+  <link name="red_buoy">
     <inertial>
       <origin xyz="0 0 0" />
       <mass value="10.0" />
@@ -18,7 +18,7 @@
       </geometry>
     </collision>
   </link>
-  <gazebo reference="green_buoy">
-    <material>Gazebo/Green</material>
+  <gazebo reference="red_buoy">
+    <material>Gazebo/Red</material>
   </gazebo>
 </robot>

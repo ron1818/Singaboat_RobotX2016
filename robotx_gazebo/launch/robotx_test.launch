@@ -6,7 +6,8 @@
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
-    <arg name="world_name" default="$(find robotx_description)/urdf/test1.urdf"/>
+    <arg name="green_buoy_name" default="$(find robotx_description)/urdf/green_buoy.urdf"/>
+    <arg name="red_buoy_name" default="$(find robotx_description)/urdf/red_buoy.urdf"/>
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch" >
@@ -28,8 +29,9 @@
     </node>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn the world -->
-    <node name="world_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-urdf -z 1 -model test -file $(arg world_name)">
-    </node>
+    <node name="green_buoy_spawner1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 5 -y -5 -model gb0 -file $(arg green_buoy_name)" />
+    <node name="green_buoy_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 5 -y 5 -model gb1 -file $(arg green_buoy_name)" />
+    <node name="red_buoy_spawner1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 32 -y -5 -model rb0 -file $(arg red_buoy_name)" />
+    <node name="red_buoy_spawner2" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 32 -y 5 -model rb1 -file $(arg red_buoy_name)" />
 
 </launch>
