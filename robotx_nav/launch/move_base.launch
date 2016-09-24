@@ -20,7 +20,7 @@
 
         <rosparam file="$(find robotx_nav)/config/base_local_planner_params.yaml" command="load" />
 
-        <remap from="odom" to="odometry/filtered/local" />
+        <remap from="odom" to="odometry/filtered/global" />
     </node>
 
 </launch>
