@@ -90,10 +90,10 @@
                 <bodyName>shelf_link</bodyName>
                 <topicName>navsat/fix</topicName>
                 <velocityTopicName>navsat/vel</velocityTopicName>
-                <!--referenceLatitude>49.9</referenceLatitude>
-            <referenceLongitude>8.9</referenceLongitude-->
-            <referenceLatitude>1.35012856</referenceLatitude>
-            <referenceLongitude>103.687695</referenceLongitude>
+                <referenceLatitude>0</referenceLatitude>
+            <referenceLongitude>0</referenceLongitude>
+            <!--referenceLatitude>1.35012856</referenceLatitude>
+            <referenceLongitude>103.687695</referenceLongitude-->
             <referenceHeading>0</referenceHeading>
             <referenceAltitude>0</referenceAltitude>
             <drift>5.0 5.0 5.0</drift>

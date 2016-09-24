@@ -6,7 +6,7 @@
     <arg name="disparity_params" default="$(find robotx_bringup)/config/disparity_params.yaml"/> 
 
     <!-- Viso2 -->
-    <node pkg="viso2_ros" type="stereo_odometer" name="bow_stereo_odometer" output="screen">
+    <node pkg="viso2_ros" type="stereo_odometer" name="bow_stereo_odometer" respawn="true" output="screen">
         <param name="match_disp_tolerance" value="50" />
         <param name="queue_size" value="20" />
         <param name="approximate_sync" value="true" />
