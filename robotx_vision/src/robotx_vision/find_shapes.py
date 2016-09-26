@@ -3,94 +3,143 @@ import numpy as np
 # import argparse
 import cv2
 
-class FlagDetection(object):
+
+class ColorDetection(object):
     """ detect object based on shape and color,
     for Robotx challenge"""
-    pass
 
-def nothing(x):
-    pass
+    # calibrated by palette
+    lower_red1 = np.array([0, 90, 90])
+    upper_red1 = np.array([25, 255, 255])
+    lower_red2 = np.array([175, 90, 90])
+    upper_red2 = np.array([255, 255, 255])
+    lower_blue = np.array([85, 90, 90])
+    upper_blue = np.array([130, 255, 255])
+    lower_green = np.array([25, 50, 75])
+    upper_green = np.array([75, 255, 255])
 
-# calibrated by palette
-lower_red1 = np.array([0, 90, 90])
-upper_red1 = np.array([25, 255, 255])
-lower_red2 = np.array([175, 90, 90])
-upper_red2 = np.array([255, 255, 255])
-lower_blue = np.array([85, 90, 90])
-upper_blue = np.array([130, 255, 255])
-lower_green = np.array([25, 50, 75])
-upper_green = np.array([75, 255, 255])
-# load the image
-# image = cv2.imread("image/finding_shapes_example.png")
-image = cv2.imread("image/docking_side.jpg")
-# image = cv2.imread("image/blue_cross.png")
-# image = cv2.imread("image/hsv_palette.jpg")
-imgray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-cv2.namedWindow('image')
+    def __init__(self, dev=0, col_under_det="red"):
+        self.dev = dev
+        self.col_under_det = col_under_det
 
-# create trackbars for hsv upper and lower
-cv2.createTrackbar('Hl', 'image', 0, 255, nothing)
-cv2.createTrackbar('Hu', 'image', 0, 255, nothing)
-cv2.createTrackbar('Sl', 'image', 0, 255, nothing)
-cv2.createTrackbar('Su', 'image', 0, 255, nothing)
-cv2.createTrackbar('Vl', 'image', 0, 255, nothing)
-cv2.createTrackbar('Vu', 'image', 0, 255, nothing)
+    def bgr_hsv_cvt(self):
+        self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
 
-while True:
-    cv2.imshow('image', image)
-    k = cv2.waitKey(1) & 0xFF
-    if k == 27:
-        break
+    def connect_device(self):
+        self.cap = cv2.VideoCapture(self.dev)
 
-    calibrate_mask = cv2.inRange(hsv, np.array([cv2.getTrackbarPos('Hl', 'image'),
-                                          cv2.getTrackbarPos('Sl', 'image'),
-                                          cv2.getTrackbarPos('Vl', 'image')]),
-                            np.array([cv2.getTrackbarPos('Hu', 'image'),
-                                     cv2.getTrackbarPos('Su', 'image'),
-                                     cv2.getTrackbarPos('Vu', 'image')]))
+    def disconnect_device(self):
+        cv2.destroyAllWindows()
+        self.cap.release()
 
-    red_mask = cv2.inRange(hsv, lower_red1, upper_red1) + cv2.inRange(hsv, lower_red2, upper_red2)
-    green_mask = cv2.inRange(hsv, lower_green, upper_green)
-    blue_mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    def nothing(self):
+        pass
 
-    calibrate_res = cv2.bitwise_and(image, image, mask=calibrate_mask)
+    def hsv_calibartion(self):
+        cv2.namedWindow('calibrate_res')
+        cv2.createTrackbar('Hl', 'calibrate_res', 0, 255, self.nothing)
+        cv2.createTrackbar('Hu', 'calibrate_res', 0, 255, self.nothing)
+        cv2.createTrackbar('Sl', 'calibrate_res', 0, 255, self.nothing)
+        cv2.createTrackbar('Su', 'calibrate_res', 0, 255, self.nothing)
+        cv2.createTrackbar('Vl', 'calibrate_res', 0, 255, self.nothing)
+        cv2.createTrackbar('Vu', 'calibrate_res', 0, 255, self.nothing)
 
-    blue_res = cv2.bitwise_and(image, image, mask=blue_mask)
-    red_res = cv2.bitwise_and(image, image, mask=red_mask)
-    green_res = cv2.bitwise_and(image, image, mask=green_mask)
+        # connect device
+        self.connect_device()
 
-    # im_blue, contours_blue, hierarchy = cv2.findContours(blue_mask.copy(),
-    #                                                      cv2.RETR_TREE,
-    #                                                      cv2.CHAIN_APPROX_NONE)
-    # im_green, contours_green, hierarchy = cv2.findContours(green_mask.copy(),
-    #                                                        cv2.RETR_TREE,
-    #                                                        cv2.CHAIN_APPROX_NONE)
-    # im_red, contours_red, hierarchy = cv2.findContours(red_mask.copy(),
-    #                                                    cv2.RETR_TREE,
-    #                                                    cv2.CHAIN_APPROX_NONE)
+        # deal for each frame
+        while True:
+            ret, self.image = self.cap.read()
+            self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+            cv2.imshow('image', self.image)
+            k = cv2.waitKey(1) & 0xFF
+            if k == 27:
+                break
 
-#     edges = cv2.Canny(image, 100, 200)
-#     im_edge, contours_edge, hierarchy = cv2.findContours(edges.copy(),
-#                                                        cv2.RETR_TREE,
-#                                                        cv2.CHAIN_APPROX_NONE)
-#     cv2.drawContours(imgray, contours_edge, 0, (0,255,0), 3)
-#     counter = 0
-#     for cnt in contours_edge:
-#         approx = cv2.approxPolyDP(cnt,0.05*cv2.arcLength(cnt,True),True)
-#         print len(approx)
-#         # if len(approx) == 3:
-#         #     cv2.drawContours(imgray, cnt, counter, (0,255,0), 3)
-#         # counter += 1
-#
-#   cv2.imshow('edges', edges)
-    # cv2.imshow('contours', imgray)
-    cv2.imshow('calibrate_res', calibrate_res)
-    cv2.imshow('blue_res', blue_res)
-    cv2.imshow('green_res', green_res)
-    cv2.imshow('red_res', red_res)
-    # cv2.imshow("im_blue", im_blue)
-    # cv2.imshow("im_red", im_red)
-    # cv2.imshow("im_green", im_green)
+            calibrate_mask = cv2.inRange(self.hsv,
+                                         np.array([cv2.getTrackbarPos('Hl', 'calibrate_res'),
+                                                  cv2.getTrackbarPos('Sl', 'calibrate_res'),
+                                                  cv2.getTrackbarPos('Vl', 'calibrate_res')]),
+                                         np.array([cv2.getTrackbarPos('Hu', 'calibrate_res'),
+                                                  cv2.getTrackbarPos('Su', 'calibrate_res'),
+                                                  cv2.getTrackbarPos('Vu', 'calibrate_res')]))
 
-cv2.destroyAllWindows()
+            calibrate_res = cv2.bitwise_and(self.image, self.image, mask=calibrate_mask)
+            cv2.imshow('calibrate_res', calibrate_res)
+
+        # disconnect and destroy
+        self.disconnect_device()
+
+    def color_inrange(self):
+        if self.col_under_det == "red":
+            lower, upper = self.lower_red1, self.upper_red1
+            lower2, upper2 = self.lower_red1, self.upper_red1
+        elif self.col_under_det == "green":
+            lower, upper = self.lower_green, self.upper_green
+        elif self.col_under_det == "blue":
+            lower, upper = self.lower_blue, self.upper_blue
+        else:
+            raise ValueError
+
+        # connect device
+        self.connect_device()
+
+        # deal for each frame
+        while True:
+            ret, self.image = self.cap.read()
+            self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+
+            if self.col_under_det == "red":
+                # hsv range
+                color_mask = cv2.inRange(self.hsv, lower, upper) + \
+                    cv2.inRange(self.hsv, lower2, upper2)
+            else:
+                color_mask = cv2.inRange(self.hsv, lower, upper)
+
+            # morphological openning (remove small objects from the foreground)
+            kernel = np.ones((5, 5), np.uint8)
+            color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, kernel)
+            # # morphological closing (fill small objects from the foreground)
+            kernel = np.ones((10, 10), np.uint8)
+            color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_CLOSE, kernel)
+            cv2.imshow('mask', color_mask)
+            res = cv2.bitwise_and(self.image, self.image, mask=color_mask)
+
+            _, contours, hierarchy = cv2.findContours(color_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            # cv2.drawContours(self.image, contours, -1, (0, 255, 0), 3)
+
+            # area = list()
+            # for i, cnt in enumerate(contours):
+            #     area.append(cv2.contourArea(cnt))
+            # print area
+
+            for i, cnt in enumerate(contours):
+                cv2.drawContours(self.image, cnt, -1, (0, 255, 0), 3)
+                approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
+                if len(approx) > 15:
+                    print "circle"
+                elif len(approx) == 3:
+                    print "triangle"
+                elif len(approx) > 4 and cv2.isContourConvex(cnt):
+                    print "cross"
+
+                x, y, w, h = cv2.boundingRect(approx)
+                cv2.rectangle(self.image, (x, y), (x+w, y+h), (0, 255, 0), 3)
+
+            # cv2.imshow('res', res_bw)
+            cv2.imshow('image', self.image)
+            k = cv2.waitKey(1) & 0xFF
+            if k == 27:
+                break
+
+        # disconnect and destroy
+        self.disconnect_device()
+
+
+if __name__ == "__main__":
+    # cd = ColorDetection(dev=0, col_under_det="red")
+    # cd = ColorDetection(dev=0, col_under_det="green")
+    cd = ColorDetection(dev=1, col_under_det="blue")
+    # cd.hsv_calibartion()
+    cd.color_inrange()
