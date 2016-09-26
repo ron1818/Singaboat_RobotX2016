@@ -70,6 +70,7 @@ ros-indigo-amcl git subversion mercurial
 
 cd ~/catkin_ws/src
 git clone https://github.com/bosch-ros-pkg/usb_cam.git
+git clone https://github.com/srv/viso2
 cd ~/catkin_ws
 catkin_make
 rospack profile
