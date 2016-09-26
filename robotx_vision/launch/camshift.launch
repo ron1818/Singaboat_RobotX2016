@@ -1,8 +1,8 @@
 <launch>
     <arg name="input_rgb_image" default="camera/rgb/image_raw" />
     <arg name="roi" default="roi" />
-    <arg name="name_space" default="" />
-  <node pkg="rbx1_vision" name="camshift" type="camshift.py" output="screen" ns="$(arg namespace)" >
+    <arg name="namespace" default="/" />
+  <node pkg="robotx_vision" name="camshift" type="camshift.py" output="screen" ns="$(arg namespace)" >
       <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
       <remap from="/roi" to="$(arg roi)" />
     <rosparam>

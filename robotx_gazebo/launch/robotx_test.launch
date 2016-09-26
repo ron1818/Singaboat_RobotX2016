@@ -20,9 +20,6 @@
 
     <include file="$(find robotx_control)/launch/control.launch"/>
 
-    <!-- robot description from auv_ros_description package -->
-    <include file="$(find robotx_description)/launch/description.launch"/>
-
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
         args="-urdf -model auv -param robot_description">
@@ -33,5 +30,12 @@
     <node name="red_buoy_spawner0" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 5 -y 5 -model rb0 -file $(arg red_buoy_name)" />
     <node name="green_buoy_spawner1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 32 -y -5 -model gb1 -file $(arg green_buoy_name)" />
     <node name="red_buoy_spawner1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 32 -y 5 -model rb1 -file $(arg red_buoy_name)" />
+
+    <!-- robot description from auv_ros_description package -->
+    <include file="$(find robotx_description)/launch/description.launch"/>
+    <!-- bring stereo image -->
+    <include file="$(find robotx_bringup)/launch/stereo_proc.launch"/>
+    <!-- bring visual odometry -->
+    <include file="$(find robotx_bringup)/launch/vo_stereo.launch"/>
 
 </launch>
