@@ -1,3 +1,4 @@
+# written in opencv3, need modification for 14.04 which is opencv2
 # import the necessary packages
 import numpy as np
 # import argparse
