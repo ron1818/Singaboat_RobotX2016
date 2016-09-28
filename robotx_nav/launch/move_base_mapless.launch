@@ -1,0 +1,7 @@
+<launch>
+  <!-- Launch move_base and load all navigation parameters -->
+  <include file="$(find robotx_nav)/launch/move_base.launch" >
+      <arg name="no_static_map" value="true" />
+  </include>
+  
+</launch>

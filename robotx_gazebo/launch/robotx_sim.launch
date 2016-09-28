@@ -9,6 +9,6 @@
         <param name="world_name" value="$(find robotx_gazebo)/worlds/test0.world" />
     </include>
 
-    <!--include file="$(find robotx_control)/launch/control.launch"/-->
+    <include file="$(find robotx_control)/launch/control.launch"/>
 
 </launch>

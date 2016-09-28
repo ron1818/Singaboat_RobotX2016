@@ -8,7 +8,7 @@ void cmdCallback(const geometry_msgs::Twist& msg)
 {
   linear=msg.linear.x;
   angular=msg.angular.z;
-}   
+}
 
 void speedCallback(const geometry_msgs::Vector3& msg)
 {
@@ -22,12 +22,12 @@ int main(int argc, char **argv)
   ros::NodeHandle nh;
 
   //publish (forward, turn, 0) range -500 to 500, for arduino
-  ros::Publisher motor_pub = nh.advertise<geometry_msgs::Vector3>("/motor_val", 1000); 
-  //subscribe to cmd_vel command (currently from turtlebot_teleop key)
-  ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel_mux/input/teleop", 1000, cmdCallback);
-  //subscribe to 
+  ros::Publisher motor_pub = nh.advertise<geometry_msgs::Vector3>("/motor_val", 1000);
+  //subscribe to cmd_vel command
+  ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel", 1000, cmdCallback);
+  //subscribe to ??
   ros::Subscriber speed_sub = nh.subscribe("/chatter", 1000, speedCallback);
-  
+
   int forward_ratio, angular_ratio;
   geometry_msgs::Vector3 motor_val;
 
@@ -37,12 +37,12 @@ int main(int argc, char **argv)
   {
     nh.getParam("/motor_param/forward", forward_ratio); //values 0-2500 if linear 0.2
     nh.getParam("/motor_param/angular", angular_ratio); //values 0-500 if angular 1
-   
+
     motor_val.x=forward_ratio*linear;
     motor_val.y=-1*angular_ratio*angular;
-       
+
     if (motor_val.x>500)
-    {  
+    {
       motor_val.x=500;
     }
     else if (motor_val.x<-500)
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     }
 
     if (motor_val.y>500)
-    {  
+    {
       motor_val.y=500;
     }
     else if (motor_val.y<-500)

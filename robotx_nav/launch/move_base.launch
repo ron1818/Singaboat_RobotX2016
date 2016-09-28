@@ -1,12 +1,32 @@
 <launch>
 
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
-    <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
-    <rosparam file="$(find robotx_nav)/config/local_costmap_params.yaml" command="load" />
-    <rosparam file="$(find robotx_nav)/config/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find robotx_nav)/config/base_local_planner_params.yaml" command="load" />
-    <remap from="odom" to="odometry/filtered" />
-  </node>
-  
+    <arg name="no_static_map" default="false" />
+    <arg name="base_global_planner" default="navfn/NavfnROS"/>
+    <arg name="base_local_planner" default="dwa_local_planner/DWAPlannerROS"/>
+    <!--<arg name="base_local_planner" default="base_local_planner/TrajectoryPlannerROS"/>-->
+
+    <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
+        <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
+        <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
+
+        <rosparam file="$(find robotx_nav)/config/local_costmap_params.yaml" command="load"  ns="local+costmap" />
+        <param name="local_costmap/width" value="10.0"/>
+        <param name="local_costmap/height" value="10.0"/>
+
+        <rosparam file="$(find robotx_nav)/config/global_costmap_params_static.yaml" command="load" ns="global_costmap" unless="$(arg no_static_map)" />
+        <param name="global_costmap/width" value="200.0" unless="$(arg no_static_map)"/>
+        <param name="global_costmap/height" value="200.0" unless="$(arg no_static_map)"/>
+        <rosparam file="$(find robotx_nav)/config/global_costmap_params_laser.yaml" command="load" ns="global_costmap" if="$(arg no_static_map)" />
+        <param name="global_costmap/width" value="100.0" if="$(arg no_static_map)"/>
+        <param name="global_costmap/height" value="100.0" if="$(arg no_static_map)"/>
+
+        <rosparam file="$(find robotx_nav)/config/base_local_planner_params.yaml" command="load" />
+
+        <remap from="odom" to="odometry/filtered/global" />
+    </node>
+
+    <!-- Run the map server with a blank map -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/blank_map.yaml" />
+
+
 </launch>
