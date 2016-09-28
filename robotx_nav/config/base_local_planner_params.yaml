@@ -7,13 +7,13 @@ NavfnROS:
   default_tolerance: 0.1 # A tolerance on the goal point for the planner.
 
 TrajectoryPlannerROS:
-   max_vel_x: 1
-   min_vel_x: 0.0
+   max_vel_x: 2.0
+   min_vel_x: 0.2
    max_vel_y: 0.0  # zero for a differential drive robot
    min_vel_y: 0.0
    min_in_place_vel_theta: 0.5
-   escape_vel: -0.1
-   acc_lim_x: 1.1
+   escape_vel: -2.5
+   acc_lim_x: 1.5
    acc_lim_y: 0.0 # zero for a differential drive robot
    acc_lim_theta: 1.5
 
@@ -48,8 +48,8 @@ DWAPlannerROS:
   acc_lim_y: 0
   acc_lim_th: 1.5
 
-  max_vel_x: 0.5
-  min_vel_x: 0.0
+  max_vel_x: 2.5
+  min_vel_x: 0.5
   max_vel_y: 0
   min_vel_y: 0
 
@@ -59,7 +59,7 @@ DWAPlannerROS:
   min_rot_vel: 0.2
 
   # Goal Tolerance Parameters
-  yaw_goal_tolerance: 0.1
-  xy_goal_tolerance: 0.2
+  yaw_goal_tolerance: 0.2
+  xy_goal_tolerance: 1.0
   latch_xy_goal_tolerance: false
 

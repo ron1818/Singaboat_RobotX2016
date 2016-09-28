@@ -9,7 +9,7 @@
         <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
         <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />
 
-        <rosparam file="$(find robotx_nav)/config/local_costmap_params.yaml" command="load"  ns="local+costmap" />
+        <rosparam file="$(find robotx_nav)/config/local_costmap_params.yaml" command="load"  ns="local_costmap" />
         <param name="local_costmap/width" value="10.0"/>
         <param name="local_costmap/height" value="10.0"/>
 
@@ -22,11 +22,11 @@
 
         <rosparam file="$(find robotx_nav)/config/base_local_planner_params.yaml" command="load" />
 
-        <remap from="odom" to="odometry/filtered/global" />
+        <!--remap from="odom" to="odometry/filtered/global" /-->
     </node>
 
-    <!-- Run the map server with a blank map -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/blank_map.yaml" />
+    <!-- Run the map server with a blank map >
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/blank_map.yaml" /-->
 
 
 </launch>
