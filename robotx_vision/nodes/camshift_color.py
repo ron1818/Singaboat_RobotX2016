@@ -75,6 +75,7 @@ class CamShiftNode(ROS2OpenCV2):
 
     # The main processing function computes the histogram and backprojection
     def process_image(self, cv_image):
+
         # predefined color's hsv range
         if self.color_under_detect == "red":
             lower, upper = self.lower_red1, self.upper_red1
@@ -94,26 +95,26 @@ class CamShiftNode(ROS2OpenCV2):
             # Convert from RGB to HSV space
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-            # # Create a mask using the current saturation and value parameters
-            # mask = cv2.inRange(hsv, np.array((0., self.smin, self.vmin)), np.array((180., 255., self.vmax)))
+            # Create a mask using the current saturation and value parameters
+            mask = cv2.inRange(hsv, np.array((0., self.smin, self.vmin)), np.array((180., 255., self.vmax)))
 
             # not select any region, do automatic color rectangle
             if self.selection is None:
                 if self.color_under_detect == "red":
                     # hsv range for red is in two
-                    mask = cv2.inRange(hsv, lower, upper) + cv2.inRange(hsv, lower2, upper2)
+                    color_mask = cv2.inRange(hsv, lower, upper) + cv2.inRange(hsv, lower2, upper2)
                 else:
-                    mask = cv2.inRange(hsv, lower, upper)
+                    color_mask = cv2.inRange(hsv, lower, upper)
 
                 # morphological openning (remove small objects from the foreground)
                 kernel = np.ones((5, 5), np.uint8)
-                mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+                color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, kernel)
                 # morphological closing (fill small objects from the foreground)
                 kernel = np.ones((10, 10), np.uint8)
-                mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+                color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_CLOSE, kernel)
 
                 # contour detection
-                contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                contours, hierarchy = cv2.findContours(color_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
                 # for multiple contours, find the maximum
                 area=list()
@@ -124,7 +125,7 @@ class CamShiftNode(ROS2OpenCV2):
 
                 # overwrite selection box by automatic color matching
                 self.selection = cv2.boundingRect(approx[np.argmax(area)])
-                self.detection_box = self.selection
+                self.detect_box = self.selection
                 self.track_box = None
 
             # If the user is making a selection with the mouse,
@@ -146,7 +147,7 @@ class CamShiftNode(ROS2OpenCV2):
 
             # If we have a histogram, track it with CamShift
             if self.hist is not None:
-                print "track window"
+                # print "track window"
                 # Compute the backprojection from the histogram
                 backproject = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
 
