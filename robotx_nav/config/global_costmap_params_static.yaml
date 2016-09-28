@@ -2,6 +2,7 @@ global_frame: map
 track_unknown_space: true
 rolling_window: false
 map_type: costmap
+static_map: true
 
 plugins:
   - {name: static,                  type: "costmap_2d::StaticLayer"}

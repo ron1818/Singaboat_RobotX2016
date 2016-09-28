@@ -1,8 +1,8 @@
-obstacle_range: 5.5
-raytrace_range: 6.0
+obstacle_range: 4.5
+raytrace_range: 5
 
 footprint: [[2.5, 2], [2.5, -2], [-2.5, -2], [-2.5, 2]]
-footprint_padding: 0.01
+footprint_padding: 0.05
 
 max_obstacle_height: 1.2
 min_obstacle_height: 0.2
@@ -12,7 +12,7 @@ update_frequency: 4.0
 publish_frequency: 3.0
 transform_tolerance: 10
 
-resolution: 0.05
+resolution: 1
 
 static:
     map_topic: /map
@@ -28,4 +28,4 @@ obstacle_laser:
         {data_type: PointCloud, topic: /starboard_stereo/points2, marking: true, clearing: true, expected_update_rate: 0, inf_is_valid: true}
 
 inflation:
-    inflation_radius: 1.0
+    inflation_radius: 0.5
