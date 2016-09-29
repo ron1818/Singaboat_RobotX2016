@@ -1,5 +1,5 @@
 image: blank_map.pgm
-resolution: 0.05 # meters/pixel
+resolution: 0.3 # meters/pixel
 origin: [-5, -5, 0] # 2-d pose wrt lower left pixel as (x, y, yaw(ccw))
 occupied_thresh: 0.65 # Pixels with occupancy probability greater than this threshold are considered completely occupied.
 free_thresh: 0.196 # Pixels with occupancy probability less than this threshold are considered completely free
