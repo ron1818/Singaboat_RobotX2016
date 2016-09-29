@@ -6,8 +6,14 @@
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
-    <arg name="green_buoy_name" default="$(find robotx_description)/urdf/green_buoy.urdf"/>
-    <arg name="red_buoy_name" default="$(find robotx_description)/urdf/red_buoy.urdf"/>
+    <arg name="test1" default="false" />
+    <arg name="test2" default="false" />
+    <arg name="test3" default="false" />
+    <arg name="test4" default="false" />
+    <arg name="test5" default="false" />
+    <arg name="test6" default="false" />
+    <arg name="test7" default="false" />
+    <arg name="test8" default="false" />
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch" >
@@ -25,11 +31,14 @@
         args="-urdf -model auv -param robot_description">
     </node>
 
-    <!-- Run a python script to the send a service call to gazebo_ros to spawn the world -->
-    <node name="green_buoy_spawner0" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 5 -y -5 -model gb0 -file $(arg green_buoy_name)" />
-    <node name="red_buoy_spawner0" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 5 -y 5 -model rb0 -file $(arg red_buoy_name)" />
-    <node name="green_buoy_spawner1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 32 -y -5 -model gb1 -file $(arg green_buoy_name)" />
-    <node name="red_buoy_spawner1" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 32 -y 5 -model rb1 -file $(arg red_buoy_name)" />
+    <include file="$(find robotx_gazebo)/launch/test1.launch" if="$(arg test1)" />
+    <include file="$(find robotx_gazebo)/launch/test2.launch" if="$(arg test2)" />
+    <include file="$(find robotx_gazebo)/launch/test3.launch" if="$(arg test3)" />
+    <include file="$(find robotx_gazebo)/launch/test4.launch" if="$(arg test4)" />
+    <include file="$(find robotx_gazebo)/launch/test5.launch" if="$(arg test5)" />
+    <include file="$(find robotx_gazebo)/launch/test6.launch" if="$(arg test6)" />
+    <include file="$(find robotx_gazebo)/launch/test7.launch" if="$(arg test7)" />
+    <include file="$(find robotx_gazebo)/launch/test8.launch" if="$(arg test8)" />
 
     <!-- robot description from auv_ros_description package -->
     <include file="$(find robotx_description)/launch/description.launch"/>
