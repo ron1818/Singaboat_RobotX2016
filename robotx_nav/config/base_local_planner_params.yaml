@@ -19,11 +19,11 @@ TrajectoryPlannerROS:
    yaw_goal_tolerance: 0.2 # about 24 degrees
    xy_goal_tolerance: 0.5  # 50 cm
    latch_xy_goal_tolerance: false
-   pdist_scale: 0.8 # default
-   gdist_scale: 0.4 # default
+   pdist_scale: 0.4 # default
+   gdist_scale: 0.8 # default
    meter_scoring: true
 
-   heading_lookahead: 0.5
+   heading_lookahead: 1.5
    heading_scoring: false
    heading_scoring_timestep: 0.8
    occdist_scale: 0.1
@@ -31,7 +31,7 @@ TrajectoryPlannerROS:
    publish_cost_grid_pc: false
    prune_plan: true
 
-   sim_time: 1.0
+   sim_time: 5.0
    sim_granularity: 0.05
    angular_sim_granularity: 0.1
    vx_samples: 8

@@ -2,7 +2,7 @@
 
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
     <!-- topic remap -->
-    <!--remap from="odom_ekf" to="odom" /-->
+    <remap from="odom" to="/odometry/filtered/global" />
     <!--remap from="cmd_vel" to="move_base_cmd_vel" /-->
     <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="global_costmap" />
     <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="local_costmap" />

@@ -1,0 +1,9 @@
+<launch>
+
+    <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_node" output="screen">
+        <remap from="imu/data_raw" to="middle_middle_imu/imu/data"/>
+        <remap from="imu/data" to="/imu/filtered"/>
+
+    </node>
+
+</launch>

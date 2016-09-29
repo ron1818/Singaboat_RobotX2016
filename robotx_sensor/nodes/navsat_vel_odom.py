@@ -14,30 +14,31 @@ import threading
 
 class Vel_Imu_Odom(object):
     """ listen to navsat/vel and imu/data and publish to odom,
-    sonar speed is the center speed x_center
+    x_center speed is the vector sum of x and y
     compass direction change is the theta """
     DT = 1  # DST update rate is 1 Hz
     current_time = rospy.Time()
     last_time = rospy.Time()
+    orientation = Quaternion()
     imu_z = 0
     vel_x = 0
     vel_y = 0
 
-    def __init__(self, vel_topic, imu_topic, odom_topic,
-                 fixed_frame, odom_frame, is_pub_tf):
-        self.vel_topic = vel_topic
-        self.imu_topic = imu_topic
-        self.odom_topic = odom_topic
-        self.odom_frame = odom_frame
-        self.fixed_frame = fixed_frame
-        self.if_pub_tf = is_pub_tf
+    def __init__(self, nodename):
+        self.nodename = nodename
+        self.vel_topic = rospy.get_param("~vel_topic", "navsat/vel")
+        self.imu_topic = rospy.get_param("~imu_topic", "imu/data")
+        self.odom_topic = rospy.get_param("~odom_topic", "odometry/vel")
+        self.odom_frame = rospy.get_param("~odom_frame", "odom")
+        self.fixed_frame = rospy.get_param("~fixed_frame", "base_link")
+        self.is_pub_tf = rospy.get_param("~is_pub_tf", "false")
 
     def talker(self):
         rospy.Subscriber(self.vel_topic, Vector3Stamped, self.vel_callback)
         rospy.Subscriber(self.imu_topic, Imu, self.imu_callback)
         odom_broadcaster = tf.TransformBroadcaster()
         odom_pub = rospy.Publisher(self.odom_topic, Odometry, queue_size=10)
-        rospy.init_node('sonar_publisher', anonymous=True)
+        rospy.init_node(self.nodename, anonymous=True)
         odom_msg = Odometry()
         odom_quart = Quaternion()
 
@@ -57,7 +58,7 @@ class Vel_Imu_Odom(object):
             self.current_time = rospy.Time.now()
             # change in time
             self.DTT = (self.current_time - self.last_time).to_sec()
-            rospy.loginfo("time is %f", self.DTT)
+            # rospy.loginfo("time is %f", self.DTT)
 
             # angular displacement
             self.delta_theta = self.imu_z * self.DTT
@@ -72,11 +73,10 @@ class Vel_Imu_Odom(object):
             self.theta += self.delta_theta
 
             # calculate heading in quaternion
-            # rotate z upside down
             odom_quart = tf.transformations.\
-                quaternion_from_euler(math.pi, 0, self.theta)
-            # rospy.loginfo(odom_quart)
-            if is_pub_tf:
+                quaternion_from_euler(0, 0, self.theta)
+#             rospy.loginfo(odom_quart)
+            if self.is_pub_tf:
                 odom_broadcaster.sendTransform((self.x_pos, self.y_pos, 0),
                                                odom_quart, rospy.Time.now(),
                                                self.fixed_frame, self.odom_frame)
@@ -86,10 +86,10 @@ class Vel_Imu_Odom(object):
             odom_msg.pose.pose.position.x = self.x_pos
             odom_msg.pose.pose.position.y = self.y_pos
             odom_msg.pose.pose.position.z = 0.0
-            odom_msg.pose.pose.orientation.x = odom_quart[0]
-            odom_msg.pose.pose.orientation.y = odom_quart[1]
-            odom_msg.pose.pose.orientation.z = odom_quart[2]
-            odom_msg.pose.pose.orientation.w = odom_quart[3]
+            odom_msg.pose.pose.orientation.x = self.orientation.x
+            odom_msg.pose.pose.orientation.y = self.orientation.y
+            odom_msg.pose.pose.orientation.z = self.orientation.z
+            odom_msg.pose.pose.orientation.w = self.orientation.w
             odom_msg.pose.covariance[0] = 0.00001
             odom_msg.pose.covariance[7] = 0.00001
             odom_msg.pose.covariance[14] = 1000000000000.0
@@ -121,6 +121,7 @@ class Vel_Imu_Odom(object):
         rospy.spin()
 
     def imu_callback(self, msg):
+        self.orientation = msg.orientation
         if msg.angular_velocity.z > -0.05 and msg.angular_velocity.z < 0:
             self.imu_z = 0
         else:
@@ -130,21 +131,21 @@ class Vel_Imu_Odom(object):
     def vel_callback(self, msg):
             self.vel_x = msg.vector.x
             self.vel_y = msg.vector.y
-            rospy.loginfo(self.vel_x)
+            # rospy.loginfo(self.vel_x)
 
 
 if __name__ == "__main__":
 
-    vel_topic = rospy.get_param('~vel_topic', "navsat/vel")
-    imu_topic = rospy.get_param('~imu_topic', "imu/data")
-    odom_topic = rospy.get_param('~odom_topic', "odometry/vel")
-    fixed_frame = rospy.get_param('~fixed_frame', "base_link")
-    odom_frame = rospy.get_param('~odom_frame', "odom")
-    is_pub_tf = rospy.get_param("~is_pub_tf", "false")
+    # vel_topic = rospy.get_param('~vel_topic', "navsat/vel")
+    # imu_topic = rospy.get_param('~imu_topic', "imu/data")
+    # odom_topic = rospy.get_param('~odom_topic', "odometry/vel")
+    # fixed_frame = rospy.get_param('~fixed_frame', "base_link")
+    # odom_frame = rospy.get_param('~odom_frame', "odom")
+    # is_pub_tf = rospy.get_param("~is_pub_tf", "false")
 
+    nodename="navsat_vel_odom_node"
     try:
-        odom_publisher = Vel_Imu_Odom(vel_topic, imu_topic, odom_topic,
-                                   fixed_frame, odom_frame, is_pub_tf)
+        odom_publisher = Vel_Imu_Odom(nodename)
         odom_publisher.talker()
 
     except rospy.ROSInterruptException:
