@@ -77,11 +77,13 @@ def drawMatches(img1, kp1, img2, kp2, matches):
 
 
 # main program
-img1 = cv2.imread('image/cameraman.png')  # queryImage
+# img1 = cv2.imread('image/cameraman.png')  # queryImage
+img1 = cv2.imread('image/buoy_marker.png')  # queryImage
 gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
 gray1_np = np.float32(gray1)
 # _, img1 = cv2.threshold(img1, 127, 255, cv2.THRESH_BINARY)
-img2 = cv2.imread('image/cameraman_rot55.png')  # trainImage
+# img2 = cv2.imread('image/cameraman_rot55.png')  # trainImage
+img2 = cv2.imread('image/sea.png')  # trainImage
 gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
 gray2_np = np.float32(gray2)
 # _, img2 = cv2.threshold(img2, 127, 255, cv2.THRESH_BINARY)
