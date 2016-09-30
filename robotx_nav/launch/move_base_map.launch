@@ -4,8 +4,10 @@
     <param name="/use_sim_time" value="$(arg isreal)"/>
 
     <!-- Launch move_base and load all navigation parameters -->
-    <include file="$(find robotx_nav)/launch/move_base.launch" />
-    <remap from="odom" to="/odometry/filtered/global"/>
+    <include file="$(find robotx_nav)/launch/move_base.launch">
+        <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isreal)" />
+        <arg name="odom_topic" value="/odom" unless="$(arg isreal)" />
+    </include>
 
     <!-- Run the map server with a blank map -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/$(arg mapname).yaml" />
