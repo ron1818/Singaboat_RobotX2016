@@ -19,3 +19,9 @@ roslaunch robotx_vision camshift_color.launch namespace:=/bow_stereo/left input_
 roslaunch robotx_vision camshift_color.launch namespace:=/bow_stereo/right input_rgb_image:=image_raw color_under_detect:=green
 # track right camera on green
 ```
+
+### feature matching ###
+must first install opencv 2.4.13.1 from source (github),
+follow opencv website for more info
+
+
