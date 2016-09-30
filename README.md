@@ -31,13 +31,49 @@ Usage
 + supports **ros-indigo** with **ubuntu 14.04LTS**
 + must install `ros-indigo-desktop-full`
 + dependencies are `robot-localization` `nmea-navsat-driver` `viso2` `gazebo`
-+ 
+
+#### clone repository ####
+```bash
+mkdir catkin_ws
+cd catkin_ws
+mkdir src
+cd src
+catkin_init_workspace
+git clone https://github.com/xxx/Singaboat_RobotX2016
+```
+
 #### script to install additional packages ####
 ```bash
-sudo apt-get install ros-indigo-gazebo*
-sudo apt-get install ros-indigo-amcl ros-indigo-gmapping ros-indigo-move-base ros-indigo-map*
-sudo apt-get install ros-indigo-robot-localization ros-indigo-nmea-navsat-driver
-sudo apt-get install ros-indigo-stereo-image* ros-indigo-viso2*
+sudo apt-get install ros-indigo-gazebo* \
+ros-indigo-amcl ros-indigo-gmapping ros-indigo-move-base ros-indigo-map* \
+ros-indigo-robot-localization ros-indigo-nmea-navsat-driver \
+ros-indigo-stereo-image* ros-indigo-viso2*
+```
+
+#### install python and opencv ####
+```bash
+sudo apt-get install python-numpy python-scipy python-serial
+sudo apt-get install ros-indigo-turtlebot-bringup \
+ros-indigo-turtlebot-create-desktop ros-indigo-openni-* \
+ros-indigo-openni2-* ros-indigo-freenect-* ros-indigo-usb-cam \
+ros-indigo-laser-* ros-indigo-hokuyo-node \
+ros-indigo-audio-common gstreamer0.10-pocketsphinx \
+ros-indigo-pocketsphinx ros-indigo-slam-gmapping \
+ros-indigo-joystick-drivers python-rosinstall \
+ros-indigo-orocos-kdl ros-indigo-python-orocos-kdl \
+python-setuptools ros-indigo-dynamixel-motor-* \
+libopencv-dev python-opencv ros-indigo-vision-opencv \
+ros-indigo-depthimage-to-laserscan ros-indigo-arbotix-* \
+ros-indigo-turtlebot-teleop ros-indigo-move-base \
+ros-indigo-map-server ros-indigo-fake-localization ros-indigo-hector* \
+ros-indigo-amcl git subversion mercurial
+
+cd ~/catkin_ws/src
+git clone https://github.com/bosch-ros-pkg/usb_cam.git
+git clone https://github.com/srv/viso2
+cd ~/catkin_ws
+catkin_make
+rospack profile
 ```
 
 ### Team work ###
