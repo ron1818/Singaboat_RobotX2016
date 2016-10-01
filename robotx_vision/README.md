@@ -1,7 +1,8 @@
 COMMANDS
 --------
 
-### launch gazebo camera and camshift ###
+### Camshift ###
+#### launch gazebo camera and camshift ####
 ```bash
 # launch gazebo with test 1
 roslaunch robotx_gazebo robotx_test.launch
@@ -10,7 +11,7 @@ roslaunch robotx_vision camshift.launch namespace:=/bow_stereo/left input_rgb_im
 roslaunch robotx_vision camshift.launch namespace:=/bow_stereo/right input_rgb_image:=image_raw
 # track right camera on green
 ```
-### launch gazebo camera and camshift with auto color detection ###
+#### launch gazebo camera and camshift with auto color detection ####
 ```bash
 # launch gazebo with test 1
 roslaunch robotx_gazebo robotx_test.launch
@@ -19,3 +20,17 @@ roslaunch robotx_vision camshift_color.launch namespace:=/bow_stereo/left input_
 roslaunch robotx_vision camshift_color.launch namespace:=/bow_stereo/right input_rgb_image:=image_raw color_under_detect:=green
 # track right camera on green
 ```
+
+#### logitech camera and camshift ####
+```bash
+# launch webcam
+roslaunch robotx_vision usb_cam.launch
+# do rectification
+ROS_NAMESPACE=/camera/rgb rosrun image_proc image_proc
+# launch camshift
+roslaunch robotx_vision camshift.launch namespace:=/camera/rgb input_rgb_image:=image_rect_color
+# or 
+roslaunch robotx_vision camshift_color.launch namespace:=/camera/rgb input_rgb_image:=image_rect_color color_under_detect:=red
+```
+
+### feature matching ###
