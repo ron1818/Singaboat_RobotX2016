@@ -49,3 +49,7 @@ roslaunch robotx_vision camshift_color.launch namespace:=/camera/rgb input_rgb_i
 ```
 
 ### feature matching ###
+must first install opencv 2.4.13.1 from source (github),
+follow opencv website for more info
+
+
