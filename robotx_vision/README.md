@@ -2,13 +2,14 @@ INSTALL OPENCV
 --------------
 ```bash
 cd
+sudo apt-get install v4l2ucp v4l-utils libv4l-dev
 git clone https://github.com/opencv/opencv
 cd opencv
 git checkout 2.4
 mkdir release
 cd release
 sudo cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=ON -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=ON -D INSTALL_PYTHON_EXAMPLES=ON -D BUILD_EXAMPLES=ON -D WITH_QT=ON -D WITH_GTK=ON -D WITH_OPENGL=ON ..
-make
+sudo make
 sudo make install
 ```
 
