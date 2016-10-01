@@ -60,7 +60,6 @@ class Flag_match(object):
             kp1, des1 = self.detector.compute(self.img1, kp1)
             kp2 = self.detector.detect(self.img2, None)
             kp2, des2 = self.detector.compute(self.img2, kp1)
-            print kp1
         else:
             # find the keypoints and descriptors with SIFT
             kp1, des1 = self.detector.detectAndCompute(self.img1, None)
@@ -70,6 +69,8 @@ class Flag_match(object):
         # img2_kp = cv2.drawKeypoints(self.img2, kp2, color=(0,0,255))
 
         matches = matcher.knnMatch(des1, des2, k=self.K)
+        print des1
+        print des2
 
         # store all the good matches as per Lowe's ratio test.
         good = []
@@ -100,9 +101,9 @@ class Flag_match(object):
 
 if __name__ == "__main__":
     try:
-        # circle = Flag_match(shape="circle", scene="image/template-2.jpg", detector="SIFT", matcher="FLANN")
+        circle = Flag_match(shape="circle", scene="image/template-2.jpg", detector="SIFT", matcher="FLANN")
         # triangle = Flag_match(shape="triangle", scene="image/template-4.jpg", detector="SURF", matcher="FLANN")
-        cross = Flag_match(shape="cross", scene="image/template-3.jpg", detector="ORB", matcher="FLANN")
+        # cross = Flag_match(shape="cross", scene="image/template-3.jpg", detector="ORB", matcher="FLANN")
     except:
         pass
 
