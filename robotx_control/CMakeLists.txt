@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   tf
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +108,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES robotx_control
-   CATKIN_DEPENDS dynamic_reconfigure message_generation nav_msgs roscpp rospy sensor_msgs std_msgs tf
+   CATKIN_DEPENDS dynamic_reconfigure message_generation nav_msgs roscpp rospy sensor_msgs std_msgs tf geometry_msgs
 #  DEPENDS system_lib
 )
 
@@ -135,14 +136,24 @@ include_directories(
 ## Declare a C++ executable
 add_executable(robotx_control_node src/run_motor.cpp)
 
+
+
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-add_dependencies(robotx_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+##add_dependencies(robotx_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(robotx_control_node
    ${catkin_LIBRARIES}
  )
+
+
+
+add_executable(robotx_control_base_controller src/base_controller.cpp)
+target_link_libraries(robotx_control_base_controller
+   ${catkin_LIBRARIES}
+ )
+
 
 #############
 ## Install ##
