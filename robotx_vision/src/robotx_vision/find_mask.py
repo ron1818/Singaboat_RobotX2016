@@ -1,7 +1,5 @@
-# written in opencv3, need modification for 14.04 which is opencv2
 # import the necessary packages
 import numpy as np
-# import argparse
 import cv2
 
 class Masking(object):
@@ -21,8 +19,9 @@ class Masking(object):
     def __init__(self):
         pass
         # self.dev = dev
-        # self.detector = cv2.ORB(edgeThreshold=5)
+        self.detector = cv2.ORB(edgeThreshold=5)
         # self.detector = cv2.SURF()
+        self.bf = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
 
     def connect_device(self):
         self.cap = cv2.VideoCapture(self.dev)
@@ -69,19 +68,27 @@ class Masking(object):
         # disconnect and destroy
         self.disconnect_device()
 
-    def streaming(self, dev, masking_method, shape, *args):
+    def streaming(self, dev, masking_method, candidate_shape, *args):
+        """ stream the video from dev (e.g. 0),
+            apply masking_method: color, canny, binary, etc.
+            detect the shape from the mask.
+            *args is for additional args of the masking_method
+        """
+        target = cv2.imread("image/triangle.jpg",0)
+        kp_r,des_r = self.detector.detectAndCompute(target, None)
         try:
             self.dev = dev
-        except ValueError:
-            print "device not found"
+        except ValueError, IOError:
+            print "device is not found"
 
+        # define masking method function
         if masking_method.lower() == "color_mask":
             masking = self.color_mask
-            # print masking
         elif masking_method.lower() == "canny_edge_mask":
             masking = self.canny_edge_mask
         else:
             masking = self.binary_mask
+
         # connect device
         self.connect_device()
 
@@ -89,12 +96,31 @@ class Masking(object):
         while True:
             # read image
             ret, frame = self.cap.read()
+            # blur
             frame = cv2.GaussianBlur(frame, (5, 5), 0)
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            gray = cv2.equalizeHist(gray)
+            # create mask
             mask = masking(frame, *args)
-            boundingrect = self.shape_detect(frame, mask, shape)
+            # find boundingbox
+            boundingrect = self.find_contours(frame, mask, candidate_shape)
+            # draw boundingbox
             for br in boundingrect:
                 x, y, w, h = br
-                cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+                obj = gray[y:y+h, x:x+w]
+                kp_o, des_o = self.detector.detectAndCompute(obj,None)
+                if len(kp_o) == 0 or des_o == None: continue
+
+                # match descriptors
+                print des_r
+                print des_o
+                matches = self.bf.match(des_r, des_o)
+                # draw object on street image, if threshold met
+                if(len(matches) >= 3):
+                    cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0), 2)
+
+
+                # cv2.rectangle(frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 3)
 
             cv2.imshow('mask', frame)
             k = cv2.waitKey(1) & 0xFF
@@ -105,6 +131,7 @@ class Masking(object):
         self.disconnect_device()
 
     def morphological(self, mask):
+        """ tune the mask """
         # morphological openning (remove small objects from the foreground)
         kernel = np.ones((5, 5), np.uint8)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
@@ -139,7 +166,8 @@ class Masking(object):
             ret, mask = cv2.threshold(gray, 100, 200, cv2.THRESH_BINARY_INV)
 
         else:
-            mask = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 11, 2)
+            mask = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                         cv2.THRESH_BINARY_INV, 11, 2)
         # return self.morphological(mask)
         return mask
 
@@ -162,106 +190,69 @@ class Masking(object):
         hull = cv2.convexHull(max_contour, returnPoints=False)
         defects = cv2.convexityDefects(max_contour, hull)
 
-        #customized isconvex based on empirical
-        defect_distance=list()
-        for i in range(defects.shape[0]):
-            s,e,f,d = defects[i,0]
-            defect_distance.append(d)
+        try:
+            #customized isconvex based on empirical
+            defect_distance=list()
+            for i in range(defects.shape[0]):
+                s,e,f,d = defects[i,0]
+                defect_distance.append(d)
 
-        if np.amax(defect_distance) < 1000:  # 1000 is empirical
-            isconvex = True
-        else:
-            isconvex = False
+            if np.amax(defect_distance) < 1000:  # 1000 is empirical
+                isconvex = True
+            else:
+                isconvex = False
+            return [len(approx), isconvex, cv2.boundingRect(approx)]
+        except:
+            return None
 
-        return [len(approx), isconvex, cv2.boundingRect(approx)]
 
-    def shape_detect(self, frame, mask, candidate_shape):
-        # find contours
+    def find_contours(self, frame, mask, candidate_shape):
         contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # find all contours
-        area = list()
+        # area = list()
         boundingrect = list()
+        candidate_shape = list()
+        isconvex = list()
         for i, cnt in enumerate(contours):
-            area.append(cv2.contourArea(cnt))
+            # area.append(cv2.contourArea(cnt))
             # approx for each contour
             approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-            print len(approx)
+            # print len(approx)
+            boundingrect.append(cv2.boundingRect(approx))
 
-            if cnt is not None:
+            try:
                 # find convex hull
                 hull = cv2.convexHull(cnt, returnPoints=False)
                 defects = cv2.convexityDefects(cnt, hull)
-            else:
-                defects == None
 
-            if defects is not None:
-            #customized isconvex based on empirical
+                #customized isconvex based on empirical
                 defect_distance=list()
                 for j in range(defects.shape[0]):
                     s,e,f,d = defects[j,0]
                     defect_distance.append(d)
 
                 if np.amax(defect_distance) < 1000:  # 1000 is empirical
-                    isconvex = True
+                    isconvex.append(True)
                 else:
-                    isconvex = False
+                    isconvex.append(False)
 
                 # shape determine
                 if len(approx) > 10 and isconvex is True:
                     candidate_shape = "circle"
                 elif 7 >= len(approx) >=3:
-                    candidate_shape = "triangle"
+                    candidate_shape.append("triangle")
                 elif len(approx) > 8 and isconvex is False:
-                    candidate_shape = "cross"
+                    candidate_shape.append("cross")
                 else:
-                    candidate_shape = "unkown"
+                    candidate_shape.append("unkown")
 
-                if candidate_shape == candidate_shape.lower():  # shape name matches
-                    boundingrect.append(cv2.boundingRect(approx))
-            else:
-                boudingrect = None
+                # if candidate_shape == candidate_shape.lower():  # shape name matches
+                #     boundingrect.append(cv2.boundingRect(approx))
+            except:
+                break
 
         return boundingrect
-
-
-
-            # return cv2.boundingRect(approx)
-
-
-
-        # # find max contours
-        # max_idx = np.argmax(area)
-        # max_contour = contours[max_idx]
-        # approx = cv2.approxPolyDP(max_contour, 0.01 * cv2.arcLength(max_contour, True), True)
-        # # print len(approx)
-
-        # # find convex hull
-        # hull = cv2.convexHull(max_contour, returnPoints=False)
-        # defects = cv2.convexityDefects(max_contour, hull)
-
-        # #customized isconvex based on empirical
-        # defect_distance=list()
-        # for i in range(defects.shape[0]):
-        #     s,e,f,d = defects[i,0]
-        #     defect_distance.append(d)
-
-        # if np.amax(defect_distance) < 1000:  # 1000 is empirical
-        #     isconvex = True
-        # else:
-        #     isconvex = False
-
-        # # shape determine
-        # if len(approx) > 10 and isconvex is True:
-        #     print "circle"
-        # elif 7 >= len(approx) >=3:
-        #     print "triangle"
-        # elif len(approx) > 8 and isconvex is False:
-        #     print "cross"
-        # else:
-        #     print "unkown"
-
-        # return cv2.boundingRect(approx)
 
 
 if __name__ == "__main__":
