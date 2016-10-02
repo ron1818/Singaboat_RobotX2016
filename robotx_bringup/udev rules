@@ -1,0 +1,3 @@
+imu: /dev/USBimu
+gps: /dev/ttyS5 (port COM6)
+arduino: /dev/USBard
