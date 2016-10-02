@@ -1,19 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(robotx_control)
+project(hydrophone)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  dynamic_reconfigure
-  message_generation
-  nav_msgs
+  geometry_msgs
   roscpp
   rospy
-  sensor_msgs
+  rosserial
   std_msgs
-  tf
-  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -73,7 +69,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   nav_msgs#   sensor_msgs#   std_msgs
+#   geometry_msgs#   std_msgs
 # )
 
 ################################################
@@ -91,10 +87,10 @@ find_package(catkin REQUIRED COMPONENTS
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-generate_dynamic_reconfigure_options(
-    cfg/CalibrateMotor.cfg
+# generate_dynamic_reconfigure_options(
+#   cfg/DynReconf1.cfg
 #   cfg/DynReconf2.cfg
-)
+# )
 
 ###################################
 ## catkin specific configuration ##
@@ -107,8 +103,8 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES robotx_control
-   CATKIN_DEPENDS dynamic_reconfigure message_generation nav_msgs roscpp rospy sensor_msgs std_msgs tf geometry_msgs
+#  LIBRARIES hydrophone
+#  CATKIN_DEPENDS geometry_msgs roscpp rospy rosserial std_msgs
 #  DEPENDS system_lib
 )
 
@@ -124,36 +120,26 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(robotx_control
-#   src/${PROJECT_NAME}/robotx_control.cpp
+# add_library(hydrophone
+#   src/${PROJECT_NAME}/hydrophone.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(robotx_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(hydrophone ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(robotx_control_node src/run_motor.cpp)
-
-
+# add_executable(hydrophone_node src/hydrophone_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-##add_dependencies(robotx_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(hydrophone_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(robotx_control_node
-   ${catkin_LIBRARIES}
- )
-
-
-
-add_executable(robotx_control_base_controller src/base_controller.cpp)
-target_link_libraries(robotx_control_base_controller
-   ${catkin_LIBRARIES}
- )
-
+# target_link_libraries(hydrophone_node
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##
@@ -170,7 +156,7 @@ target_link_libraries(robotx_control_base_controller
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS robotx_control robotx_control_node
+# install(TARGETS hydrophone hydrophone_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -195,11 +181,10 @@ target_link_libraries(robotx_control_base_controller
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_robotx_control.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_hydrophone.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-

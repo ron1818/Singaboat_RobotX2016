@@ -2,6 +2,8 @@
 #include "geometry_msgs/Vector3.h"
 #include "geometry_msgs/Twist.h"
 
+//given cmd_val, publish motor_val. do base_controller with PID 	
+
 double linear, angular;
 
 void cmdCallback(const geometry_msgs::Twist& msg)
@@ -25,7 +27,7 @@ int main(int argc, char **argv)
   ros::Publisher motor_pub = nh.advertise<geometry_msgs::Vector3>("/motor_val", 1000);
   //subscribe to cmd_vel command
   ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel", 1000, cmdCallback);
-  //subscribe to ??
+  //subscribe to arduino:motor resistance info
   ros::Subscriber speed_sub = nh.subscribe("/chatter", 1000, speedCallback);
 
   int forward_ratio, angular_ratio;
