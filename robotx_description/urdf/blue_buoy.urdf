@@ -1,5 +1,5 @@
-<robot name="red_buoy">
-  <link name="red_buoy">
+<robot name="blue_buoy">
+  <link name="blue_buoy">
     <inertial>
       <origin xyz="0 0 0" />
       <mass value="10.0" />
@@ -8,7 +8,7 @@
     <visual>
       <origin xyz="0 0 -1"/>
       <geometry>
-            <mesh filename="package://robotx_description/meshes/red_buoy_marker.dae" scale="1 1 1" />
+            <mesh filename="package://robotx_description/meshes/blue_buoy_marker.dae" scale="1 1 1" />
       </geometry>
     </visual>
     <collision>
@@ -18,7 +18,7 @@
       </geometry>
     </collision>
   </link>
-  <gazebo reference="red_buoy">
-    <material>Gazebo/Red</material>
+  <gazebo reference="blue_buoy">
+    <material>Gazebo/Blue</material>
   </gazebo>
 </robot>

@@ -1,0 +1,14 @@
+<launch>
+
+    <arg name="green_buoy_name" default="$(find robotx_description)/urdf/green_buoy.urdf"/>
+    <arg name="red_buoy_name" default="$(find robotx_description)/urdf/red_buoy.urdf"/>
+    <arg name="yellow_buoy_name" default="$(find robotx_description)/urdf/yellow_buoy.urdf"/>
+    <arg name="blue_buoy_name" default="$(find robotx_description)/urdf/blue_buoy.urdf"/>
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn the world -->
+    <node name="green_buoy_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 5 -y 5 -model gb0 -file $(arg green_buoy_name)" />
+    <node name="red_buoy_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 10 -y 7 -model rb0 -file $(arg red_buoy_name)" />
+    <node name="yellow_buoy_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 22 -y -3 -model yb0 -file $(arg yellow_buoy_name)" />
+    <node name="blue_buoy_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 12 -y -10 -model bb0 -file $(arg blue_buoy_name)" />
+
+</launch>
