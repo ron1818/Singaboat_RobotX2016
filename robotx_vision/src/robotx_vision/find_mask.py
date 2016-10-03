@@ -112,8 +112,6 @@ class Masking(object):
                 if len(kp_o) == 0 or des_o == None: continue
 
                 # match descriptors
-                print des_r
-                print des_o
                 matches = self.bf.match(des_r, des_o)
                 # draw object on street image, if threshold met
                 if(len(matches) >= 3):
@@ -177,34 +175,19 @@ class Masking(object):
         mask = cv2.Canny(gray, threshold1, threshold2, L2gradient=True)
         return mask
 
-    def find_max_contour(self, frame, mask):
+    def find_max_contour(self, mask):
         # find contours
         contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # find max contours
-        max_idx = np.argmax(area)
-        max_contour = contours[max_idx]
-        approx = cv2.approxPolyDP(max_contour, 0.01 * cv2.arcLength(max_contour, True), True)
+        # for multiple contours, find the maximum
+        area=list()
+        approx=list()
+        for i, cnt in enumerate(contours):
+            approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
+            area.append(cv2.contourArea(cnt))
 
-        # find convex hull
-        hull = cv2.convexHull(max_contour, returnPoints=False)
-        defects = cv2.convexityDefects(max_contour, hull)
-
-        try:
-            #customized isconvex based on empirical
-            defect_distance=list()
-            for i in range(defects.shape[0]):
-                s,e,f,d = defects[i,0]
-                defect_distance.append(d)
-
-            if np.amax(defect_distance) < 1000:  # 1000 is empirical
-                isconvex = True
-            else:
-                isconvex = False
-            return [len(approx), isconvex, cv2.boundingRect(approx)]
-        except:
-            return None
-
+        # overwrite selection box by automatic color matching
+        return cv2.boundingRect(approx[np.argmax(area)])
 
     def find_contours(self, frame, mask, candidate_shape):
         contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
