@@ -6,6 +6,7 @@ class Masking(object):
     """ detect object based on shape and color,
     for Robotx challenge"""
 
+    MIN_MATCHES = 3
     # calibrated by palette
     lower_red1 = np.array([0, 90, 90])
     upper_red1 = np.array([25, 255, 255])
@@ -17,9 +18,8 @@ class Masking(object):
     upper_green = np.array([75, 255, 255])
 
     def __init__(self):
-        pass
         # self.dev = dev
-        self.detector = cv2.ORB(edgeThreshold=5)
+        self.detector = cv2.ORB(nlevels=2, edgeThreshold=10)
         # self.detector = cv2.SURF()
         self.bf = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
 
@@ -74,8 +74,20 @@ class Masking(object):
             detect the shape from the mask.
             *args is for additional args of the masking_method
         """
-        target = cv2.imread("image/triangle.jpg",0)
+        if candidate_shape.lower() == "triangle":
+            target = cv2.imread("image/triangle.jpg",0)
+        elif candidate_shape.lower() == "cross":
+            target = cv2.imread("image/cross.jpg",0)
+        elif candidate_shape.lower() == "circle":
+            target = cv2.imread("image/circle.jpg",0)
+        else:
+            print "shape not supported, default circle"
+            target = cv2.imread("image/circle.jpg",0)
+
+
         kp_r,des_r = self.detector.detectAndCompute(target, None)
+        target_kp = cv2.drawKeypoints(target, kp_r, color=(127,127,0))
+        cv2.imshow("target", target_kp)
         try:
             self.dev = dev
         except ValueError, IOError:
@@ -109,18 +121,20 @@ class Masking(object):
                 x, y, w, h = br
                 obj = gray[y:y+h, x:x+w]
                 kp_o, des_o = self.detector.detectAndCompute(obj,None)
+                frame_kp = cv2.drawKeypoints(frame, kp_o, color=(127,127,0))
+                cv2.imshow("frame_kp", frame_kp)
                 if len(kp_o) == 0 or des_o == None: continue
 
                 # match descriptors
                 matches = self.bf.match(des_r, des_o)
                 # draw object on street image, if threshold met
-                if(len(matches) >= 3):
+                if(len(matches) >= self.MIN_MATCHES):
                     cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0), 2)
 
 
                 # cv2.rectangle(frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 3)
 
-            cv2.imshow('mask', frame)
+            # cv2.imshow('mask', frame)
             k = cv2.waitKey(1) & 0xFF
             if k == 27:
                 break
