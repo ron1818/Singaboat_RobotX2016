@@ -18,7 +18,7 @@
             </geometry>
         </collision>
         <gazebo reference="dock_base">
-            <material>Gazebo/Grey</material>
+            <material>Gazebo/White</material>
         </gazebo>
     </link>
 
@@ -41,7 +41,7 @@
                 <box size="14 1 0.01" />
             </geometry>
         </collision>
-        <gazebo reference="dock_base">
+        <gazebo reference="dock_wall">
             <material>Gazebo/White</material>
         </gazebo>
     </link>
@@ -53,19 +53,19 @@
             <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="1.0"  iyz="0.0"  izz="1.0" />
         </inertial>
         <visual>
-            <origin xyz="3.5 0.2 1" rpy="1.57 0 0"/>
+            <origin xyz="3.5 0.3 1.2" rpy="1.57 0 0"/>
             <geometry>
                 <mesh filename="package://robotx_description/meshes/cross.dae" scale="1 1 1" />
             </geometry>
         </visual>
         <collision>
-            <origin xyz="4 0.1 0.02"/>
+            <origin xyz="3.9 0.1 0.02"/>
             <geometry>
                 <box size="2 1 0.01" />
             </geometry>
         </collision>
         <gazebo reference="sign1">
-            <material>Gazebo/Red</material>
+            <material>Gazebo/RedEmissive</material>
         </gazebo>
     </link>
 
@@ -76,7 +76,7 @@
             <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="1.0"  iyz="0.0"  izz="1.0" />
         </inertial>
         <visual>
-            <origin xyz="0 0.2 1" rpy="1.57 0 0"/>
+            <origin xyz="-0.1 0.3 1.2" rpy="1.57 0 0"/>
             <geometry>
                 <mesh filename="package://robotx_description/meshes/circle.dae" scale="1 1 1" />
             </geometry>
@@ -88,7 +88,7 @@
             </geometry>
         </collision>
         <gazebo reference="sign2">
-            <material>Gazebo/Blue</material>
+            <material>Gazebo/BlueEmissive</material>
         </gazebo>
     </link>
 
@@ -99,7 +99,7 @@
             <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="1.0"  iyz="0.0"  izz="1.0" />
         </inertial>
         <visual>
-            <origin xyz="-4.5 0.2 1" rpy="1.57 0 0"/>
+            <origin xyz="-4.1 0.3 1.2" rpy="1.57 0 0"/>
             <geometry>
                 <mesh filename="package://robotx_description/meshes/triangle.dae" scale="1 1 1" />
             </geometry>
@@ -111,7 +111,7 @@
             </geometry>
         </collision>
         <gazebo reference="sign3">
-            <material>Gazebo/Green</material>
+            <material>Gazebo/GreenEmissive</material>
         </gazebo>
     </link>
     <joint name="base_wall_joint" type="fixed">
