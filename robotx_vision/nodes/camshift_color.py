@@ -10,27 +10,21 @@ import rospy
 import cv2
 from cv2 import cv as cv
 from robotx_vision.ros2opencv2 import ROS2OpenCV2
+from robotx_vision.find_mask import Masking
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 import numpy as np
 
 class CamShiftNode(ROS2OpenCV2):
     # taken from robotx_vision.find_shapes.Color_Detection
-    # calibrated by palette
-    lower_red1 = np.array([0, 90, 90])
-    upper_red1 = np.array([25, 255, 255])
-    lower_red2 = np.array([175, 90, 90])
-    upper_red2 = np.array([255, 255, 255])
-    lower_blue = np.array([85, 90, 90])
-    upper_blue = np.array([130, 255, 255])
-    lower_green = np.array([25, 50, 75])
-    upper_green = np.array([75, 255, 255])
 
     def __init__(self, node_name):
         ROS2OpenCV2.__init__(self, node_name)
 
         self.node_name = node_name
         self.color_under_detect = rospy.get_param("~color_under_detect", "red")
+        # call masking alglorthm to get the color mask
+        self.mask = Masking()
 
         # The minimum saturation of the tracked color in HSV space,
         # as well as the min and max value (the V in HSV) and a
@@ -76,18 +70,6 @@ class CamShiftNode(ROS2OpenCV2):
     # The main processing function computes the histogram and backprojection
     def process_image(self, cv_image):
 
-        # predefined color's hsv range
-        if self.color_under_detect == "red":
-            lower, upper = self.lower_red1, self.upper_red1
-            lower2, upper2 = self.lower_red1, self.upper_red1
-        elif self.color_under_detect == "green":
-            lower, upper = self.lower_green, self.upper_green
-        elif self.color_under_detect == "blue":
-            lower, upper = self.lower_blue, self.upper_blue
-        else:
-            print "color not within the scope"
-            raise ValueError
-
         try:
             # First blur the image
             frame = cv2.blur(cv_image, (5, 5))
@@ -100,31 +82,10 @@ class CamShiftNode(ROS2OpenCV2):
 
             # not select any region, do automatic color rectangle
             if self.selection is None:
-                if self.color_under_detect == "red":
-                    # hsv range for red is in two
-                    color_mask = cv2.inRange(hsv, lower, upper) + cv2.inRange(hsv, lower2, upper2)
-                else:
-                    color_mask = cv2.inRange(hsv, lower, upper)
-
-                # morphological openning (remove small objects from the foreground)
-                kernel = np.ones((5, 5), np.uint8)
-                color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_OPEN, kernel)
-                # morphological closing (fill small objects from the foreground)
-                kernel = np.ones((10, 10), np.uint8)
-                color_mask = cv2.morphologyEx(color_mask, cv2.MORPH_CLOSE, kernel)
-
-                # contour detection
-                contours, hierarchy = cv2.findContours(color_mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-                # for multiple contours, find the maximum
-                area=list()
-                approx=list()
-                for i, cnt in enumerate(contours):
-                    approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
-                    area.append(cv2.contourArea(cnt))
-
-                # overwrite selection box by automatic color matching
-                self.selection = cv2.boundingRect(approx[np.argmax(area)])
+                # obtain the color mask
+                color_mask = self.mask.color_mask(frame, self.color_under_detect)
+                # create bounding box from the maximum mask
+                self.selection = self.mask.find_max_contour(color_mask)
                 self.detect_box = self.selection
                 self.track_box = None
 

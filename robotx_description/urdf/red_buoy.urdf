@@ -8,13 +8,13 @@
     <visual>
       <origin xyz="0 0 -1"/>
       <geometry>
-            <mesh filename="package://robotx_description/meshes/green_buoy_marker.dae" scale="1 1 1" />
+            <mesh filename="package://robotx_description/meshes/red_buoy_marker.dae" scale="1 1 1" />
       </geometry>
     </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>
-        <cylinder length="2" radius="0.5" />
+        <cylinder length="0.99" radius="0.127" />
       </geometry>
     </collision>
   </link>

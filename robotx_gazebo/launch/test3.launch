@@ -1,0 +1,8 @@
+<launch>
+
+    <arg name="dock_name" default="$(find robotx_description)/urdf/dock.urdf"/>
+
+    <!-- Run a python script to the send a service call to gazebo_ros to spawn the world -->
+    <node name="dock_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -x 10 -y 15 -model dock -file $(arg dock_name)" />
+
+</launch>
