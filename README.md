@@ -128,6 +128,15 @@ Usage
 + must install `ros-indigo-desktop-full`
 + dependencies are `robot-localization` `nmea-navsat-driver` `viso2` `gazebo`
 
+#### fork repository ####
+[create](https://help.github.com/categories/collaborating-with-issues-and-pull-requests/)
+[pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
+[remote](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
+[sync](https://help.github.com/articles/syncing-a-fork/)
+
+useful commands:
+`git clone`, `git fetch`, `git remote -v`, `git remote add upstream`
+`git checkout xxx`, `git fetch upstream`, `git merge upstream/xxx`
 #### clone repository ####
 ```bash
 mkdir catkin_ws
