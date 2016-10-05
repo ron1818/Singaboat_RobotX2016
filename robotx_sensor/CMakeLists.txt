@@ -8,6 +8,11 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   roscpp
   rospy
+  std_msgs
+  roslib
+  serial
+  geometry_msgs
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -128,16 +133,17 @@ include_directories(
 # add_dependencies(robotx_sensor ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(robotx_sensor_node src/robotx_sensor_node.cpp)
+## Declare a C++ executable
+ add_executable(imu_node nodes/imu.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(robotx_sensor_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+ add_dependencies(imu_node imu_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(robotx_sensor_node
-#   ${catkin_LIBRARIES}
-# )
+ target_link_libraries(imu_node
+  ${catkin_LIBRARIES}
+ )
 
 #############
 ## Install ##
