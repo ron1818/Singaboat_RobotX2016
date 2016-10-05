@@ -4,7 +4,7 @@ COMMANDS
 ### launch fake wamv and movebase ###
 ```bash
 # lauch robot state description
-roslaunch robotx_description fake_wamv_description.launch
+roslaunch robotx_bringup fake_wamv_description.launch
 # launch movebase
 roslaunch robotx_nav move_base_map.lauch isreal:=false mapname:=pandan
 # launch rviz
