@@ -33,9 +33,9 @@ int main(int argc, char **argv)
   //subscribe to cmd_vel 
   ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel", 100, cmdCallback);
   //subscribe to odometry
-  ros::Subscriber odom_sub = nh.subscribe("/odometry/vel", 100, odomCallback);
+  ros::Subscriber odom_sub = nh.subscribe("/odom", 100, odomCallback);
 
-  bool reverse;
+  bool reverse="False";
 
   double forward_P, forward_I, forward_D, angular_P, angular_I, angular_D;
   double f_error=0.0, f_derivator=0.0, f_integrator=0.0, f_I_max=500.0, f_I_min=-500.0;

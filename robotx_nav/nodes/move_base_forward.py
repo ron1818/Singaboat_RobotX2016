@@ -130,7 +130,7 @@ class Forward(object):
 	N=math.ceil(self.forward["goal_distance"]/self.forward["waypoint_distance"]); 
 	
         # Then convert the angles to quaternions, all have the same heading angles
-        for i in range(N):
+        for i in N:
             q_angle = quaternion_from_euler(0, 0, self.forward["heading"])
             q = Quaternion(*q_angle)
             quaternions.append(q)
