@@ -134,7 +134,7 @@ include_directories(
 
 ## Declare a C++ executable
 ## Declare a C++ executable
- add_executable(imu_node nodes/imu.cpp)
+ add_executable(imu_node src/imu.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above

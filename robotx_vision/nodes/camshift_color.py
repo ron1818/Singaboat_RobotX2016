@@ -15,7 +15,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 import numpy as np
 
-class CamShiftNode(ROS2OpenCV2):
+class CamShiftColor(ROS2OpenCV2):
     # taken from robotx_vision.find_shapes.Color_Detection
 
     def __init__(self, node_name):
@@ -24,7 +24,7 @@ class CamShiftNode(ROS2OpenCV2):
         self.node_name = node_name
         self.color_under_detect = rospy.get_param("~color_under_detect", "red")
         # call masking alglorthm to get the color mask
-        self.mask = Masking()
+        self.mymask = Masking()
 
         # The minimum saturation of the tracked color in HSV space,
         # as well as the min and max value (the V in HSV) and a
@@ -83,9 +83,9 @@ class CamShiftNode(ROS2OpenCV2):
             # not select any region, do automatic color rectangle
             if self.selection is None:
                 # obtain the color mask
-                color_mask = self.mask.color_mask(frame, self.color_under_detect)
+                color_mask = self.mymask.color_mask(frame, self.color_under_detect)
                 # create bounding box from the maximum mask
-                self.selection = self.mask.find_max_contour(color_mask)
+                self.selection = self.mymask.find_max_contour(color_mask)
                 self.detect_box = self.selection
                 self.track_box = None
 
@@ -171,7 +171,7 @@ class CamShiftNode(ROS2OpenCV2):
 if __name__ == '__main__':
     try:
         node_name = "camshift"
-        CamShiftNode(node_name)
+        CamShiftColor(node_name)
         try:
             rospy.init_node(node_name)
         except:
