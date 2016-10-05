@@ -147,6 +147,7 @@ libopencv-dev python-opencv ros-indigo-vision-opencv \
 ros-indigo-depthimage-to-laserscan ros-indigo-arbotix-* \
 ros-indigo-turtlebot-teleop ros-indigo-move-base \
 ros-indigo-map-server ros-indigo-fake-localization ros-indigo-hector* \
+ros-indigo-gazebo-ros* ros-indigo-serial \
 ros-indigo-amcl git subversion mercurial
 
 cd ~/catkin_ws/src
