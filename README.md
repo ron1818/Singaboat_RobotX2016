@@ -24,6 +24,7 @@ Water Test
 ----------
 ### 2016-10-08 ###
 Objectives:
+
 0. setup the ROSMASTER and BaseStation and sync time
 1. map the speed command from `cmd_vel` to the actual boat speed
 2. see the actual performance of `IMU` and `GPS`
@@ -32,6 +33,7 @@ Objectives:
 5. test the system integrity
 
 #### thing to do before touch into water ####
+0. udev rule for all the sensors
 1. all connections are correct
 2. laptop and onboat computers are connected in an intranet
 3. can listen to `cmd_vel` and the motor can run
@@ -74,6 +76,7 @@ refer to **ROS by Example** 7.4
 1. bringup the base controller so that you can use keyboard to send the `cmd_vel`,
 alternatively, use:
 ```bash
+roslaunch robotx_bringup wamv_minimal.launch
 # test linear movement
 rostopic pub /cmd_vel -r 10 geometry_msgs/Twist '{linear: {x: 1, y: 0, z: 0}, {angular: {x: 0, y: 0, z: 0}}'
 # test angular movement
@@ -82,6 +85,12 @@ rostopic pub /cmd_vel -r 10 geometry_msgs/Twist '{linear: {x: 0, y: 0, z: 0}, {a
 rostopic pub /cmd_vel -r 10 geometry_msgs/Twist '{}'
 ```
 else, use the `calibrate_linear.py` and `calibrate_angular.py` to calibrate (refer to 7.4)
+```bash
+roslaunch robotx_bringup wamv_minimal.launch
+roslaunch robotx_control wamv_control.launch #TODO
+rosrun robotx_nav calibrate_linear.py
+rosrun robotx_nav calibrate_angular.py
+```
 
 #### IMU and GPS ####
 1. launch IMU and GPS
@@ -89,6 +98,12 @@ else, use the `calibrate_linear.py` and `calibrate_angular.py` to calibrate (ref
 3. during the movement, save the data by `rosbag`
 4. analyze the IMU and GPS data by `rqt_plot` or `matplotlib` in python
 5. see the `linear x`, `angular z` in `imu/data` and `xyz` in `navsat/vel`
+```bash
+roslaunch robotx_bringup wamv_minimal.launch
+roslaunch robotx_sensor gps_serial.launch
+roslaunch robotx_sensor imu_razor.launch
+roslaunch robotx_sensor navsat_vel_odom.launch
+```
 
 #### camera ####
 1. make sure the cameras are calibrated
