@@ -6,6 +6,8 @@ class Masking(object):
     """ detect object based on shape and color,
     for Robotx challenge"""
 
+    MIN_MATCH_COUNT = 3
+    K = 2
     # calibrated by palette
     lower_red1 = np.array([0, 90, 90])
     upper_red1 = np.array([25, 255, 255])
@@ -16,12 +18,99 @@ class Masking(object):
     lower_green = np.array([25, 50, 75])
     upper_green = np.array([75, 255, 255])
 
-    def __init__(self):
-        pass
-        # self.dev = dev
-        self.detector = cv2.ORB(edgeThreshold=5)
-        # self.detector = cv2.SURF()
-        self.bf = cv2.BFMatcher(cv2.NORM_HAMMING,crossCheck=True)
+    circle_template = 'image/circle.jpg'
+    triangle_template = 'image/triangle.jpg'
+    cross_template = 'image/cross.jpg'
+
+    def __init__(self, color, shape, masker, detector, matcher, matching_method):
+
+        self._color = color
+        self._shape = shape
+        self._masker = masker
+        self._detector = detector
+        self._matcher = matcher
+        self._matching_method = matching_method
+
+        # read color
+        if self._color is not None:
+            self.color = color.lower()
+        else:
+            print "color not supported or no color for masking"
+            self.color = None
+
+        # read template
+        if self._shape is not None:
+            if self._shape.lower() == "circle":
+                self.target = cv2.imread(self.circle_template,0)
+            elif self._shape.lower() == "cross":
+                self.target = cv2.imread(self.cross_template,0)
+            elif self._shape.lower() == "triangle":
+                self.target = cv2.imread(self.triangle_template,0)
+            else:
+                self.target = None
+                print "target not supported"
+        else:
+            self.target = None
+            print "target not present"
+
+        # read masker
+        if self._masker is not None:
+            if self._masker.lower() == "bw":
+                self.masker = self.binary_mask
+            elif self._masker.lower() == "canny":
+                self.masker = self.canny_edge_mask
+            elif self._masker.lower() == "color" and self.color is not None:
+                self.masker = self.color_mask
+            else:
+                print "mask method not supported"
+                self.masker = None
+        else:
+            print "mask method not present"
+            self.masker = None
+
+        # read detector
+        # todo detector_params
+        if self.target is not None and self._detector is not None: # have target to detect
+            if self._detector.lower() == "sift":
+                self.detector = cv2.SIFT()
+            elif self._detector.lower() == "surf":
+                self.detector = cv2.SURF()
+            elif self._detector.lower() == "orb":
+                self.detector = cv2.ORB(nlevels=2, edgeThreshold=5)
+            elif self._detector.lower() == "fast":
+                self.detector = cv2.FastFeatureDetector()
+            else:
+                self.detector = None
+                print "detector not supported or no detector for matching"
+        else:
+            self.detector = None
+            print "detector not required"
+
+        # read matcher
+        if self.detector is not None and self._matcher is not None:
+            if self._matcher.lower() == "flann":
+                FLANN_INDEX_KDTREE = 0
+                index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
+                search_params = dict(checks = 50)
+                self.matcher = cv2.FlannBasedMatcher(index_params, search_params)
+            elif self._matcher.lower() == "bruteforce":
+                self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+            else:
+                self.matcher = None
+                print "matcher not supported or no matcher"
+        else:
+            self.matcher = None
+            print "matcher not required"
+
+        # read matching method
+        if self.matcher is not None and self._matching_method is not None:
+            if self._matching_method.lower() == "knn":
+                self.matching_method = self.matcher.knnMatch
+            else:  # default is one match
+                self.matching_method = self.matcher.match
+        else:
+            self.matching_method = None
+            print "matching method not required"
 
     def connect_device(self):
         self.cap = cv2.VideoCapture(self.dev)
@@ -30,64 +119,22 @@ class Masking(object):
         cv2.destroyAllWindows()
         self.cap.release()
 
-    def nothing(self):
-        pass
-
-    def hsv_calibartion(self):
-        cv2.namedWindow('calibrate_res')
-        cv2.createTrackbar('Hl', 'calibrate_res', 0, 255, self.nothing)
-        cv2.createTrackbar('Hu', 'calibrate_res', 0, 255, self.nothing)
-        cv2.createTrackbar('Sl', 'calibrate_res', 0, 255, self.nothing)
-        cv2.createTrackbar('Su', 'calibrate_res', 0, 255, self.nothing)
-        cv2.createTrackbar('Vl', 'calibrate_res', 0, 255, self.nothing)
-        cv2.createTrackbar('Vu', 'calibrate_res', 0, 255, self.nothing)
-
-        # connect device
-        self.connect_device()
-
-        # deal for each frame
-        while True:
-            ret, self.image = self.cap.read()
-            self.hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
-            cv2.imshow('image', self.image)
-            k = cv2.waitKey(1) & 0xFF
-            if k == 27:
-                break
-
-            calibrate_mask = cv2.inRange(self.hsv,
-                                         np.array([cv2.getTrackbarPos('Hl', 'calibrate_res'),
-                                                  cv2.getTrackbarPos('Sl', 'calibrate_res'),
-                                                  cv2.getTrackbarPos('Vl', 'calibrate_res')]),
-                                         np.array([cv2.getTrackbarPos('Hu', 'calibrate_res'),
-                                                  cv2.getTrackbarPos('Su', 'calibrate_res'),
-                                                  cv2.getTrackbarPos('Vu', 'calibrate_res')]))
-
-            calibrate_res = cv2.bitwise_and(self.image, self.image, mask=calibrate_mask)
-            cv2.imshow('calibrate_res', calibrate_res)
-
-        # disconnect and destroy
-        self.disconnect_device()
-
-    def streaming(self, dev, masking_method, candidate_shape, *args):
+    def streaming(self, dev, *args):
         """ stream the video from dev (e.g. 0),
             apply masking_method: color, canny, binary, etc.
             detect the shape from the mask.
             *args is for additional args of the masking_method
         """
-        target = cv2.imread("image/triangle.jpg",0)
-        kp_r,des_r = self.detector.detectAndCompute(target, None)
+        if self.detector is not None:
+            kp_r, des_r = self.detector.detectAndCompute(self.target, None)
+            # target_kp = cv2.drawKeypoints(target, kp_r, color=(0,0,255))
+            # cv2.imshow("target", target_kp)
+
+        # connect video
         try:
             self.dev = dev
         except ValueError, IOError:
             print "device is not found"
-
-        # define masking method function
-        if masking_method.lower() == "color_mask":
-            masking = self.color_mask
-        elif masking_method.lower() == "canny_edge_mask":
-            masking = self.canny_edge_mask
-        else:
-            masking = self.binary_mask
 
         # connect device
         self.connect_device()
@@ -100,27 +147,64 @@ class Masking(object):
             frame = cv2.GaussianBlur(frame, (5, 5), 0)
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.equalizeHist(gray)
+
             # create mask
-            mask = masking(frame, *args)
-            # find boundingbox
-            boundingrect = self.find_contours(frame, mask, candidate_shape)
+            if self.masker is not None:
+                if self._masker.lower() == "color":
+                    mask = self.masker(frame, *args)
+                else:  # other kind of masking, use gray
+                    mask = self.masker(gray, *args)
+                # find boundingboxes of the mask
+                boundingrect = self.find_contours(frame, mask, candidate_shape)
+            else:  # no mask then full frame as bounding
+                height, width, channels = frame.shape
+                boudingrect = [0, 0, width, height]
+
             # draw boundingbox
             for br in boundingrect:
                 x, y, w, h = br
                 obj = gray[y:y+h, x:x+w]
                 kp_o, des_o = self.detector.detectAndCompute(obj,None)
+                # frame_kp = cv2.drawKeypoints(frame, kp_o, color=(0,255,0))
+                # cv2.imshow("frame_kp", frame_kp)
+                # no keypoints detected, go to next frame
                 if len(kp_o) == 0 or des_o == None: continue
 
                 # match descriptors
-                matches = self.bf.match(des_r, des_o)
-                # draw object on street image, if threshold met
-                if(len(matches) >= 3):
-                    cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0), 2)
+                # matching on the boundingrect
+                if self._matching_method.lower() == "flann":  # need feature matching
+                    matches = self.matching_method(des_r, des_o, k=self.K)
+
+                    # store all the good matches as per Lowe's ratio test.
+                    good = []
+                    for m, n in matches:
+                        if m.distance < 0.75*n.distance:
+                            good.append(m)
+
+                    #print len(good) > self.MIN_MATCH_COUNT
+
+                    frame_idx = list()
+                    for mat in good:
+                        frame_idx.append(mat.trainIdx)
+
+                    matched_kp2 = [kp2[i] for i in frame_idx]
+                    matched_kp2_array = np.float32([p.pt for p in matched_kp2]).reshape(-1, 1, 2)
+
+                    # img = cv2.drawKeypoints(frame, kp2, color=(0,255,0), flags=0)
+                    # cv2.imshow("kpts", img)
+                    x, y, w, h = cv2.boundingRect(matched_kp2_array)
+                    cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
+                else:
+                    matches = self.matching_method(des_r, des_o)
+                    # draw object on frame, if threshold met
+                    if(len(matches) >= self.MIN_MATCH_COUNT):
+                        cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0), 2)
+
 
 
                 # cv2.rectangle(frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 3)
 
-            cv2.imshow('mask', frame)
+            # cv2.imshow('mask', frame)
             k = cv2.waitKey(1) & 0xFF
             if k == 27:
                 break
@@ -151,15 +235,12 @@ class Masking(object):
         elif color.lower() == "green":
             mask = cv2.inRange(hsv, self.lower_green, self.upper_green)
         else:
-            mask = None
-            return mask
+            return None
             raise ValueError
 
         return self.morphological(mask)
 
-    def binary_mask(self, frame, is_adaptive=False):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.equalizeHist(gray)
+    def binary_mask(self, gray, is_adaptive=False):
         if not is_adaptive:
             ret, mask = cv2.threshold(gray, 100, 200, cv2.THRESH_BINARY_INV)
 
@@ -169,9 +250,7 @@ class Masking(object):
         # return self.morphological(mask)
         return mask
 
-    def canny_edge_mask(self, frame, threshold1=100, threshold2=200):
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.equalizeHist(gray)
+    def canny_edge_mask(self, gray, threshold1=100, threshold2=200):
         mask = cv2.Canny(gray, threshold1, threshold2, L2gradient=True)
         return mask
 
@@ -189,7 +268,7 @@ class Masking(object):
         # overwrite selection box by automatic color matching
         return cv2.boundingRect(approx[np.argmax(area)])
 
-    def find_contours(self, frame, mask, candidate_shape):
+    def find_contours(self, mask, candidate_shape):
         contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # find all contours

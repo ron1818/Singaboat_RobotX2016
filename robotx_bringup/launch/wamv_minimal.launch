@@ -1,0 +1,9 @@
+<launch>
+    <node pkg="robotx_bringup" type="tf_broadcaster.py" name="tf_broadcast_node" output="screen">
+        <param name="base_frame" value="base_link"/>
+        <param name="laser_frame" value="lidar_link"/>
+        <param name="camera_frame" value="camera_link"/>
+        <param name="gps_frame" value="gps_link"/>
+        <param name="imu_frame" value="imu_link"/>
+    </node>
+</launch>
