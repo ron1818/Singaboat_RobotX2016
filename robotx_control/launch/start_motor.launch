@@ -1,6 +1,11 @@
 <launch>
-  <param name="motor_param/forward" value="2500" type="int" />
-  <param name="motor_param/angular" value="500" type="int" />
+  <param name="motor_param/forward" value="500" type="int" />
+  <param name="motor_param/angular" value="100" type="int" />
+
+  <param name="motor_param/right_calibration" value="1.0" type="double" />
+  <param name="motor_param/left_calibration" value="1.0" type="double" />
+
+  <param name="motor_param/reverse" value="false" type="bool" />
  
   <node pkg="turtlebot_teleop" type="turtlebot_teleop_key" name="turtlebot_teleop_keyboard"  output="screen">
   <param name="scale_linear" value="0.5" type="double"/> 
