@@ -20,10 +20,10 @@ int main(int argc, char **argv)
   //publish (forward, turn, 0) range -500 to 500, for arduino
   ros::Publisher motor_pub = nh.advertise<geometry_msgs::Twist>("/motor_val", 1000);
   //subscribe to cmd_vel command
-  ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel", 1000, cmdCallback);
+  ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel_mux/input/teleop", 1000, cmdCallback);
 
   int forward_ratio, angular_ratio;
-  double right_calib, left_calib;
+  int right_calib, left_calib;
   bool isReverse="false";
   geometry_msgs::Twist motor_val;
 
@@ -33,8 +33,8 @@ int main(int argc, char **argv)
   {
     nh.getParam("/motor_param/forward", forward_ratio); //values 0-2500 if linear 0.2
     nh.getParam("/motor_param/angular", angular_ratio); //values 0-500 if angular 1
-    nh.getParam("/motor_param/right_calibration", right_calib); //value set to 1  
-    nh.getParam("/motor_param/left_calibration", left_calib); //value set to 1
+    nh.getParam("/motor_param/right_calibration", right_calib); //value set to 0, offset 
+    nh.getParam("/motor_param/left_calibration", left_calib); //value set to 0
     nh.getParam("/motor_param/reverse", isReverse);
 
     motor_val.linear.y=right_calib; //calibration factor for right motor

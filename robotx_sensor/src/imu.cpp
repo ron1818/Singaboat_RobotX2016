@@ -10,6 +10,9 @@
 #include <tf/transform_broadcaster.h>
 #include <cmath>
 
+#define Gravity 25.28
+#define Gyro_gain 0.0012043
+
 
 using std::string;
 using serial::Serial;
@@ -72,12 +75,12 @@ int main(int argc, char **argv)
    rpy.y=s[1]*M_PI/180;
    rpy.z=s[2]*M_PI/180;
    //ROS_INFO("%lf, %lf, %lf", rpy.x, rpy.y, rpy.z);
-   gyro.x=s[4];
-   gyro.y=s[5];
-   gyro.z=s[6];
-   acc.x=s[8];
-   acc.y=s[9];
-   acc.z=s[10];
+   gyro.x=s[4]*Gyro_gain;
+   gyro.y=s[5]*Gyro_gain;
+   gyro.z=s[6]*Gyro_gain;
+   acc.x=s[8]/Gravity;
+   acc.y=s[9]/Gravity;
+   acc.z=s[10]/Gravity;
 
    
    //geometry_msgs::Quaternion quat= tf::createQuaternionFromRPY(double rpy.x, double rpy.y, double rpy.z); 

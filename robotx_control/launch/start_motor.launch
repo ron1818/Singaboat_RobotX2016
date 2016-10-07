@@ -2,8 +2,8 @@
   <param name="motor_param/forward" value="500" type="int" />
   <param name="motor_param/angular" value="100" type="int" />
 
-  <param name="motor_param/right_calibration" value="1.0" type="double" />
-  <param name="motor_param/left_calibration" value="1.0" type="double" />
+  <param name="motor_param/right_calibration" value="0" type="int" />
+  <param name="motor_param/left_calibration" value="0" type="int" />
 
   <param name="motor_param/reverse" value="false" type="bool" />
  
