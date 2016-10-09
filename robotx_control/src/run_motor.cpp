@@ -20,7 +20,7 @@ int main(int argc, char **argv)
   //publish (forward, turn, 0) range -500 to 500, for arduino
   ros::Publisher motor_pub = nh.advertise<geometry_msgs::Twist>("/motor_val", 1000);
   //subscribe to cmd_vel command
-  ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel_mux/input/teleop", 1000, cmdCallback);
+  ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel", 1000, cmdCallback);
 
   int forward_ratio, angular_ratio;
   int right_calib, left_calib;
