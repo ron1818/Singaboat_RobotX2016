@@ -9,4 +9,12 @@
         <remap from="fix" to="/navsat/fix" />
         <remap from="vel" to="/navsat/vel" />
     </node>
+	
+    <node pkg="robotx_sensor" type="imu_node" name="imu_node" output="screen" />
+    
+        <node pkg="robotx_sensor" type="navsat_vel_odom.py" name="navsat_vel_odom" output="screen" >
+        <param name="is_pub_tf" value="false"/>
+    </node>
+
+
 </launch>

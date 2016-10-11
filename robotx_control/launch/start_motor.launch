@@ -1,6 +1,6 @@
 <launch>
-  <param name="motor_param/forward" value="500" type="int" />
-  <param name="motor_param/angular" value="100" type="int" />
+  <param name="motor_param/forward" value="1500" type="int" />
+  <param name="motor_param/angular" value="300" type="int" />
 
   <param name="motor_param/right_calibration" value="0" type="int" />
   <param name="motor_param/left_calibration" value="0" type="int" />

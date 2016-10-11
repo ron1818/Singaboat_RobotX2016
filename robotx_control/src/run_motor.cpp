@@ -27,7 +27,7 @@ int main(int argc, char **argv)
   bool isReverse="false";
   geometry_msgs::Twist motor_val;
 
-  ros::Rate loop_rate(50);
+  ros::Rate loop_rate(30);
 
   while(ros::ok())
   {

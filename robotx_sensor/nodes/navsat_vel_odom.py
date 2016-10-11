@@ -6,7 +6,7 @@
 import rospy
 import math
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Quaternion, Vector3Stamped
+from geometry_msgs.msg import Quaternion, TwistStamped
 from sensor_msgs.msg import Imu
 import tf
 import threading
@@ -34,7 +34,7 @@ class Vel_Imu_Odom(object):
         self.is_pub_tf = rospy.get_param("~is_pub_tf", "false")
 
     def talker(self):
-        rospy.Subscriber(self.vel_topic, Vector3Stamped, self.vel_callback)
+        rospy.Subscriber(self.vel_topic, TwistStamped, self.vel_callback)
         rospy.Subscriber(self.imu_topic, Imu, self.imu_callback)
         odom_broadcaster = tf.TransformBroadcaster()
         odom_pub = rospy.Publisher(self.odom_topic, Odometry, queue_size=10)
@@ -129,8 +129,8 @@ class Vel_Imu_Odom(object):
             self.imu_z = -1 * msg.angular_velocity.z
 
     def vel_callback(self, msg):
-            self.vel_x = msg.vector.x
-            self.vel_y = msg.vector.y
+            self.vel_x = msg.twist.linear.x
+            self.vel_y = msg.twist.linear.y
             # rospy.loginfo(self.vel_x)
 
 
