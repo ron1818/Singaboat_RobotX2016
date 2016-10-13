@@ -1,0 +1,197 @@
+<launch> 
+  <arg name="camera_name_f_r" default="right" />
+  <arg name="camera_name_f_l" default="left" />
+  <arg name="camera_name_r_r" default="right" />
+  <arg name="camera_name_r_l" default="left" />
+  <arg name="camera_name_l_r" default="right" />
+  <arg name="camera_name_l_l" default="left" />    
+  <arg name="camera_ip_f_r" default="192.168.1.100" />
+  <arg name="camera_ip_f_l" default="192.168.1.101" />
+  <arg name="camera_ip_r_r" default="192.168.1.102" />
+  <arg name="camera_ip_r_l" default="192.168.1.103" />
+  <arg name="camera_ip_l_r" default="192.168.1.104" />
+  <arg name="camera_ip_l_l" default="192.168.1.105" />
+
+  <arg name="image_width" default="640" />
+  <arg name="image_height" default="480" />
+  <arg name="enable_theora" default="1" />
+
+  <arg name="debug_mode_enable" value="0"/> 
+
+  <master auto="start" />
+  <group ns="bow">
+    <group ns="$(arg camera_name_f_r)">
+      <node pkg="axis_camera" type="axis.py" name="$(arg camera_name_f_r)" output="screen">
+        <param name="hostname" value="$(arg camera_ip_f_r)" />
+        <param name="username" value="root" />
+        <param name="password" value="pass"/>
+        <param name="width" value="$(arg image_width)" />
+        <param name="height" value="$(arg image_height)" />
+        <param name="frame_id" value="$(arg camera_name_f_r)"/>
+        <param name="camera_info_url" value="package://robotx_control/camera_info/cam_f_r.yaml"/>
+      </node>
+
+      <node pkg="image_transport" type="republish" name="republish"
+            args="compressed" if="$(arg enable_theora)">
+        <remap from="in" to="image_raw" />
+        <remap from="out" to="image_raw_out" />
+      </node>
+      <node pkg="image_view" type="image_view" name="image_view_$(arg camera_name_f_r)" 
+  		  if="$(arg debug_mode_enable)"> 
+      	<param name="image_transport" value="compressed" />
+      	<remap from="image" to="/bow/$(arg camera_name_f_r)/image_rect_color" />
+      </node>
+
+      <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+        <remap from="image_raw" to="/bow/$(arg camera_name_f_r)/image_raw_out"/>
+        <remap from="camera_info" to="/bow/$(arg camera_name_f_r)/camera_info"/>
+        <param name="queue_size" value="20"/>  
+      </node>
+    </group>
+
+
+    <group ns="$(arg camera_name_f_l)">
+      <node pkg="axis_camera" type="axis.py" name="$(arg camera_name_f_l)" output="screen">
+        <param name="hostname" value="$(arg camera_ip_f_l)" />
+        <param name="username" value="root" />
+        <param name="password" value="pass"/>
+        <param name="width" value="$(arg image_width)" />
+        <param name="height" value="$(arg image_height)" />
+        <param name="camera_info_url" value="package://robotx_control/camera_info/cam_f_l.yaml"/>
+      </node>
+
+      <node pkg="image_transport" type="republish" name="republish"
+            args="compressed" if="$(arg enable_theora)">
+        <remap from="in" to="image_raw" />
+        <remap from="out" to="image_raw_out" />
+      </node>
+      <node pkg="image_view" type="image_view" name="image_view_$(arg camera_name_f_l)" 
+  		  if="$(arg debug_mode_enable)"> 
+      	<param name="image_transport" value="compressed" />
+      	<remap from="image" to="/bow/$(arg camera_name_f_l)/image_rect_color" />
+      </node>
+      <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+        <remap from="image_raw" to="/bow/$(arg camera_name_f_l)/image_raw_out"/>
+        <remap from="camera_info" to="/bow/$(arg camera_name_f_l)/camera_info"/>
+        <param name="queue_size" value="20"/>  
+      </node>
+    </group>
+  </group>
+
+  <group ns="starboard">
+    <group ns="$(arg camera_name_r_r)">
+      <node pkg="axis_camera" type="axis.py" name="$(arg camera_name_r_r)">
+        <param name="hostname" value="$(arg camera_ip_r_r)" />
+        <param name="username" value="root" />
+        <param name="password" value="pass"/>
+        <param name="width" value="$(arg image_width)" />
+        <param name="height" value="$(arg image_height)" />
+        <param name="camera_info_url" value="package://robotx_control/camera_info/cam_f_r.yaml"/>
+      </node>
+
+      <node pkg="image_transport" type="republish" name="republish"
+            args="compressed" if="$(arg enable_theora)">
+        <remap from="in" to="image_raw" />
+        <remap from="out" to="image_raw_out" />
+      </node>
+
+      <node pkg="image_view" type="image_view" name="image_view_$(arg camera_name_r_r)" 
+  		  if="$(arg debug_mode_enable)"> 
+      	<param name="image_transport" value="compressed" />
+      	<remap from="image" to="/starboard/$(arg camera_name_r_r)/image_rect_color" />
+      </node>
+
+      <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+        <remap from="image_raw" to="/starboard/$(arg camera_name_r_r)/image_raw_out"/>
+        <remap from="camera_info" to="/starboard/$(arg camera_name_r_r)/camera_info"/>
+        <param name="queue_size" value="20"/>  
+      </node>
+    </group>
+
+    <group ns="$(arg camera_name_r_l)">
+      <node pkg="axis_camera" type="axis.py" name="$(arg camera_name_r_l)">
+        <param name="hostname" value="$(arg camera_ip_r_l)" />
+        <param name="username" value="root" />
+        <param name="password" value="pass"/>
+        <param name="width" value="$(arg image_width)" />
+        <param name="height" value="$(arg image_height)" />
+        <param name="camera_info_url" value="package://robotx_control/camera_info/cam_f_l.yaml"/>
+      </node>
+
+      <node pkg="image_transport" type="republish" name="republish"
+            args="compressed" if="$(arg enable_theora)">
+        <remap from="in" to="image_raw" />
+        <remap from="out" to="image_raw_out" />
+      </node>
+      <node pkg="image_view" type="image_view" name="image_view_$(arg camera_name_r_l)" 
+  		  if="$(arg debug_mode_enable)"> 
+      	<param name="image_transport" value="compressed" />
+      	<remap from="image" to="/starboard/$(arg camera_name_r_l)/image_rect_color" />
+      </node>
+      <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+        <remap from="image_raw" to="/starboard/$(arg camera_name_r_l)/image_raw_out"/>
+        <remap from="camera_info" to="/starboard/$(arg camera_name_r_l)/camera_info"/>
+        <param name="queue_size" value="20"/>  
+      </node>
+    </group>
+  </group>
+
+  <group ns="port">
+    <group ns="$(arg camera_name_l_r)">
+      <node pkg="axis_camera" type="axis.py" name="$(arg camera_name_l_r)">
+        <param name="hostname" value="$(arg camera_ip_l_r)" />
+        <param name="username" value="root" />
+        <param name="password" value="pass"/>
+        <param name="width" value="$(arg image_width)" />
+        <param name="height" value="$(arg image_height)" />
+        <param name="camera_info_url" value="package://robotx_control/camera_info/cam_f_r.yaml"/>
+      </node>
+
+      <node pkg="image_transport" type="republish" name="republish"
+            args="compressed" if="$(arg enable_theora)">
+        <remap from="in" to="image_raw" />
+        <remap from="out" to="image_raw_out" />
+      </node>
+      <node pkg="image_view" type="image_view" name="image_view_$(arg camera_name_l_r)" 
+  		  if="$(arg debug_mode_enable)"> 
+      	<param name="image_transport" value="compressed" />
+      	<remap from="image" to="/port/$(arg camera_name_l_r)/image_rect_color" />
+      </node>
+      <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+        <remap from="image_raw" to="/port/$(arg camera_name_l_r)/image_raw_out"/>
+        <remap from="camera_info" to="/port/$(arg camera_name_l_r)/camera_info"/>
+        <param name="queue_size" value="20"/>  
+      </node>
+    </group>
+
+
+    <group ns="$(arg camera_name_l_l)">
+      <node pkg="axis_camera" type="axis.py" name="$(arg camera_name_l_l)">
+        <param name="hostname" value="$(arg camera_ip_l_l)" />
+        <param name="username" value="root" />
+        <param name="password" value="pass"/>
+        <param name="width" value="$(arg image_width)" />
+        <param name="height" value="$(arg image_height)" />
+        <param name="camera_info_url" value="package://robotx_control/camera_info/cam_f_l.yaml"/>
+      </node>
+
+      <node pkg="image_transport" type="republish" name="republish"
+            args="compressed" if="$(arg enable_theora)">
+        <remap from="in" to="image_raw" />
+        <remap from="out" to="image_raw_out" />
+      </node>
+      <node pkg="image_view" type="image_view" name="image_view_$(arg camera_name_l_l)" 
+  		  if="$(arg debug_mode_enable)"> 
+      	<param name="image_transport" value="compressed" />
+      	<remap from="image" to="/port/$(arg camera_name_l_l)/image_rect_color" />
+      </node>
+      <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+        <remap from="image_raw" to="/port/$(arg camera_name_l_l)/image_raw_out"/>
+        <remap from="camera_info" to="/port/$(arg camera_name_l_l)/camera_info"/>
+        <param name="queue_size" value="20"/>  
+      </node>
+    </group>
+  </group>
+
+ <node pkg="tf" type="static_transform_publisher" name="my_tf" args="0 0 0 0 0 0 /map /axis_camera 100"/>
+</launch>

@@ -47,7 +47,7 @@ int main(int argc, char **argv)
   
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("imu/data", 1000);
   ros::Rate loop_rate(50);
-  ser=new Serial("/dev/ttyUSB0", 57600, serial::Timeout::simpleTimeout(250));
+  ser=new Serial("/dev/USBimu", 57600, serial::Timeout::simpleTimeout(250));
 
   std::string frame_id="imu_link";
   
