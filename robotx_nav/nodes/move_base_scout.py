@@ -130,7 +130,7 @@ class Forward(object):
         # return the resultant waypoints
         return waypoints
 
-    def straight_waypoints(self, start, end, waypoints)
+    def straight_waypoints(self, start, end, waypoints):
 	
 	# Create a list to hold the target quaternions (orientations)
         quaternions = list()
@@ -145,8 +145,6 @@ class Forward(object):
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
-        # Create a list to hold the waypoint poses
-        waypoints = list()
         catersian_x = [start.x+i*(end.x-start.x)/N
                        for i in range(0,N)]
         catersian_y = [start.y+i*(end.y-start.y)/N
