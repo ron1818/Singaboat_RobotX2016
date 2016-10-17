@@ -134,7 +134,7 @@ include_directories(
 # add_dependencies(robotx_control ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(robotx_control_node src/run_motor.cpp)
+
 
 
 
@@ -143,10 +143,10 @@ add_executable(robotx_control_node src/run_motor.cpp)
 ##add_dependencies(robotx_control_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
+add_executable(robotx_control_node src/run_motor.cpp)
 target_link_libraries(robotx_control_node
    ${catkin_LIBRARIES}
  )
-
 
 
 add_executable(robotx_control_base_controller src/base_controller.cpp)
