@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
 
     <!-- these are the arguments you can pass this launch file, for example paused:=true -->
@@ -17,7 +18,7 @@
         <arg name="headless" value="$(arg headless)"/>
     </include>
 
-    <!--include file="$(find auv_ros_control)/launch/control.launch"/-->
+    <!--include file="$(find auv_ros_control)/launch/fake_control.launch"/-->
 
     <!-- robot description from auv_ros_description package -->
     <include file="$(find robotx_description)/launch/description.launch"/>

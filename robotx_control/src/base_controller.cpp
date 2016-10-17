@@ -8,6 +8,7 @@
 
 double ref_linear, ref_angular, act_linear, act_angular;
 
+// is it Twist or TwistWithCovarianceStamped? (ren ye)
 void cmdCallback(const geometry_msgs::Twist& msg)
 {
   //assign reference velocity
