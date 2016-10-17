@@ -6,12 +6,13 @@
  * in ROS:
  * 1. run roscore
  * 2. in a new tab(ctrl+shift+t) 
- *    rosrun rosserial_python serial_node.py /dev/ttyACM0 _baud:=9600
+ *    rosrun rosserial_python serial_node.py /dev/ttyACM0 _baud:=57600 
  * 3. in another tab
  *    rostopic echo chatter
  * 4. in another tab
  *    rostopic pub motor_motion geometry_msgs/Vector3 '-500.0' '500.0'0.0'    
  *    these are forwardROS and turnROS variables (range -500 to 500)
+ * 5. publishes hydrophone analog value
  * 
  * connect Arduino to AD8402 digital potentiometer, Futaba receiver, embedded computer 
  * digital potentiometer connect to Minn Kota motor
@@ -24,36 +25,41 @@
 #include <ros.h>
 #include <geometry_msgs/Vector3.h>
 #include <geometry_msgs/Twist.h>
+
 #include <SPI.h>
 
-#define pwr5volt 6
-#define sensorPin 2
-#define slaveSelectPin 10
+#define pwr5volt 6  
+#define slaveSelectPin 53
 #define RC1 7
 #define RC2 8
 #define RC3 9
 
-
 ros::NodeHandle nh;
 
-int ch1; // Here's where we'll keep our channel values
-int ch2; 
-int ch3;// channel 3 unused, can be used for switching between ROS command or RC command
+int ch1=1500; // Here's where we'll keep our channel values
+int ch2=1500; 
+int ch3=1500;// channel 3 unused, can be used for switching between ROS command or RC command
 int forward;
 int turn;
 int forwardROS;
 int turnROS;
+double right_calib=1.0;
+double left_calib=1.0;
+
 geometry_msgs::Vector3 movement; //for chatter
 
-void changeVar(const geometry_msgs::Vector3 && input){
-  forwardROS=input.x;
-  turnROS=input.y;
+void changeVar(const geometry_msgs::Twist& input){
+  forwardROS=input.linear.x;
+  turnROS=input.angular.z;
+
+  //updates calibration factor
+  right_calib=input.linear.y;
+  left_calib=input.linear.z; 
 }
 
-ros::Subscriber<geometry_msgs::Vector3>sub("/motor_val", &changeVar);
+ros::Subscriber<geometry_msgs::Twist>sub("/motor_val", &changeVar);
 
 ros::Publisher chatter("chatter", &movement);
-
 
 void setup() {
   
@@ -75,7 +81,7 @@ void setup() {
 }
 
 void loop() {
-
+  
   ch1 = pulseIn(RC1, HIGH, 25000); // Read the pulse width of 
   ch2 = pulseIn(RC2, HIGH, 25000); // each channel
   ch3 = pulseIn(RC3, HIGH, 25000); // ch3 unused at the moment
@@ -107,11 +113,12 @@ void unicycleRun(int forward, int turn){
   int digitalStepRight;
   int digitalStepLeft;
   
-  Ur=forward-turn/2; //here turning in cw is positive
-  Ul=forward+turn/2;
-  //Ur & Ul ranges from -750 to 750
-
-
+  Ur=right_calib*(forward-turn/2); //here turning in cw is positive
+  Ul=left_calib*(forward+turn/2);
+  //Ur & Ul ranges from -750 to 750 if right and left calibration factors = 1 
+  Ur=-Ur;
+  Ul=-Ul;
+  
   //map Ur and Ul to digital potentiometer values 0-255, map back to 1000-2000
   Ur=map(Ur, -750, 750, 1000, 2000);
   Ul=map(Ul, -750, 750, 1000, 2000);
@@ -121,7 +128,7 @@ void unicycleRun(int forward, int turn){
   
   setMotor(digitalStepRight, digitalStepLeft);
   
-  movement.x=digitalStepRight; //zero fastest forward, 255 fastest backwards, zero at 120
+  movement.x=digitalStepRight; //0=>fastest forward, 255 =>fastest backwards, 120 =>stops
   movement.y=digitalStepLeft;
   chatter.publish(&movement);
 }
@@ -132,7 +139,7 @@ int mapToResistance(int input){
   
   if (input<=2000&&input>1550)
   {
-    digitalStep = map(input,1551,2000,80,0); //right (80-50) left(80-0)
+    digitalStep = map(input,1551,2000,90,0); //right (80-50) left(80-0)
   }
   else if (input<=1550&&input>1450)
   {
@@ -140,7 +147,7 @@ int mapToResistance(int input){
   }
   else if (input<=1450&&input>=1000)
   {
-    digitalStep = map(input,1000,1450,255,175); 
+    digitalStep = map(input,1000,1450,256,205); 
   }
   
   return digitalStep;
