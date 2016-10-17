@@ -25,7 +25,7 @@
         <arg name="headless" value="$(arg headless)"/>
     </include>
 
-	<!-- launch robot localization--/>
+    <!-- launch robot localization/-->
     <include file="$(find robotx_control)/launch/fake_control.launch"/>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
