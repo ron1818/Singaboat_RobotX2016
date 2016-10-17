@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <launch>
     <node pkg="robotx_bringup" type="tf_broadcaster.py" name="tf_broadcast_node" output="screen">
         <param name="base_frame" value="base_link"/>

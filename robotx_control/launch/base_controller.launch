@@ -1,3 +1,4 @@
+<?xml version="1.0" ?>
 <launch>
   <param name="motor_param/forward_P" value="1000" type="double" />
   <param name="motor_param/forward_I" value="0.0" type="double" />
