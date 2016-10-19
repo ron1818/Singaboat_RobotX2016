@@ -1,6 +1,7 @@
 # import the necessary packages
 import numpy as np
 import cv2
+import inspect, os
 
 class Masking(object):
     """ detect object based on shape and color,
@@ -18,15 +19,15 @@ class Masking(object):
     lower_green = np.array([25, 50, 75])
     upper_green = np.array([75, 255, 255])
 
-    circle_template = 'image/circle.jpg'
-    triangle_template = 'image/triangle.jpg'
-    cross_template = 'image/cross.jpg'
 
-    def __init__(self, color, shape, shape_path, masker, detector, matcher, matching_method):
+    circle_template = os.path.dirname(os.path.realpath(__file__))+('/image/circle.jpg')
+    triangle_template = os.path.dirname(os.path.realpath(__file__))+('/image/triangle.jpg')
+    cross_template = os.path.dirname(os.path.realpath(__file__))+('/image/cross.jpg')
+
+    def __init__(self, color, shape, masker, detector, matcher, matching_method):
 
         self._color = color
         self._shape = shape
-        self.shape_path = shape_path
         self._masker = masker
         self._detector = detector
         self._matcher = matcher
@@ -42,11 +43,11 @@ class Masking(object):
         # read template
         if self._shape is not None:
             if self._shape.lower() == "circle":
-                self.target = cv2.imread(self.shape_path + self.circle_template, 0)
+                self.target = cv2.imread(self.circle_template, 0)
             elif self._shape.lower() == "cross":
-                self.target = cv2.imread(self.shape_path + self.cross_template,0)
+                self.target = cv2.imread(self.cross_template,0)
             elif self._shape.lower() == "triangle":
-                self.target = cv2.imread(self.shape_path + self.triangle_template,0)
+                self.target = cv2.imread(self.triangle_template,0)
             else:
                 self.target = None
                 print "target not supported"

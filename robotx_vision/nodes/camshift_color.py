@@ -24,7 +24,7 @@ class CamShiftColor(ROS2OpenCV2):
         self.node_name = node_name
         self.color_under_detect = rospy.get_param("~color_under_detect", "red")
         # call masking alglorthm to get the color mask
-        self.mymask = Masking(color=self.color_under_detect, shape=None, shape_path="",
+        self.mymask = Masking(color=self.color_under_detect, shape=None,
                               masker=None, detector=None, matcher=None, matching_method=None)
 
         # The minimum saturation of the tracked color in HSV space,

@@ -26,23 +26,24 @@ class SymbolTracker(CamShiftColor):
 
         self.shape = rospy.get_param("~shape", "circle")
         self.masker = rospy.get_param("~masker", "canny")
-        self.detector = rospy.get_param("~detector", "orb")
+        self.detector = rospy.get_param("~detector", "surf")
         self.matcher = rospy.get_param("~matcher", "flann")
         self.matching_method = rospy.get_param("~matching_method", "one")
         # call masking alglorthm to get the color mask
         self.mymask = Masking(color=self.color_under_detect,
                               shape=self.shape,
                               # how to solve the absolute path problem?
-                              shape_path="/home/ry1404/catkin_ws/src/Singaboat_Robotx2016/robotx_vision/src/robotx_vision/",
                               masker=self.masker,
                               detector=self.detector,
                               matcher=self.matcher,
                               matching_method=self.matching_method)
 
-        print self.mymask.target
         # features from template
         if self.mymask.detector is not None:
             self.kp_r, self.des_r = self.mymask.detector.detectAndCompute(self.mymask.target, None)
+            ## debug: draw keypoints
+            # kpt1 = cv2.drawKeypoints(self.mymask.target, self.kp_r, color=(255,0,0))
+            # cv2.imshow("orb_template", kpt1)
 
     # The main processing function computes the histogram and backprojection
     def process_image(self, cv_image):
@@ -109,29 +110,48 @@ class SymbolTracker(CamShiftColor):
                 # Display the resulting backprojection
                 cv2.imshow("Backproject", backproject)
 
-            # If we have a track_box,
-            # check if it has the shape we want
-            if self.track_window is not None:
+            # # If we have a track_box,
+            # # check if it has the shape we want
+            # if self.track_window is not None:
 
-                D = 10
-                x, y, w, h = self.track_window
-                x0 = max(0, x - D - 1)
-                y0 = max(0, y - D - 1)
-                x1 = min(x + w + D, self.frame_width - 1)
-                t1 = min(y + h + D, self.frame_width - 1)
-                cropped_image = cv_image[y0:y1, x0:x1]
-                cropped_gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
-                cropped_gray = cv2.equalizeHist(cropped_gray)
-                cv2.imshow("Tracked_obj", cropped_gray)
-                # features from template
-                if self.mymask.detector is not None:
-                    kp_r, des_r = self.mymask.detector.detectAndCompute(self.target, None)
-                # features from target
-                kp_o, des_o = self.mymask.detector.detectAndCompute(cropped_gray,None)
+            #     D = 10
+            #     x, y, w, h = self.track_window
+            #     x0 = max(0, x - D - 1)
+            #     y0 = max(0, y - D - 1)
+            #     x1 = min(x + w + D, self.frame_width - 1)
+            #     t1 = min(y + h + D, self.frame_width - 1)
+            #     cropped_image = cv_image[y0:y1, x0:x1]
+            #     cropped_gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+            #     cropped_gray = cv2.equalizeHist(cropped_gray)
+            #     # cv2.imshow("Tracked_obj", cropped_gray)
+            #     # # features from template
+            #     # if self.mymask.detector is not None:
+            #     #     kp_r, des_r = self.mymask.detector.detectAndCompute(self.target, None)
+            #     # features from target
+            #     kp_o, des_o = self.mymask.detector.detectAndCompute(cropped_gray,None)
+
+            #     # debug: draw keypoints
+            #     kpt2 = cv2.drawKeypoints(cropped_gray, kp_o, color=(255,0,0))
+            #     cv2.imshow("orb_crop", kpt2)
+
+            #     matches = self.mymask.matching_method(self.des_r, des_o, k=2)
+            #     print matches
+
+            # If we have a backproject,
+            # use it as mask
+            if backproject is not None:
+
+                gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+                gray = cv2.equalizeHist(gray)
+
+                kp_o, des_o = self.mymask.detector.detectAndCompute(gray,backproject)
+
+                # debug: draw keypoints
+                kpt2 = cv2.drawKeypoints(gray, kp_o, color=(255,0,0))
+                cv2.imshow("orb_gray", kpt2)
 
                 matches = self.mymask.matching_method(self.des_r, des_o, k=2)
                 print matches
-
 
 
 
