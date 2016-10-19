@@ -31,8 +31,8 @@ from visualization_msgs.msg import Marker
 from math import radians, pi
 
 class MoveBaseSquare():
-    def __init__(self):
-        rospy.init_node('nav_test', anonymous=False)
+    def __init__(self, nodename="nav_test"):
+        rospy.init_node(nodename, anonymous=False)
 
         rospy.on_shutdown(self.shutdown)
 
@@ -166,6 +166,6 @@ class MoveBaseSquare():
 
 if __name__ == '__main__':
     try:
-        MoveBaseSquare()
+        MoveBaseSquare(nodename="nav_test")
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

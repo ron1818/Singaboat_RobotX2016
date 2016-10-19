@@ -10,7 +10,7 @@
     2016-09-30
 
     constant heading behavior
-    reinaldo 
+    reinaldo
     2016-10-02
 
 """
@@ -45,13 +45,13 @@ class Forward(object):
         # create a goal, later need to get it from roi
         # polar form, w.r.t boat, r is the distance, theta is angle wrt to boat's x axis
         # this need to be changed and updated from roi
-        goal_polar = {"r": 10, "theta":pi/2}
+        goal_polar = {"r": 30, "theta":pi/2}
 
         while not self.odom_received:
             rospy.sleep(1)
 
         # goal position
-        self.forward["heading"] = goal_polar["theta"] + self.yaw0
+        self.forward["heading"] = goal_polar["theta"]  # + self.yaw0
 
         self.forward["translation"] = [self.x0 + goal_polar["r"] * cos(self.forward["heading"]),
                                     self.y0 + goal_polar["r"] * sin(self.forward["heading"]),
@@ -60,11 +60,12 @@ class Forward(object):
 	self.forward["goal_distance"]=goal_polar["r"]
 
 	#set the distance between waypoints
-   	self.forward["waypoint_distance"]=5;
+   	self.forward["waypoint_distance"]=rospy.get_param("~waypoint_distance", 5)
 
 
         # create waypoints
         waypoints = self.create_waypoints()
+        print type(waypoints)
 
         # Initialize the visualization markers for RViz
         self.init_markers()
@@ -93,7 +94,7 @@ class Forward(object):
         i = 0
 
         # Cycle through the four waypoints
-        while i < waypoints.len() and not rospy.is_shutdown():
+        while i < len(waypoints) and not rospy.is_shutdown():
             # Update the marker display
             self.marker_pub.publish(self.markers)
 
@@ -124,13 +125,14 @@ class Forward(object):
         # First define the corner orientations as Euler angles
         # then calculate the position wrt to the center
         # need polar to catersian transform
-        print self.forward["heading"]
+        # print self.forward["heading"]
 
 	#stores number of waypoints
-	N=math.ceil(self.forward["goal_distance"]/self.forward["waypoint_distance"]); 
-	
+	N = ceil(self.forward["goal_distance"]/self.forward["waypoint_distance"])
+        N = int(N)
+
         # Then convert the angles to quaternions, all have the same heading angles
-        for i in N:
+        for i in range(N):
             q_angle = quaternion_from_euler(0, 0, self.forward["heading"])
             q = Quaternion(*q_angle)
             quaternions.append(q)
@@ -138,9 +140,9 @@ class Forward(object):
         # Create a list to hold the waypoint poses
         waypoints = list()
         catersian_x = [self.x0+i*self.forward["translation"][0]/N
-                       for i in N]
+                       for i in range(N)]
         catersian_y = [self.y0+i*self.forward["translation"][1]/N
-                       for i in N]
+                       for i in range(N)]
 
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
