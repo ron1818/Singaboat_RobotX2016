@@ -10,27 +10,29 @@
     Ren Ye
     2016-09-30
 
+    # changelog
+    @2016-10-19: class inheritate from movebaseutil
+
 """
 
 import rospy
 import actionlib
 from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist
-from sensor_msgs.msg import RegionOfInterest, CameraInfo
 from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos, tan
+from math import radians, pi, sin, cos, tan, atan2
+from move_base_util import MoveBaseUtil
+import thread
 
-class Loitering(object):
+class Loitering(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self):
-        rospy.init_node('loitering_test', anonymous=False)
-
-        rospy.on_shutdown(self.shutdown)
+    def __init__(self, nodename, target):
+        MoveBaseUtil.__init__(self, nodename)
 
         self.loitering={}
 
@@ -39,20 +41,17 @@ class Loitering(object):
         rospy.wait_for_message("/odom", Odometry)
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
 
-        # create a buoy, later need to get it from roi
-        # polar form, w.r.t boat, r is the distance, theta is angle wrt to boat's x axis
-        # this need to be changed and updated from roi
-        buoy_polar = {"r": 10, "theta":pi/2}
-
         while not self.odom_received:
             rospy.sleep(1)
 
-        # center position
-        self.loitering["heading"] = buoy_polar["theta"] + (self.yaw0 - pi / 2)
+        # find the target
+        # obtained from vision nodes, absolute catersian
+        # but may be updated later, so need to callback
+        self.loitering["center"] = target  # (x, y, 0)
+        x1, y1, _ = target
 
-        self.loitering["center"] = [self.x0 + buoy_polar["r"] * cos(self.loitering["heading"]),
-                                    self.y0 + buoy_polar["r"] * sin(self.loitering["heading"]),
-                                    0]
+        # heading from boat to center
+        self.loitering["heading"] = atan2(y1 - self.y0, x1 - self.x0)
 
         # How big is the loitering radius?
         self.loitering["radius"] = rospy.get_param("~loitering_radius", 5.0)  # meters
@@ -64,8 +63,8 @@ class Loitering(object):
         # create waypoints
         waypoints = self.create_waypoints()
 
-        # Initialize the visualization markers for RViz
-        self.init_markers()
+        # # Initialize the visualization markers for RViz
+        # self.init_markers()
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -90,8 +89,8 @@ class Loitering(object):
         # Initialize a counter to track waypoints
         i = 0
 
-        # Cycle through the four waypoints
-        while i < self.loitering["polygon"] and not rospy.is_shutdown():
+        # Cycle through the waypoints
+        while i <= self.loitering["polygon"] and not rospy.is_shutdown():
             # Update the marker display
             self.marker_pub.publish(self.markers)
 
@@ -122,7 +121,7 @@ class Loitering(object):
         # First define the corner orientations as Euler angles
         # then calculate the position wrt to the center
         # need polar to catersian transform
-        print self.loitering["heading"]
+        # print self.loitering["heading"]
         if self.loitering["ccw"] == 1:  # counterclockwise
             # position theta related to center point with heading,
             # - pi is looking back from buoy to boat
@@ -149,59 +148,18 @@ class Loitering(object):
         catersian_y = [self.loitering["radius"] * sin(theta) + self.loitering["center"][1]
                        for theta in position_theta]
 
+        # close the loiter by append the quaternion/catersians' start to end
+        quaternions.append(quaternions[0])
+        catersian_x.append(catersian_x[0])
+        catersian_y.append(catersian_y[0])
+
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
-        for i in range(self.loitering["polygon"]):
+        for i in range(self.loitering["polygon"]+1):
             waypoints.append(Pose(Point(catersian_x[i], catersian_y[i], 0.0),
                              quaternions[i]))
         # return the resultant waypoints
         return waypoints
-
-    def move(self, goal):
-        # Send the goal pose to the MoveBaseAction server
-        self.move_base.send_goal(goal)
-
-        # Allow 1 minute to get there
-        finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
-
-        # If we don't get there in time, abort the goal
-        if not finished_within_time:
-            self.move_base.cancel_goal()
-            rospy.loginfo("Timed out achieving goal")
-        else:
-            # We made it!
-            state = self.move_base.get_state()
-            if state == GoalStatus.SUCCEEDED:
-                rospy.loginfo("Goal succeeded!")
-
-    def init_markers(self):
-        # Set up our waypoint markers
-        marker_scale = 0.2
-        marker_lifetime = 0 # 0 is forever
-        marker_ns = 'waypoints'
-        marker_id = 0
-        marker_color = {'r': 1.0, 'g': 0.7, 'b': 1.0, 'a': 1.0}
-
-        # Define a marker publisher.
-        self.marker_pub = rospy.Publisher('waypoint_markers', Marker, queue_size=5)
-
-        # Initialize the marker points list.
-        self.markers = Marker()
-        self.markers.ns = marker_ns
-        self.markers.id = marker_id
-        self.markers.type = Marker.CUBE_LIST
-        self.markers.action = Marker.ADD
-        self.markers.lifetime = rospy.Duration(marker_lifetime)
-        self.markers.scale.x = marker_scale
-        self.markers.scale.y = marker_scale
-        self.markers.color.r = marker_color['r']
-        self.markers.color.g = marker_color['g']
-        self.markers.color.b = marker_color['b']
-        self.markers.color.a = marker_color['a']
-
-        self.markers.header.frame_id = 'odom'
-        self.markers.header.stamp = rospy.Time.now()
-        self.markers.points = list()
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
@@ -218,9 +176,8 @@ class Loitering(object):
         self.odom_received = True
         # rospy.loginfo([self.x0, self.y0, self.z0])
 
-    def roi_callback(self, msg):
-        """ from roi, get the relative distance and heading from the boat
-        to the buoy marker """
+    def marker_callback(self, msg):
+        """ read markers from vision and identify target """
         pass
 
     def shutdown(self):
@@ -234,6 +191,7 @@ class Loitering(object):
 
 if __name__ == '__main__':
     try:
-        Loitering()
+        Loitering(nodename="loitering_test", target = [10, 10, 0])
+
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

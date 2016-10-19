@@ -12,6 +12,8 @@
     constant heading behavior
     reinaldo
     2016-10-02
+    # changelog:
+    @2016-10-19: class inheriate from movebase util
 
 """
 
@@ -24,16 +26,15 @@ from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos, tan, ceil
+from math import radians, pi, sin, cos, tan, ceil, atan2, sqrt
+from move_base_util import MoveBaseUtil
 
-class Forward(object):
+class Forward(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self):
-        rospy.init_node('forward_test', anonymous=False)
-
-        rospy.on_shutdown(self.shutdown)
+    def __init__(self, nodename, target):
+        MoveBaseUtil.__init__(self, nodename)
 
         self.forward={}
 
@@ -42,33 +43,34 @@ class Forward(object):
         rospy.wait_for_message("/odom", Odometry)
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
 
-        # create a goal, later need to get it from roi
-        # polar form, w.r.t boat, r is the distance, theta is angle wrt to boat's x axis
-        # this need to be changed and updated from roi
-        goal_polar = {"r": 30, "theta":pi/2}
-
         while not self.odom_received:
             rospy.sleep(1)
 
-        # goal position
-        self.forward["heading"] = goal_polar["theta"]  # + self.yaw0
 
-        self.forward["translation"] = [self.x0 + goal_polar["r"] * cos(self.forward["heading"]),
-                                    self.y0 + goal_polar["r"] * sin(self.forward["heading"]),
-                                    0]
+        # find the target
+        # obtained from vision nodes, absolute catersian
+        # but may be updated later, so need to callback
+        self.forward["translation"] = target  # (x, y, 0)
+        x1, y1, _ = target
 
-	self.forward["goal_distance"]=goal_polar["r"]
+        # heading from boat to center
+        self.forward["heading"] = atan2(y1 - self.y0, x1 - self.x0)
+
+	self.forward["goal_distance"]= sqrt((x1 - self.x0) ** 2 + (y1 - self.y0) ** 2)
 
 	#set the distance between waypoints
    	self.forward["waypoint_distance"]=rospy.get_param("~waypoint_distance", 5)
 
+        print self.forward["heading"]
+        print self.forward["goal_distance"]
+
 
         # create waypoints
         waypoints = self.create_waypoints()
-        print type(waypoints)
+        # print type(waypoints)
 
-        # Initialize the visualization markers for RViz
-        self.init_markers()
+        ## Initialize the visualization markers for RViz
+        # self.init_markers()
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -125,7 +127,6 @@ class Forward(object):
         # First define the corner orientations as Euler angles
         # then calculate the position wrt to the center
         # need polar to catersian transform
-        # print self.forward["heading"]
 
 	#stores number of waypoints
 	N = ceil(self.forward["goal_distance"]/self.forward["waypoint_distance"])
@@ -139,9 +140,9 @@ class Forward(object):
 
         # Create a list to hold the waypoint poses
         waypoints = list()
-        catersian_x = [self.x0+i*self.forward["translation"][0]/N
+        catersian_x = [(N - i) * self.x0 / N + i * self.forward["translation"][0] / N
                        for i in range(N)]
-        catersian_y = [self.y0+i*self.forward["translation"][1]/N
+        catersian_y = [(N - i) * self.y0 / N + i * self.forward["translation"][1] / N
                        for i in range(N)]
 
         # Append the waypoints to the list.  Each waypoint
@@ -151,52 +152,6 @@ class Forward(object):
                              quaternions[i]))
         # return the resultant waypoints
         return waypoints
-
-    def move(self, goal):
-        # Send the goal pose to the MoveBaseAction server
-        self.move_base.send_goal(goal)
-
-        # Allow 1 minute to get there
-        finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
-
-        # If we don't get there in time, abort the goal
-        if not finished_within_time:
-            self.move_base.cancel_goal()
-            rospy.loginfo("Timed out achieving goal")
-        else:
-            # We made it!
-            state = self.move_base.get_state()
-            if state == GoalStatus.SUCCEEDED:
-                rospy.loginfo("Goal succeeded!")
-
-    def init_markers(self):
-        # Set up our waypoint markers
-        marker_scale = 0.2
-        marker_lifetime = 0 # 0 is forever
-        marker_ns = 'waypoints'
-        marker_id = 0
-        marker_color = {'r': 1.0, 'g': 0.7, 'b': 1.0, 'a': 1.0}
-
-        # Define a marker publisher.
-        self.marker_pub = rospy.Publisher('waypoint_markers', Marker, queue_size=5)
-
-        # Initialize the marker points list.
-        self.markers = Marker()
-        self.markers.ns = marker_ns
-        self.markers.id = marker_id
-        self.markers.type = Marker.CUBE_LIST
-        self.markers.action = Marker.ADD
-        self.markers.lifetime = rospy.Duration(marker_lifetime)
-        self.markers.scale.x = marker_scale
-        self.markers.scale.y = marker_scale
-        self.markers.color.r = marker_color['r']
-        self.markers.color.g = marker_color['g']
-        self.markers.color.b = marker_color['b']
-        self.markers.color.a = marker_color['a']
-
-        self.markers.header.frame_id = 'odom'
-        self.markers.header.stamp = rospy.Time.now()
-        self.markers.points = list()
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
@@ -213,22 +168,8 @@ class Forward(object):
         self.odom_received = True
         # rospy.loginfo([self.x0, self.y0, self.z0])
 
-    def roi_callback(self, msg):
-        """ from roi, get the relative distance and heading from the boat
-        to the buoy marker """
-        pass
-
-    def shutdown(self):
-        rospy.loginfo("Stopping the robot...")
-        # Cancel any active goals
-        self.move_base.cancel_goal()
-        rospy.sleep(2)
-        # Stop the robot
-        self.cmd_vel_pub.publish(Twist())
-        rospy.sleep(1)
-
 if __name__ == '__main__':
     try:
-        Forward()
+        Forward(nodename="constantheading_test", target=[10, 20, 0])
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
