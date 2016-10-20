@@ -1,6 +1,7 @@
 # import the necessary packages
 import numpy as np
 import cv2
+import inspect, os
 
 class Masking(object):
     """ detect object based on shape and color,
@@ -18,9 +19,10 @@ class Masking(object):
     lower_green = np.array([25, 50, 75])
     upper_green = np.array([75, 255, 255])
 
-    circle_template = 'image/circle.jpg'
-    triangle_template = 'image/triangle.jpg'
-    cross_template = 'image/cross.jpg'
+
+    circle_template = os.path.dirname(os.path.realpath(__file__))+('/image/circle.jpg')
+    triangle_template = os.path.dirname(os.path.realpath(__file__))+('/image/triangle.jpg')
+    cross_template = os.path.dirname(os.path.realpath(__file__))+('/image/cross.jpg')
 
     def __init__(self, color, shape, masker, detector, matcher, matching_method):
 
@@ -41,7 +43,7 @@ class Masking(object):
         # read template
         if self._shape is not None:
             if self._shape.lower() == "circle":
-                self.target = cv2.imread(self.circle_template,0)
+                self.target = cv2.imread(self.circle_template, 0)
             elif self._shape.lower() == "cross":
                 self.target = cv2.imread(self.cross_template,0)
             elif self._shape.lower() == "triangle":
@@ -268,7 +270,7 @@ class Masking(object):
         # overwrite selection box by automatic color matching
         return cv2.boundingRect(approx[np.argmax(area)])
 
-    def find_contours(self, mask, candidate_shape):
+    def find_contours(self, mask):
         contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         # find all contours
@@ -283,36 +285,36 @@ class Masking(object):
             # print len(approx)
             boundingrect.append(cv2.boundingRect(approx))
 
-            try:
-                # find convex hull
-                hull = cv2.convexHull(cnt, returnPoints=False)
-                defects = cv2.convexityDefects(cnt, hull)
+            # try:
+            #     # find convex hull
+            #     hull = cv2.convexHull(cnt, returnPoints=False)
+            #     defects = cv2.convexityDefects(cnt, hull)
 
-                #customized isconvex based on empirical
-                defect_distance=list()
-                for j in range(defects.shape[0]):
-                    s,e,f,d = defects[j,0]
-                    defect_distance.append(d)
+            #     #customized isconvex based on empirical
+            #     defect_distance=list()
+            #     for j in range(defects.shape[0]):
+            #         s,e,f,d = defects[j,0]
+            #         defect_distance.append(d)
 
-                if np.amax(defect_distance) < 1000:  # 1000 is empirical
-                    isconvex.append(True)
-                else:
-                    isconvex.append(False)
+            #     if np.amax(defect_distance) < 1000:  # 1000 is empirical
+            #         isconvex.append(True)
+            #     else:
+            #         isconvex.append(False)
 
-                # shape determine
-                if len(approx) > 10 and isconvex is True:
-                    candidate_shape = "circle"
-                elif 7 >= len(approx) >=3:
-                    candidate_shape.append("triangle")
-                elif len(approx) > 8 and isconvex is False:
-                    candidate_shape.append("cross")
-                else:
-                    candidate_shape.append("unkown")
+            #     # shape determine
+            #     if len(approx) > 10 and isconvex is True:
+            #         candidate_shape = "circle"
+            #     elif 7 >= len(approx) >=3:
+            #         candidate_shape.append("triangle")
+            #     elif len(approx) > 8 and isconvex is False:
+            #         candidate_shape.append("cross")
+            #     else:
+            #         candidate_shape.append("unkown")
 
-                # if candidate_shape == candidate_shape.lower():  # shape name matches
-                #     boundingrect.append(cv2.boundingRect(approx))
-            except:
-                break
+            #     # if candidate_shape == candidate_shape.lower():  # shape name matches
+            #     #     boundingrect.append(cv2.boundingRect(approx))
+            # except:
+            #     break
 
         return boundingrect
 

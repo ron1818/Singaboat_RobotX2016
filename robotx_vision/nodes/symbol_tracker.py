@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
-""" camshift_color.py - Version 1.1 2013-12-20
+""" symbol_tracker.py - Version 1.1 2013-12-20
 
-    Modification of the ROS OpenCV Camshift example using cv_bridge and publishing the ROI
+    Modification of the ROS OpenCV Camshift example
+    Addition with template tracker to track shapes
+    using cv_bridge and publishing the ROI
     coordinates to the /roi topic.
 """
 
@@ -10,71 +12,44 @@ import rospy
 import cv2
 from cv2 import cv as cv
 from robotx_vision.ros2opencv2 import ROS2OpenCV2
-from robotx_vision.find_mask import Masking
+from robotx_vision.find_mask import Masking  # feature matching
+from camshift_color import CamShiftColor
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 import numpy as np
 
-class CamShiftColor(ROS2OpenCV2):
+class SymbolTracker(CamShiftColor):
     # taken from robotx_vision.find_shapes.Color_Detection
 
     def __init__(self, node_name):
-        ROS2OpenCV2.__init__(self, node_name)
+        CamShiftColor.__init__(self, node_name)
 
-        self.node_name = node_name
-        self.color_under_detect = rospy.get_param("~color_under_detect", "red")
+        self.shape = rospy.get_param("~shape", "circle")
+        self.masker = rospy.get_param("~masker", "canny")
+        self.detector = rospy.get_param("~detector", "surf")
+        self.matcher = rospy.get_param("~matcher", "flann")
+        self.matching_method = rospy.get_param("~matching_method", "one")
         # call masking alglorthm to get the color mask
-        self.mymask = Masking(color=self.color_under_detect, shape=None,
-                              masker=None, detector=None, matcher=None, matching_method=None)
+        self.mymask = Masking(color=self.color_under_detect,
+                              shape=self.shape,
+                              # how to solve the absolute path problem?
+                              masker=self.masker,
+                              detector=self.detector,
+                              matcher=self.matcher,
+                              matching_method=self.matching_method)
 
-        # The minimum saturation of the tracked color in HSV space,
-        # as well as the min and max value (the V in HSV) and a
-        # threshold on the backprojection probability image.
-        self.smin = rospy.get_param("~smin", 85)
-        self.vmin = rospy.get_param("~vmin", 50)
-        self.vmax = rospy.get_param("~vmax", 254)
-        self.threshold = rospy.get_param("~threshold", 50)
-
-        # Create a number of windows for displaying the histogram,
-        # parameters controls, and backprojection image
-        cv.NamedWindow("Histogram", cv.CV_WINDOW_NORMAL)
-        cv.MoveWindow("Histogram", 700, 50)
-        cv.NamedWindow("Parameters", 0)
-        cv.MoveWindow("Parameters", 700, 325)
-        cv.NamedWindow("Backproject", 0)
-        cv.MoveWindow("Backproject", 700, 900)
-        cv.NamedWindow("Tracked_obj", 0)
-        cv.MoveWindow("Tracked_obj", 700, 900)
-
-        # Create the slider controls for saturation, value and threshold
-        cv.CreateTrackbar("Saturation", "Parameters", self.smin, 255, self.set_smin)
-        cv.CreateTrackbar("Min Value", "Parameters", self.vmin, 255, self.set_vmin)
-        cv.CreateTrackbar("Max Value", "Parameters", self.vmax, 255, self.set_vmax)
-        cv.CreateTrackbar("Threshold", "Parameters", self.threshold, 255, self.set_threshold)
-
-        # Initialize a number of variables
-        self.hist = None
-        self.track_window = None
-        self.show_backproj = False
-
-    # These are the callbacks for the slider controls
-    def set_smin(self, pos):
-        self.smin = pos
-
-    def set_vmin(self, pos):
-        self.vmin = pos
-
-    def set_vmax(self, pos):
-       self.vmax = pos
-
-    def set_threshold(self, pos):
-        self.threshold = pos
+        # features from template
+        if self.mymask.detector is not None:
+            self.kp_r, self.des_r = self.mymask.detector.detectAndCompute(self.mymask.target, None)
+            ## debug: draw keypoints
+            # kpt1 = cv2.drawKeypoints(self.mymask.target, self.kp_r, color=(255,0,0))
+            # cv2.imshow("orb_template", kpt1)
 
     # The main processing function computes the histogram and backprojection
     def process_image(self, cv_image):
 
         try:
-            # First blur the image
+            # Blur the image
             frame = cv2.blur(cv_image, (5, 5))
 
             # Convert from RGB to HSV space
@@ -87,12 +62,12 @@ class CamShiftColor(ROS2OpenCV2):
             if self.selection is None:
                 # obtain the color mask
                 color_mask = self.mymask.color_mask(frame, self.color_under_detect)
-                # create bounding box from the maximum mask
+                # create bounding boxes from the masks
                 self.selection = self.mymask.find_max_contour(color_mask)
                 self.detect_box = self.selection
                 self.track_box = None
 
-            # If the user is making a selection with the mouse,
+            # If region is selected,
             # calculate a new histogram to track
             if self.selection is not None:
                 x0, y0, w, h = self.selection
@@ -106,11 +81,13 @@ class CamShiftColor(ROS2OpenCV2):
                 self.hist = self.hist.reshape(-1)
                 self.show_hist()
 
+            # If we have a detection, clear out the selection
             if self.detect_box is not None:
                 self.selection = None
 
             # If we have a histogram, track it with CamShift
             if self.hist is not None:
+                # print "track window"
                 # Compute the backprojection from the histogram
                 backproject = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
 
@@ -132,6 +109,51 @@ class CamShiftColor(ROS2OpenCV2):
 
                 # Display the resulting backprojection
                 cv2.imshow("Backproject", backproject)
+
+            # # If we have a track_box,
+            # # check if it has the shape we want
+            # if self.track_window is not None:
+
+            #     D = 10
+            #     x, y, w, h = self.track_window
+            #     x0 = max(0, x - D - 1)
+            #     y0 = max(0, y - D - 1)
+            #     x1 = min(x + w + D, self.frame_width - 1)
+            #     t1 = min(y + h + D, self.frame_width - 1)
+            #     cropped_image = cv_image[y0:y1, x0:x1]
+            #     cropped_gray = cv2.cvtColor(cropped_image, cv2.COLOR_BGR2GRAY)
+            #     cropped_gray = cv2.equalizeHist(cropped_gray)
+            #     # cv2.imshow("Tracked_obj", cropped_gray)
+            #     # # features from template
+            #     # if self.mymask.detector is not None:
+            #     #     kp_r, des_r = self.mymask.detector.detectAndCompute(self.target, None)
+            #     # features from target
+            #     kp_o, des_o = self.mymask.detector.detectAndCompute(cropped_gray,None)
+
+            #     # debug: draw keypoints
+            #     kpt2 = cv2.drawKeypoints(cropped_gray, kp_o, color=(255,0,0))
+            #     cv2.imshow("orb_crop", kpt2)
+
+            #     matches = self.mymask.matching_method(self.des_r, des_o, k=2)
+            #     print matches
+
+            # If we have a backproject,
+            # use it as mask
+            if backproject is not None:
+
+                gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
+                gray = cv2.equalizeHist(gray)
+
+                kp_o, des_o = self.mymask.detector.detectAndCompute(gray,backproject)
+
+                # debug: draw keypoints
+                kpt2 = cv2.drawKeypoints(gray, kp_o, color=(255,0,0))
+                cv2.imshow("orb_gray", kpt2)
+
+                matches = self.mymask.matching_method(self.des_r, des_o, k=2)
+                print matches
+
+
 
         except:
             pass
@@ -174,7 +196,7 @@ class CamShiftColor(ROS2OpenCV2):
 if __name__ == '__main__':
     try:
         node_name = "camshift"
-        CamShiftColor(node_name)
+        SymbolTracker(node_name)
         try:
             rospy.init_node(node_name)
         except:
