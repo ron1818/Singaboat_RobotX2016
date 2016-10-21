@@ -48,8 +48,8 @@ class MoveTo(MoveBaseUtil):
         while not self.odom_received:
             rospy.sleep(1)
 
-        q_angle = quaternion_from_euler(0, 0, atan2(target.x-self.y0, target.y-self.x0))
-        angle = Quaternion(*q_angle)
+        q_angle = quaternion_from_euler(0, 0, atan2(target.y-self.y0, target.x-self.x0))
+        angle = Quaternion(*q_angley
 
         waypoint=Pose(target, angle)
 
