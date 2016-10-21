@@ -27,6 +27,7 @@ using namespace cv;
 using namespace std;
 
 std::string nodeName = "shape_detection";
+std::string subscribedTopic = "/port/right/image_rect_color";
 
 //Image transport vars
 cv_bridge::CvImagePtr cv_ptr;
@@ -246,7 +247,7 @@ int main(int argc, char** argv)
 
     //Start ROS
     image_transport::ImageTransport it(nh);
-    image_transport::Subscriber sub = it.subscribe("/port/right/image_rect_color", 1, imageCb);
+    image_transport::Subscriber sub = it.subscribe(subscribedTopic, 1, imageCb);
     ros::Rate r(40);
 
     while (nh.ok())
