@@ -1,11 +1,15 @@
 <?xml version="1.0"?>
 <launch>
 
+    <arg name="waypoint_separation" default="5.0" />
+    <arg name="is_relative" default="false" />
     <arg name="isreal" default="false" />
     <param name="/use_sim_time" value="$(arg isreal)"/>
 
     <node pkg="robotx_nav" type="move_base_forward.py" name="constant_heading_behavior" >
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isreal)" />
+        <param name="waypoint_separation" value="$(arg waypoint_separation)" />
+        <param name="is_relative" value="$(arg is_relative)" />
     </node>
 
 </launch>

@@ -47,23 +47,21 @@ class Forward(MoveBaseUtil):
             rospy.sleep(1)
 
 
-        # find the target
-        # obtained from vision nodes, absolute catersian
-        # but may be updated later, so need to callback
-        self.forward["translation"] = target  # (x, y, 0)
-        x1, y1, _ = target
-
-        # heading from boat to center
-        self.forward["heading"] = atan2(y1 - self.y0, x1 - self.x0)
-
-	self.forward["goal_distance"]= sqrt((x1 - self.x0) ** 2 + (y1 - self.y0) ** 2)
-
-	#set the distance between waypoints
+	# set the distance between waypoints
    	self.forward["waypoint_distance"]=rospy.get_param("~waypoint_distance", 5)
+        # check whether absolute or relative target
+   	self.forward["is_relative"]=rospy.get_param("~is_relative", "false")
 
-        print self.forward["heading"]
-        print self.forward["goal_distance"]
-
+        if self.forward["is_relative"]:
+            self.forward["translation"], self.forward["heading"] = \
+                    self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+        else: # absolute
+            # obtained from vision nodes, absolute catersian
+            # but may be updated later, so need to callback
+            self.forward["translation"] = (target.x, target.y, target.z)  # (x, y, 0)
+            self.forward["goal_distance"]= sqrt((target.x - self.x0) ** 2 + (target.y - self.y0) ** 2)
+            # heading from boat to center
+            self.forward["heading"] = atan2(target.y - self.y0, target.x - self.x0)
 
         # create waypoints
         waypoints = self.create_waypoints()
@@ -170,6 +168,6 @@ class Forward(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Forward(nodename="constantheading_test", target=[10, 20, 0])
+        Forward(nodename="constantheading_test", target=Point(10, 20, 0))
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

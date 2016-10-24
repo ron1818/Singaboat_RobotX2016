@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="radius" default="5" />
+    <arg name="polygon" default="6" />
+    <arg name="is_ccw" default="true" />
+    <arg name="is_relative" default="false" />
+    <arg name="isreal" default="false" />
+    <param name="/use_sim_time" value="$(arg isreal)"/>
+
+    <node pkg="robotx_nav" type="move_base_loiter.py" name="loiter_behavior" >
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isreal)" />
+        <param name="radius" value="$(arg radius)" />
+        <param name="polygon" value="$(arg polygon)" />
+        <param name="is_ccw" value="$(arg is_ccw)" />
+        <param name="is_relative" value="$(arg is_relative)" />
+    </node>
+
+</launch>
