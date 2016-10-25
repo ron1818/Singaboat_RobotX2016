@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # license removed for brevity
 """
-    move to a point
+    move to a point without considering orientation
     reinaldo
     2016-10-20
     # changelog:
@@ -48,7 +48,7 @@ class MoveTo(MoveBaseUtil):
         while not self.odom_received:
             rospy.sleep(1)
 
-        q_angle = quaternion_from_euler(0, 0, atan2(target.x-self.y0, target.y-self.x0))
+        q_angle = quaternion_from_euler(0, 0, atan2(target.y-self.y0, target.x-self.x0))
         angle = Quaternion(*q_angle)
 
         waypoint=Pose(target, angle)
