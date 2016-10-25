@@ -50,7 +50,7 @@ class Forward(MoveBaseUtil):
 	# set the distance between waypoints
    	self.forward["waypoint_distance"]=rospy.get_param("~waypoint_distance", 5)
         # check whether absolute or relative target
-   	self.forward["is_relative"]=rospy.get_param("~is_relative", "false")
+   	self.forward["is_relative"]=rospy.get_param("~is_relative", False)
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = \

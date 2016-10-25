@@ -39,15 +39,22 @@ class Scout(MoveBaseUtil):
         # information about map, length (X), width (Y), position of the center wrt boat: boat-center
         # TODO (1) map center to absolute
         #      (2) get parameters by rospy.get_param()
-        self.map_info = {"l":60, "w":60, "center_x": 30, "center_y":30}
+        self.map_length = rospy.get_param("~length", 60)
+        self.map_width = rospy.get_param("~width", 60)
+        self.map_center_x = rospy.get_param("~center_x", 30)
+        self.map_center_y = rospy.get_param("~center_y", 30)
         # set the offset distance from border
-        offset=3
+        self.map_offset = rospy.get_param("~offset", 3)
+
+        # self.map_info = {"l":self.map_length, "w":self.map_width,
+        #                  "center_x":self.map_center_x, "center_y":self.map_center_y}
 
         while not self.odom_received:
             rospy.sleep(1)
 
         # create waypoints
-        waypoints = self.scout_waypoints(self.map_info["l"], self.map_info["w"], self.map_info["center_x"], self.map_info["center_y"], offset)
+        waypoints = self.scout_waypoints(self.map_length, self.map_width,
+                                         self.map_center_x, self.map_center_y, self.map_offset)
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:

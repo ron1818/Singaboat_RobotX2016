@@ -45,17 +45,18 @@ class Loiter(MoveBaseUtil):
             rospy.sleep(1)
 
         # check if it is relative (polar) or absolute (catersian) target
-        self.loiter["is_relative"] = rospy.get_param("~is_relative", "false")
+        self.loiter["is_relative"] = rospy.get_param("~is_relative", False)
 
         # How big is the loiter radius?
         self.loiter["radius"] = rospy.get_param("~radius", 5.0)  # meters
         # How many waypoints is the loiter? default 6 (hexagon)
         self.loiter["polygon"] = rospy.get_param("~polygon", 6)  # hexagon
         # loiter clockwise or counter clockwise?
-        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", "true")  # 1 for ccw, 0 for cw
+        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", True)  # 1 for ccw, 0 for cw
 
         # find the target
         if self.loiter["is_relative"]:
+            print self.loiter["is_relative"]
             self.loiter["center"], self.loiter["heading"] = \
                     self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
         else: # absolute

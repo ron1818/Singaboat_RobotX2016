@@ -40,18 +40,19 @@ class Zigzag(MoveBaseUtil):
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
         # information about map, length (X), width (Y), position of the initial point
-        self.map_info = {"l":60, "w":60}
+        self.map_length = rospy.get_param("~length", 60)
+        self.map_width = rospy.get_param("~width", 60)
 
         # set the half period and half amplitude
-        hp=10;
-        an=5;
-        offset=5;
+        map_half_period = rospy.get_param("~half_period", 10)
+        map_half_amplitude = rospy.get_param("~half_amplitude", 10)
+        map_offset = rospy.get_param("~offset", 5)
 
         while not self.odom_received:
             rospy.sleep(1)
 
         # create waypoints
-        waypoints = self.create_waypoints(hp, an, offset)
+        waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset)
         print type(waypoints)
 
         # Initialize the visualization markers for RViz
@@ -100,14 +101,13 @@ class Zigzag(MoveBaseUtil):
 
     def create_waypoints(self, hp, an, offset):
 
-        map_x=self.map_info["l"]
-        map_y=self.map_info["w"]
+        map_x, map_y = self.map_length, self.map_width
 
-        mid_y=floor(map_y/2)
+        mid_y=floor(map_y / 2)
 
         #calculate the number of tri(half way)
-        N=floor((map_x-2*offset)/hp)
-        N=int(N)
+        N = floor((map_x - 2 * offset) / hp)
+        N = int(N)
 
         # Create a list to hold the target points
         vertex = list()
@@ -120,24 +120,26 @@ class Zigzag(MoveBaseUtil):
         quaternions.append(q)
 
         for i in range(0, N):
-            vertex.append(Point(offset+i*hp+(hp/2), mid_y+an*((-1)**i), 0))
+            vertex.append(Point(offset + i * hp + (hp / 2),
+                          mid_y + an * ((-1) ** i), 0))
             q_angle = quaternion_from_euler(0, 0, 0)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
-            vertex.append(Point(offset+(i+1)*hp, mid_y, 0))
+            vertex.append(Point(offset + (i + 1) * hp, mid_y, 0))
             q_angle = quaternion_from_euler(0, 0, -0.5*pi*(-1)**i)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
         for i in range(0, N):
-            vertex.append(Point(offset+(N-i)*hp-(hp/2), mid_y-an*((-1)**i), 0))
+            vertex.append(Point(offset + (N - i) * hp - (hp / 2),
+                          mid_y - an * ((-1) ** i), 0))
             q_angle = quaternion_from_euler(0, 0, -pi)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
-            vertex.append(Point(offset+(N-i-1)*hp, mid_y, 0))
-            q_angle = quaternion_from_euler(0, 0, 0.5*pi*(-1)**i)
+            vertex.append(Point(offset + (N - i - 1) * hp, mid_y, 0))
+            q_angle = quaternion_from_euler(0, 0, 0.5 * pi * (-1) ** i)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
