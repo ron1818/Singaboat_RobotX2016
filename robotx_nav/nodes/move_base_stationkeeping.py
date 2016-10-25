@@ -22,7 +22,7 @@ from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
 
-class StationKeeping(object):
+class StationKeeping(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
@@ -41,17 +41,22 @@ class StationKeeping(object):
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
 
         # Subscribe to the move_base action server
-        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)        
+        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+
+        rospy.loginfo("Waiting for move_base action server...")
+
+        # Wait 60 seconds for the action server to become available
+        self.move_base.wait_for_server(rospy.Duration(60))
 
         rospy.loginfo("Connected to move base server")
         rospy.loginfo("Starting navigation test")
 
         q_angle = quaternion_from_euler(0, 0, target.angular.z)
         angle = Quaternion(*q_angle)
-        waypoint=Pose(target.linear, angle)
+        station=Pose(target.linear, angle)
 	
 	p = Point()
-        p = waypoint.position
+        p = station.position
         self.markers.points.append(p)
 
         self.marker_pub.publish(self.markers)
@@ -76,10 +81,11 @@ class StationKeeping(object):
         	goal.target_pose.header.stamp = rospy.Time.now()
 
         	# Set the goal pose to the waypoint
-        	goal.target_pose.pose = waypoint
+        	goal.target_pose.pose = station
 
         	# Start the robot moving toward the goal
         	self.move(goal)
+		rospy.loginfo("goal sent")
 
 
 
@@ -101,7 +107,7 @@ class StationKeeping(object):
 
 if __name__ == '__main__':
     try:
-        StationKeeping(nodename="station_keeping_test", target=[[10, 5, 0], [0, 0, 0.2]], radius=5, duration=180)
+        StationKeeping("station_keeping_test", Twist(Point(10, 5, 0), Point(0, 0, 0.2)), 5, 180)
     except rospy.ROSInterruptException:
 	rospy.loginfo("Navigation test finished.")
         pass
