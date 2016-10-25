@@ -12,7 +12,7 @@ from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler
 from visualization_msgs.msg import Marker
-from math import radians, pi
+from math import radians, pi, sin, cos
 
 class MoveBaseUtil():
     def __init__(self, nodename="nav_test"):
@@ -48,6 +48,19 @@ class MoveBaseUtil():
         # self.move_base.wait_for_server(rospy.Duration(60))
 
         # * Cycle through the four waypoints
+
+    def convert_relative_to_absolute(self, boat, target):
+        """ boat is catersian (x0, y0),
+        target is polar (r, theta)
+        and absolute is catersian (x1, y1) """
+        r, theta = target
+        x, y, yaw = boat
+        heading = theta + (yaw - pi / 2)
+        center = [x + r * cos(heading),
+                  y + r * sin(heading),
+                  0]
+
+        return [center, heading]
 
     def move(self, goal):
             # Send the goal pose to the MoveBaseAction server
