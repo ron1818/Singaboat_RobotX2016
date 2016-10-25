@@ -12,6 +12,7 @@ Panels:
         - /Path2
         - /Odometry1
         - /Image1
+        - /Marker1
       Splitter Ratio: 0.5
     Tree Height: 369
   - Class: rviz/Selection
@@ -32,7 +33,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: Image
+    SyncSource: ""
 Visualization Manager:
   Class: ""
   Displays:
@@ -240,6 +241,14 @@ Visualization Manager:
       Transport Hint: raw
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /waypoint_markers
+      Name: Marker
+      Namespaces:
+        waypoints: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -264,7 +273,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 98.7827
+      Distance: 74.109
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -299,5 +308,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1200
-  X: 710
+  X: 700
   Y: 14

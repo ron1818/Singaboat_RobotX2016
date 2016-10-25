@@ -2,64 +2,42 @@ controller_frequency: 3.0
 recovery_behavior_enabled: true
 clearing_rotation_allowed: false
 
-NavfnROS:
-  allow_unknown: true # Specifies whether or not to allow navfn to create plans that traverse unknown space.
-  default_tolerance: 0.1 # A tolerance on the goal point for the planner.
-
 TrajectoryPlannerROS:
-   max_vel_x: 2.0
+   max_vel_x: 1.3 # 5km/h=1.3m/s
    min_vel_x: 0.1
    max_vel_y: 0.0  # zero for a differential drive robot
    min_vel_y: 0.0
+   max_vel_theta: 1.0
+   min_vel_theta: -1.0
    min_in_place_vel_theta: 0.5
-   escape_vel: -0.5
+   max_rotation_vel: 2.0
+   min_in_place_rotation_vel: 0.5
+   escape_vel: -0.1
    acc_lim_x: 1.5
-   acc_lim_y: 0.0 # zero for a differential drive robot
-   acc_lim_theta: 1.5
+   acc_lim_y: 0.0  # zero for a differential drive robot
+   acc_lim_theta: 2.0
 
    holonomic_robot: false
-   yaw_goal_tolerance: 0.5 # about 30 degrees
-   xy_goal_tolerance: 1  # 1 m
+   yaw_goal_tolerance: 0.4 # about 24 degrees
+   xy_goal_tolerance: 0.5  # 50 cm
    latch_xy_goal_tolerance: false
-   pdist_scale: 0.9
-   gdist_scale: 0.1
-   meter_scoring: true
+   pdist_scale: 0.6 # default 0.8
+   gdist_scale: 0.8 # default 0.4
+   meter_scoring: false
 
-   heading_lookahead: 0.5
-   heading_scoring: false
-   heading_scoring_timestep: 0.8
-   occdist_scale: 0.1
+   heading_lookahead: 1.5
+   heading_scoring: true
+   heading_scoring_timestep: 0.5
+   occdist_scale: 0.05
    oscillation_reset_dist: 0.05
    publish_cost_grid_pc: false
-   prune_plan: true
+   # prune_plan: true
 
-   sim_time: 1.0
-   sim_granularity: 0.025
-   angular_sim_granularity: 0.025
+   sim_time: 1.7
+   sim_granularity: 0.05
+   angular_sim_granularity: 0.05
    vx_samples: 8
-   vy_samples: 0 # zero for a differential drive robot
+   vy_samples: 0  # zero for a differential drive robot
    vtheta_samples: 20
    dwa: true
    simple_attractor: false
-
-DWAPlannerROS:
-  # Robot configuration parameters  
-  acc_lim_x: 1.1
-  acc_lim_y: 0
-  acc_lim_th: 1.5
-
-  max_vel_x: 2.5
-  min_vel_x: 0.5
-  max_vel_y: 0
-  min_vel_y: 0
-
-  max_trans_vel: 0.5
-  min_trans_vel: 0.1
-  max_rot_vel: 1.0
-  min_rot_vel: 0.2
-
-  # Goal Tolerance Parameters
-  yaw_goal_tolerance: 0.2
-  xy_goal_tolerance: 1.0
-  latch_xy_goal_tolerance: false
-
