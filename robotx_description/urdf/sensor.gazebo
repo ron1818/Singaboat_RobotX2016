@@ -178,7 +178,7 @@
 </xacro:if-->
 
 
-<!-- Set up hokuyo configuration >
+<!-- Set up hokuyo configuration -->
     <xacro:if value="$(arg lidar_enabled)">
         <gazebo reference="hokuyo_link">
             <sensor type="ray" name="head_hokuyo_sensor">
@@ -191,8 +191,8 @@
                         <horizontal>
                             <samples>720</samples>
                             <resolution>1</resolution>
-                            <min_angle>${-M_PI/2}</min_angle>
-                            <max_angle>${M_PI/2}</max_angle>
+                            <min_angle>${-M_PI*3/4}</min_angle>
+                            <max_angle>${M_PI*3/4}</max_angle>
                         </horizontal>
                     </scan>
                     <range>
@@ -214,5 +214,5 @@
             </plugin>
         </sensor>
     </gazebo>
-</xacro:if-->
+</xacro:if>
 </robot>

@@ -7,6 +7,7 @@
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
+    <arg name="lidar_enabled" default="true"/>
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch" >
@@ -16,6 +17,7 @@
         <arg name="paused" value="$(arg paused)"/>
         <arg name="use_sim_time" value="$(arg use_sim_time)"/>
         <arg name="headless" value="$(arg headless)"/>
+        <arg name="lidar_enabled" value="$(arg lidar_enabled)"/>
     </include>
 
     <!--include file="$(find auv_ros_control)/launch/fake_control.launch"/-->
