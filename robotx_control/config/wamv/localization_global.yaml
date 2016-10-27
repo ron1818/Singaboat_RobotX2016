@@ -43,7 +43,7 @@ odom0_queue_size: 10
 # odom2_differential: false # with GPS, must be false
 # odom2_queue_size: 10
 
-imu0: imu/data
+imu0: middle_middle_imu/imu/data
 imu0_config: [false, false, false,
               true, true, true,
               false, false, false,
