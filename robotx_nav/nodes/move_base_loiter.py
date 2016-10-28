@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-""" movebase loitering
+""" movebase loiter
 
     Command a robot to move in a polygon around a centerpoint,
-    inspired from moos-ivp loitering behavior
+    inspired from moos-ivp loiter behavior
 
     borrowed from rbx1 move base square
 
@@ -27,14 +27,14 @@ from math import radians, pi, sin, cos, tan, atan2
 from move_base_util import MoveBaseUtil
 import thread
 
-class Loitering(MoveBaseUtil):
+class Loiter(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
     def __init__(self, nodename, target):
         MoveBaseUtil.__init__(self, nodename)
 
-        self.loitering={}
+        self.loiter={}
 
         # get boat position, one time only
         self.odom_received = False
@@ -44,21 +44,27 @@ class Loitering(MoveBaseUtil):
         while not self.odom_received:
             rospy.sleep(1)
 
-        # find the target
-        # obtained from vision nodes, absolute catersian
-        # but may be updated later, so need to callback
-        self.loitering["center"] = target  # (x, y, 0)
-        x1, y1, _ = target
+        # check if it is relative (polar) or absolute (catersian) target
+        self.loiter["is_relative"] = rospy.get_param("~is_relative", "false")
 
-        # heading from boat to center
-        self.loitering["heading"] = atan2(y1 - self.y0, x1 - self.x0)
-
-        # How big is the loitering radius?
-        self.loitering["radius"] = rospy.get_param("~loitering_radius", 5.0)  # meters
-        # How many waypoints is the loitering? default 6 (hexagon)
-        self.loitering["polygon"] = rospy.get_param("~loitering_polygon", 6)  # hexagon
+        # How big is the loiter radius?
+        self.loiter["radius"] = rospy.get_param("~radius", 5.0)  # meters
+        # How many waypoints is the loiter? default 6 (hexagon)
+        self.loiter["polygon"] = rospy.get_param("~polygon", 6)  # hexagon
         # loiter clockwise or counter clockwise?
-        self.loitering["ccw"] = rospy.get_param("~loitering_ccw", 1)  # 1 for ccw, 0 for cw
+        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", "true")  # 1 for ccw, 0 for cw
+
+        # find the target
+        if self.loiter["is_relative"]:
+            self.loiter["center"], self.loiter["heading"] = \
+                    self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+        else: # absolute
+            # obtained from vision nodes, absolute catersian
+            # but may be updated later, so need to callback
+            self.loiter["center"] = (target.x, target.y, target.z)  # (x, y, 0)
+
+            # heading from boat to center
+            self.loiter["heading"] = atan2(target.y - self.y0, target.x - self.x0)
 
         # create waypoints
         waypoints = self.create_waypoints()
@@ -90,7 +96,7 @@ class Loitering(MoveBaseUtil):
         i = 0
 
         # Cycle through the waypoints
-        while i <= self.loitering["polygon"] and not rospy.is_shutdown():
+        while i <= self.loiter["polygon"] and not rospy.is_shutdown():
             # Update the marker display
             self.marker_pub.publish(self.markers)
 
@@ -110,7 +116,7 @@ class Loitering(MoveBaseUtil):
             self.move(goal)
 
             i += 1
-        else:  # escape loitering and continue to the next waypoint
+        else:  # escape loiter and continue to the next waypoint
             pass
 
     def create_waypoints(self):
@@ -121,18 +127,18 @@ class Loitering(MoveBaseUtil):
         # First define the corner orientations as Euler angles
         # then calculate the position wrt to the center
         # need polar to catersian transform
-        # print self.loitering["heading"]
-        if self.loitering["ccw"] == 1:  # counterclockwise
+        # print self.loiter["heading"]
+        if self.loiter["is_ccw"]:  # counterclockwise
             # position theta related to center point with heading,
             # - pi is looking back from buoy to boat
-            position_theta =  [2 * pi * i / self.loitering["polygon"] - pi
-                               + self.loitering["heading"]
-                               for i in range(self.loitering["polygon"])]
+            position_theta =  [2 * pi * i / self.loiter["polygon"] - pi
+                               + self.loiter["heading"]
+                               for i in range(self.loiter["polygon"])]
             euler_angles = [i + pi / 2 for i in position_theta]
         else:  # clockwise
-            position_theta =  [2 * pi * i / self.loitering["polygon"] - pi
-                               - self.loitering["heading"]
-                               for i in reversed(range(self.loitering["polygon"]))]
+            position_theta =  [2 * pi * i / self.loiter["polygon"] - pi
+                               - self.loiter["heading"]
+                               for i in reversed(range(self.loiter["polygon"]))]
             euler_angles = [i - pi / 2 for i in position_theta]
 
         # Then convert the angles to quaternions
@@ -143,9 +149,9 @@ class Loitering(MoveBaseUtil):
 
         # Create a list to hold the waypoint poses
         waypoints = list()
-        catersian_x = [self.loitering["radius"] * cos(theta) + self.loitering["center"][0]
+        catersian_x = [self.loiter["radius"] * cos(theta) + self.loiter["center"][0]
                        for theta in position_theta]
-        catersian_y = [self.loitering["radius"] * sin(theta) + self.loitering["center"][1]
+        catersian_y = [self.loiter["radius"] * sin(theta) + self.loiter["center"][1]
                        for theta in position_theta]
 
         # close the loiter by append the quaternion/catersians' start to end
@@ -155,7 +161,7 @@ class Loitering(MoveBaseUtil):
 
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
-        for i in range(self.loitering["polygon"]+1):
+        for i in range(self.loiter["polygon"]+1):
             waypoints.append(Pose(Point(catersian_x[i], catersian_y[i], 0.0),
                              quaternions[i]))
         # return the resultant waypoints
@@ -176,22 +182,10 @@ class Loitering(MoveBaseUtil):
         self.odom_received = True
         # rospy.loginfo([self.x0, self.y0, self.z0])
 
-    def marker_callback(self, msg):
-        """ read markers from vision and identify target """
-        pass
-
-    def shutdown(self):
-        rospy.loginfo("Stopping the robot...")
-        # Cancel any active goals
-        self.move_base.cancel_goal()
-        rospy.sleep(2)
-        # Stop the robot
-        self.cmd_vel_pub.publish(Twist())
-        rospy.sleep(1)
 
 if __name__ == '__main__':
     try:
-        Loitering(nodename="loitering_test", target = [10, 10, 0])
+        Loiter(nodename="loiter_test", target = Point(10, 10, 0))
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

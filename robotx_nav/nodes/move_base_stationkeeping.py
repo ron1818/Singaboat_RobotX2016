@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 # license removed for brevity
 """
-    move to a point without considering orientation
-    reinaldo
-    2016-10-20
-    # changelog:
-    @2016-10-20: class inheriate from movebase util
+   station keeping
+    @Weiwei
+    2016-10-25
+    
+   corrected: reinaldo
+   
 
 """
 
@@ -21,16 +22,20 @@ from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
 
-class MoveTo(MoveBaseUtil):
+class StationKeeping(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target):
+    def __init__(self, nodename, target, radius, duration):
         MoveBaseUtil.__init__(self, nodename)
 
+        #get boat pose one time only
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+
+        while not self.odom_received:
+            rospy.sleep(1)
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
@@ -38,49 +43,51 @@ class MoveTo(MoveBaseUtil):
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
-
         rospy.loginfo("Waiting for move_base action server...")
 
         # Wait 60 seconds for the action server to become available
         self.move_base.wait_for_server(rospy.Duration(60))
 
-
-        while not self.odom_received:
-            rospy.sleep(1)
-
-        q_angle = quaternion_from_euler(0, 0, atan2(target.y-self.y0, target.x-self.x0))
-        angle = Quaternion(*q_angle)
-
-        waypoint=Pose(target, angle)
-
-        # Set a visualization marker at each waypoint
-
-        p = Point()
-        p = waypoint.position
-        self.markers.points.append(p)
-
-
-
         rospy.loginfo("Connected to move base server")
         rospy.loginfo("Starting navigation test")
 
+        q_angle = quaternion_from_euler(0, 0, target.angular.z)
+        angle = Quaternion(*q_angle)
+        station=Pose(target.linear, angle)
+	
+	p = Point()
+        p = station.position
+        self.markers.points.append(p)
 
         self.marker_pub.publish(self.markers)
 
-        # Intialize the waypoint goal
-        goal = MoveBaseGoal()
+        #get start time
+        start_time= rospy.get_time()
 
-        # Use the map frame to define goal poses
-        goal.target_pose.header.frame_id = 'map'
+        while (rospy.get_time()-start_time < duration) and not rospy.is_shutdown():
+            if (sqrt((target.linear.x-self.x0)**2 + (target.linear.y-self.y0)**2)<radius):
+                #pub.publish(Twist())
+		rospy.loginfo("inside inner radius")
 
-        # Set the time stamp to "now"
-        goal.target_pose.header.stamp = rospy.Time.now()
+            else:
+		rospy.loginfo("outside radius")
+                # Intialize the waypoint goal
+        	goal = MoveBaseGoal()
 
-        # Set the goal pose to the i-th waypoint
-        goal.target_pose.pose = waypoint
+        	# Use the map frame to define goal poses
+        	goal.target_pose.header.frame_id = 'map'
 
-        # Start the robot moving toward the goal
-        self.move(goal)
+        	# Set the time stamp to "now"
+        	goal.target_pose.header.stamp = rospy.Time.now()
+
+        	# Set the goal pose to the waypoint
+        	goal.target_pose.pose = station
+
+        	# Start the robot moving toward the goal
+        	self.move(goal)
+		rospy.loginfo("goal sent")
+
+
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
@@ -100,6 +107,7 @@ class MoveTo(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        MoveTo(nodename="moveto_test", target=Point(10,5,0))
+        StationKeeping("station_keeping_test", Twist(Point(10, 5, 0), Point(0, 0, 0.2)), 5, 180)
     except rospy.ROSInterruptException:
+	rospy.loginfo("Navigation test finished.")
         pass
