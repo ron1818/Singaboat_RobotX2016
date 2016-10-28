@@ -11,10 +11,12 @@ find_package(catkin REQUIRED COMPONENTS
   image_transport
   sensor_msgs
   std_msgs
+  message_generation
   roslaunch
 )
 
 find_package(OpenCV REQUIRED core ocl)
+roslaunch_add_file_check(launch)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -50,11 +52,10 @@ catkin_python_setup()
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  object_detection.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -71,10 +72,10 @@ catkin_python_setup()
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -108,7 +109,7 @@ catkin_python_setup()
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES robotx_vision
-#  CATKIN_DEPENDS cv_bridge roscpp rospy
+  CATKIN_DEPENDS message_runtime
 #  DEPENDS system_lib
 )
 
@@ -138,11 +139,17 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 # add_dependencies(robotx_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(blackbuoy nodes/blackbuoy.cpp)
-target_link_libraries(blackbuoy ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_executable(object_detector src/object_detector.cpp)
+target_link_libraries(object_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(object_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(symbol nodes/identifySymbol.cpp)
-target_link_libraries(symbol ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_executable(publisher src/publisher.cpp)
+target_link_libraries(publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(subscriber src/subscriber.cpp)
+target_link_libraries(subscriber ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 ## Add cmake target dependencies of the executable

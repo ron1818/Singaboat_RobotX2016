@@ -52,3 +52,16 @@ roslaunch robotx_vision camshift_color.launch namespace:=/camera/rgb input_rgb_i
 must first install opencv 2.4.13.1 from source (github),
 follow opencv website for more info
 
+### object_detection ###
+catkin_make
+# object detected will be publish as a custom message type (msg/object_detection.msg)
+# naming convetion of custom message:
+#	[frame_id] camera, using convetional naming
+#	[type]     object's type: marker, totem, obstacle, triangle, circle, cruciform
+#	[color]    object's color: red, green, blue, black, white
+#	[angle_t]  top angle of detected object on image
+#	[angle_b]  bottom angle of detected object on image
+#	[angle_l]  left angle of detected object on image
+#	[angle_r]  right angle of detected object on image
+# launch object detection node (paramater need to be adjusted depends on the subscribed camera's topic)
+roslaunch robotx_vision object_detector.launch 
