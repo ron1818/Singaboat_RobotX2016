@@ -1,0 +1,24 @@
+<robot name="yellow_buoy">
+  <link name="yellow_buoy">
+    <inertial>
+      <origin xyz="0 0 0" />
+      <mass value="10.0" />
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 -0.5"/>
+      <geometry>
+            <mesh filename="package://robotx_description/meshes/totem_flat.dae" scale="1 1 1" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <cylinder length="0.99" radius="0.127" />
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="yellow_buoy">
+    <material>Gazebo/Yellow</material>
+  </gazebo>
+</robot>

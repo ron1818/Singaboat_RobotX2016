@@ -8,9 +8,9 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   roscpp
   rospy
-  std_msgs
   roslib
   serial
+  std_msgs
   geometry_msgs
   sensor_msgs
 )
@@ -134,16 +134,16 @@ include_directories(
 
 ## Declare a C++ executable
 ## Declare a C++ executable
- add_executable(imu_node nodes/imu.cpp)
+add_executable(imu_node src/imu.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
- add_dependencies(imu_node imu_generate_messages_cpp)
+#add_dependencies(imu_node imu_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(imu_node
-  ${catkin_LIBRARIES}
- )
+target_link_libraries(imu_node
+ ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##

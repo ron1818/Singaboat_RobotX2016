@@ -20,6 +20,102 @@ or follow [linorobot](https://linorobot.org/getting-started/)
 3. calibrate camera with checkboard
 4. dry run and prepare for water test
 
+Water Test
+----------
+### 2016-10-08 ###
+Objectives:
+
+0. setup the ROSMASTER and BaseStation and sync time
+1. map the speed command from `cmd_vel` to the actual boat speed
+2. see the actual performance of `IMU` and `GPS`
+3. see the actual performance of cameras
+4. test the safety control and emergency stop
+5. test the system integrity
+
+#### thing to do before touch into water ####
+0. udev rule for all the sensors
+1. all connections are correct
+2. laptop and onboat computers are connected in an intranet
+3. can listen to `cmd_vel` and the motor can run
+4. GPS and IMU and camera can run
+5. enough space for data storage
+6. installed `opencv`, `openssh`, `ntpdate`
+
+#### setup computer networks ####
+refer to **ROS by Example** 4.12
+1. for the onboat computer (master), put:
+```bash
+export ROS_MASTER_URI=http://<masterip>:11311
+export ROS_IP=<masterip>
+```
+in `~/.bashrc`
+
+for the shore computer (observer), put:
+```bash
+export ROS_MASTER_URI=http://<masterip>:11311
+export ROS_IP=<observerip>
+```
+in `~/.bashrc`
+
+2. from observer, login to the master by:
+```bash
+ssh -Y <username>@<masterip>
+# in master
+roscore
+```
+
+3. sync time by:
+```bash
+# on the observer
+sudo ntudate -b <masterip>
+```
+anytime you find the command has time problem (mostly in movebase), run this command.
+
+#### command and speed mapping ####
+refer to **ROS by Example** 7.4 
+1. bringup the base controller so that you can use keyboard to send the `cmd_vel`,
+alternatively, use:
+```bash
+roslaunch robotx_bringup wamv_minimal.launch
+# test linear movement
+rostopic pub /cmd_vel -r 10 geometry_msgs/Twist '{linear: {x: 1, y: 0, z: 0}, {angular: {x: 0, y: 0, z: 0}}'
+# test angular movement
+rostopic pub /cmd_vel -r 10 geometry_msgs/Twist '{linear: {x: 0, y: 0, z: 0}, {angular: {x: 0, y: 0, z: 1}}'
+# stop
+rostopic pub /cmd_vel -r 10 geometry_msgs/Twist '{}'
+```
+else, use the `calibrate_linear.py` and `calibrate_angular.py` to calibrate (refer to 7.4)
+```bash
+roslaunch robotx_bringup wamv_minimal.launch
+roslaunch robotx_control wamv_control.launch #TODO
+rosrun robotx_nav calibrate_linear.py
+rosrun robotx_nav calibrate_angular.py
+```
+
+#### IMU and GPS ####
+1. launch IMU and GPS
+2. move the boat linear and back for several times
+3. during the movement, save the data by `rosbag`
+4. analyze the IMU and GPS data by `rqt_plot` or `matplotlib` in python
+5. see the `linear x`, `angular z` in `imu/data` and `xyz` in `navsat/vel`
+```bash
+roslaunch robotx_bringup wamv_minimal.launch
+roslaunch robotx_sensor gps_serial.launch
+roslaunch robotx_sensor imu_razor.launch
+roslaunch robotx_sensor navsat_vel_odom.launch
+```
+
+#### camera ####
+1. make sure the cameras are calibrated
+2. the naming convention is : `bow/left` `bow/right` for the from two cameras,
+`port/left` `port/right` for the left two cameras and `starboard/left` `starboard/right`
+for the right two cameras.
+3. make sure the cameras can output `image/raw` `image/rect` and `camera_info`
+4. do not use `rosbag` to record video, it will occupy too much space, instead, 
+use opencv to (capture and write)[https://pythonprogramming.net/loading-video-python-opencv-tutorial/]
+but make sure you update the opencv to 2.4.13.1 (2.4.9 is still OK for this test)
+
+
 Introduction
 ------------
 this repository hosts all the files for [robotx challenge 2016](http://www.robotx.org)
@@ -32,6 +128,15 @@ Usage
 + must install `ros-indigo-desktop-full`
 + dependencies are `robot-localization` `nmea-navsat-driver` `viso2` `gazebo`
 
+#### fork repository ####
+[create](https://help.github.com/categories/collaborating-with-issues-and-pull-requests/)
+[pull request](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
+[remote](https://help.github.com/articles/creating-a-pull-request-from-a-fork/)
+[sync](https://help.github.com/articles/syncing-a-fork/)
+
+useful commands:
+`git clone`, `git fetch`, `git remote -v`, `git remote add upstream`
+`git checkout xxx`, `git fetch upstream`, `git merge upstream/xxx`
 #### clone repository ####
 ```bash
 mkdir catkin_ws
@@ -66,6 +171,7 @@ libopencv-dev python-opencv ros-indigo-vision-opencv \
 ros-indigo-depthimage-to-laserscan ros-indigo-arbotix-* \
 ros-indigo-turtlebot-teleop ros-indigo-move-base \
 ros-indigo-map-server ros-indigo-fake-localization ros-indigo-hector* \
+ros-indigo-gazebo-ros* ros-indigo-serial \
 ros-indigo-amcl git subversion mercurial
 
 cd ~/catkin_ws/src
