@@ -84,7 +84,7 @@ class StationKeeping(MoveBaseUtil):
         	goal.target_pose.pose = station
 
         	# Start the robot moving toward the goal
-        	self.move(goal)
+        	self.move(goal, 0, 0)
 		rospy.loginfo("goal sent")
 
 

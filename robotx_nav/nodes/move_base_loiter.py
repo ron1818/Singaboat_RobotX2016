@@ -114,10 +114,11 @@ class Loiter(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal)
+            self.move(goal, 1, 2)
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
+	    rospy.loginfo("end")
             pass
 
     def create_waypoints(self):
