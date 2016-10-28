@@ -39,10 +39,10 @@ class Scout(MoveBaseUtil):
         # information about map, length (X), width (Y), position of the center wrt boat: boat-center
         # TODO (1) map center to absolute
         #      (2) get parameters by rospy.get_param()
-        self.map_length = rospy.get_param("~length", 60)
-        self.map_width = rospy.get_param("~width", 60)
-        self.map_center_x = rospy.get_param("~center_x", 30)
-        self.map_center_y = rospy.get_param("~center_y", 30)
+        self.map_length = rospy.get_param("~length", 20)
+        self.map_width = rospy.get_param("~width", 20)
+        self.map_center_x = rospy.get_param("~center_x", 10)
+        self.map_center_y = rospy.get_param("~center_y", 10)
         # set the offset distance from border
         self.map_offset = rospy.get_param("~offset", 3)
 
@@ -97,7 +97,7 @@ class Scout(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal)
+            self.move(goal, 1, 2)
 
             i += 1
         else:  # escape constant forward and continue to the next waypoint
@@ -140,7 +140,7 @@ class Scout(MoveBaseUtil):
 
         # waypoints that joins corners
         waypoints=list()
-        for i in range(N - 1):
+        for i in range(len(corners)-1):
             waypoints=self.straight_waypoints(corners[i], corners[i+1], waypoints)
 
         # return the resultant waypoints
