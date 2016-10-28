@@ -20,7 +20,8 @@ from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos, tan, ceil
+import math
+# from math import radians, pi, sin, cos, tan, ceil
 from move_base_util import MoveBaseUtil
 
 class Scout(MoveBaseUtil):
@@ -36,15 +37,24 @@ class Scout(MoveBaseUtil):
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
 
         # information about map, length (X), width (Y), position of the center wrt boat: boat-center
-        self.map_info = {"l":60, "w":60, "center_x": 30, "center_y":30}
+        # TODO (1) map center to absolute
+        #      (2) get parameters by rospy.get_param()
+        self.map_length = rospy.get_param("~length", 20)
+        self.map_width = rospy.get_param("~width", 20)
+        self.map_center_x = rospy.get_param("~center_x", 10)
+        self.map_center_y = rospy.get_param("~center_y", 10)
         # set the offset distance from border
-        offset=3;
+        self.map_offset = rospy.get_param("~offset", 3)
+
+        # self.map_info = {"l":self.map_length, "w":self.map_width,
+        #                  "center_x":self.map_center_x, "center_y":self.map_center_y}
 
         while not self.odom_received:
             rospy.sleep(1)
 
         # create waypoints
-        waypoints = self.scout_waypoints(self, self.map_info["l"], self.map_info["w"], self.map_info["center_x"], self.map_info["center_y"], offset)
+        waypoints = self.scout_waypoints(self.map_length, self.map_width,
+                                         self.map_center_x, self.map_center_y, self.map_offset)
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -70,7 +80,7 @@ class Scout(MoveBaseUtil):
         i = 0
 
         # Cycle through the four waypoints
-        while i < waypoints.len() and not rospy.is_shutdown():
+        while i < len(waypoints) and not rospy.is_shutdown():
             # Update the marker display
             self.marker_pub.publish(self.markers)
 
@@ -87,43 +97,51 @@ class Scout(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal)
+            self.move(goal, 1, 2)
 
             i += 1
         else:  # escape constant forward and continue to the next waypoint
+            rospy.loginfo("Navigation test finished.")
             pass
+
 
     def scout_waypoints(self, map_x, map_y, center_x, center_y, offset):
 
-        dis_x=self.x0-center_x
-        dis_y=self.y0-center_y
+        dis_x = self.x0 - center_x
+        dis_y = self.y0 - center_y
 
-        math.copysign(sign_x, dis_x)
-        math.copysign(sign_y, dis_y)
+        sign_x = math.copysign(1, dis_x)
+        sign_y = math.copysign(1, dis_y)
 
 
         # Create a list to hold the target quaternions (orientations)
         corners = list()
 
-        if math.floor(map_x/offset)<math.floor(map_y/offset):
-            N=math.floor(map_x/(2*offset))-1
+        if math.floor(map_x / offset) < math.floor(map_y / offset):
+            N = math.floor(map_x / (2 * offset)) - 1
         else:
-            N=math.floor(map_y/(2*offset))-1
+            N = math.floor(map_y / (2 * offset)) - 1
+        N = int(N)
 
-        corner.append(Point(self.x0, self.y0, 0))
+        corners.append(Point(self.x0, self.y0, 0))
 
-        for i in  range(0,N):
-            corner.append(Point(center_x+sign_x*(N-i)*offset, center_y+sign_y*(N-i)*offset, 0))
-            corner.append(Point(center_x+sign_x*(N-i)*offset, center_y-sign_y*(N-i)*offset, 0))
-            corner.append(Point(center_x-sign_x*(N-i)*offset, center_y-sign_y*(N-i)*offset, 0))
-            corner.append(Point(center_x-sign_x*(N-i)*offset, center_y+sign_y*(N-i-1)*offset, 0))
+        # waypoints for the corners
+        for i in range(N):
+            corners.append(Point(center_x + sign_x * (N - i) * offset,
+                           center_y + sign_y * (N - i) * offset, 0))
+            corners.append(Point(center_x + sign_x * (N - i) * offset,
+                           center_y - sign_y * (N - i) * offset, 0))
+            corners.append(Point(center_x - sign_x * (N - i) * offset,
+                           center_y - sign_y * (N - i) * offset, 0))
+            corners.append(Point(center_x - sign_x * (N - i) * offset,
+                           center_y + sign_y * (N - i - 1) * offset, 0))
 
-        corner.append(Point(center_x, center_y, 0))
+        corners.append(Point(center_x, center_y, 0))
 
+        # waypoints that joins corners
         waypoints=list()
-
-        for i in range(0,N-1):
-            waypoints=straight_waypoints(self, corner[i], corner[i+1], waypoints)
+        for i in range(len(corners)-1):
+            waypoints=self.straight_waypoints(corners[i], corners[i+1], waypoints)
 
         # return the resultant waypoints
         return waypoints
@@ -134,28 +152,29 @@ class Scout(MoveBaseUtil):
         quaternions = list()
 
         #stores number of waypoints
-        N=math.ceil(math.sqrt((end.x-start.x)**2+(end.y-start.y)**2)/5);
+        N=math.ceil(math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2) / 5)
+        N = int(N)
 
 
         # Then convert the angles to quaternions, all have the same heading angles
-        for i in N:
-            q_angle = quaternion_from_euler(0, 0, math.atan2((end.y-start.y),(end.x-start.x)))
+        for i in range(N):
+            q_angle = quaternion_from_euler(0, 0,
+                                            math.atan2((end.y - start.y),(end.x - start.x)))
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
-        catersian_x = [start.x+i*(end.x-start.x)/N
-                for i in range(0,N)]
-        catersian_y = [start.y+i*(end.y-start.y)/N
-                for i in range(0,N)]
+        catersian_x = [start.x + i * (end.x - start.x) / N
+                       for i in range(N)]
+        catersian_y = [start.y + i * (end.y - start.y) / N
+                       for i in range(0,N)]
 
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
-        for i in N:
+        for i in range(N):
             waypoints.append(Pose(Point(catersian_x[i], catersian_y[i], 0.0),
                 quaternions[i]))
             # return the resultant waypoints
         return waypoints
-
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
@@ -175,6 +194,6 @@ class Scout(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Forward("scout_test")
+        Scout("scout_test")
     except rospy.ROSInterruptException:
-        rospy.loginfo("Navigation test finished.")
+        rospy.loginfo("Navigation test aborted.")

@@ -8,7 +8,13 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   roscpp
   rospy
+  image_transport
+  sensor_msgs
+  std_msgs
+  roslaunch
 )
+
+find_package(OpenCV REQUIRED core ocl)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -115,7 +121,11 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
+
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 ## Declare a C++ library
 # add_library(robotx_vision
@@ -128,7 +138,12 @@ include_directories(
 # add_dependencies(robotx_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(robotx_vision_node src/robotx_vision_node.cpp)
+add_executable(blackbuoy nodes/blackbuoy.cpp)
+target_link_libraries(blackbuoy ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
+add_executable(symbol nodes/identifySymbol.cpp)
+target_link_libraries(symbol ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above

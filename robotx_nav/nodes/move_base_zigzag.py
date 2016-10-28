@@ -42,7 +42,7 @@ class Zigzag(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename):
+    def __init__(self, nodename, quadrant):
         MoveBaseUtil.__init__(self, nodename)
 >>>>>>> 24d1ffbe26fdc4faf7b0835fb40748e89a929e53
 
@@ -58,6 +58,7 @@ class Zigzag(MoveBaseUtil):
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
         # information about map, length (X), width (Y), position of the initial point
+<<<<<<< HEAD
         self.map_info = {"l":60, "w":60}
 <<<<<<< HEAD
 	
@@ -72,10 +73,43 @@ class Zigzag(MoveBaseUtil):
         an=5;
         offset=5;
 >>>>>>> 24d1ffbe26fdc4faf7b0835fb40748e89a929e53
+=======
+        self.map_length = rospy.get_param("~length", 60)
+        self.map_width = rospy.get_param("~width", 60)
 
+        # set the half period and half amplitude
+        map_half_period = rospy.get_param("~half_period", 10)
+        map_half_amplitude = rospy.get_param("~half_amplitude", 10)
+        map_offset = rospy.get_param("~offset", 5)
+>>>>>>> 80eea307abab2b775e9fdf947f2525ae221ac485
+
+	
         while not self.odom_received:
             rospy.sleep(1)
+	
+	#assumption point 0,0 is the left-bottom of map
+	if quadrant==1:
+	    # create waypoints for quadrant 1
+            waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length/2, self.map_width/2, 
+						self.map_length/2, self.map_width/2)
+	elif quadrant==2:
+	    # create waypoints for quadrant 2
+            waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length/2, self.map_width/2, 
+						0, self.map_width/2)
+	elif quadrant==3:
+	    # create waypoints for quadrant 3
+            waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length/2, self.map_width/2, 
+						0, 0)
+	elif quadrant==4:
+	    # create waypoints for quadrant 4
+            waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length/2, self.map_width/2, 
+						self.map_length/2, 0)
+	else:
+	    # create waypoints for the whole map
+            waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length, self.map_width, 
+						0, 0)
 
+<<<<<<< HEAD
         # create waypoints
         waypoints = self.create_waypoints(hp, an, offset)
 <<<<<<< HEAD
@@ -83,6 +117,8 @@ class Zigzag(MoveBaseUtil):
 =======
         print type(waypoints)
 >>>>>>> 24d1ffbe26fdc4faf7b0835fb40748e89a929e53
+=======
+>>>>>>> 80eea307abab2b775e9fdf947f2525ae221ac485
 
         # Initialize the visualization markers for RViz
         self.init_markers()
@@ -122,12 +158,13 @@ class Zigzag(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal)
+            self.move(goal, 1, 2)
 
             i += 1
         else:  # escape constant forward and continue to the next waypoint
             pass
 
+<<<<<<< HEAD
     def create_waypoints(self, hp, an, offset):
 <<<<<<< HEAD
 	
@@ -165,44 +202,46 @@ class Zigzag(MoveBaseUtil):
             vertex.append(Point(offset+(N-i)*hp-(hp/2), mid_y-an*((-1)**i), 0))
 	    q_angle = quaternion_from_euler(0, 0, -pi)
 =======
+=======
+    def create_waypoints(self, hp, an, offset, map_x, map_y, init_x, init_y):
+>>>>>>> 80eea307abab2b775e9fdf947f2525ae221ac485
 
-        map_x=self.map_info["l"]
-        map_y=self.map_info["w"]
-
-        mid_y=floor(map_y/2)
+        mid_y=floor(map_y / 2)
 
         #calculate the number of tri(half way)
-        N=floor((map_x-2*offset)/hp)
-        N=int(N)
+        N = floor((map_x - 2 * offset) / hp)
+        N = int(N)
 
         # Create a list to hold the target points
         vertex = list()
         quaternions = list()
 
-
-        vertex.append(Point(offset, mid_y, 0))
+        vertex.append(Point(init_x+offset,init_y+mid_y, 0))
         q_angle = quaternion_from_euler(0, 0, -0.5*pi)
         q = Quaternion(*q_angle)
         quaternions.append(q)
 
         for i in range(0, N):
-            vertex.append(Point(offset+i*hp+(hp/2), mid_y+an*((-1)**i), 0))
+            vertex.append(Point(init_x+offset + i * hp + (hp / 2),
+                          init_y+mid_y + an * ((-1) ** i), 0))
             q_angle = quaternion_from_euler(0, 0, 0)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
-            vertex.append(Point(offset+(i+1)*hp, mid_y, 0))
+            vertex.append(Point(init_x+offset + (i + 1) * hp,init_y + mid_y, 0))
             q_angle = quaternion_from_euler(0, 0, -0.5*pi*(-1)**i)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
         for i in range(0, N):
-            vertex.append(Point(offset+(N-i)*hp-(hp/2), mid_y-an*((-1)**i), 0))
+            vertex.append(Point(init_x+offset + (N - i) * hp - (hp / 2),
+                          init_y+mid_y - an * ((-1) ** i), 0))
             q_angle = quaternion_from_euler(0, 0, -pi)
 >>>>>>> 24d1ffbe26fdc4faf7b0835fb40748e89a929e53
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
+<<<<<<< HEAD
             vertex.append(Point(offset+(N-i-1)*hp, mid_y, 0))
 <<<<<<< HEAD
 	    q_angle = quaternion_from_euler(0, 0, 0.5*pi*(-1)**i)
@@ -263,6 +302,10 @@ class Zigzag(MoveBaseUtil):
         self.markers.points = list()
 =======
             q_angle = quaternion_from_euler(0, 0, 0.5*pi*(-1)**i)
+=======
+            vertex.append(Point(init_x+offset + (N - i - 1) * hp, init_y+ mid_y, 0))
+            q_angle = quaternion_from_euler(0, 0, 0.5 * pi * (-1) ** i)
+>>>>>>> 80eea307abab2b775e9fdf947f2525ae221ac485
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
@@ -311,7 +354,15 @@ if __name__ == '__main__':
 
 if __name__ == '__main__':
     try:
+<<<<<<< HEAD
         Zigzag(nodename="zigzag_test")
 >>>>>>> 24d1ffbe26fdc4faf7b0835fb40748e89a929e53
+=======
+	Zigzag(nodename="zigzag_test", quadrant=1)
+	Zigzag(nodename="zigzag_test", quadrant=2)
+	Zigzag(nodename="zigzag_test", quadrant=3)
+        Zigzag(nodename="zigzag_test", quadrant=4)
+	Zigzag(nodename="zigzag_test", quadrant=0)
+>>>>>>> 80eea307abab2b775e9fdf947f2525ae221ac485
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

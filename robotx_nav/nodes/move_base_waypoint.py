@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # license removed for brevity
 """
-    move to a point
+    move to a point without considering orientation
     reinaldo
     2016-10-20
     # changelog:
@@ -80,7 +80,7 @@ class MoveTo(MoveBaseUtil):
         goal.target_pose.pose = waypoint
 
         # Start the robot moving toward the goal
-        self.move(goal)
+        self.move(goal, 0, 0)
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
