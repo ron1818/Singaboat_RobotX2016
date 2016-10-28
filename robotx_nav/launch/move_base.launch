@@ -9,11 +9,11 @@
         <!-- topic remap -->
         <remap from="odom" to="$(arg odom_topic)" />
         <remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
-        <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="global_costmap" unless="$(arg isreal)" />
-        <rosparam file="$(find robotx_nav)/config/costmap_common_params.yaml" command="load" ns="local_costmap" unless="$(arg isreal)" />
-        <rosparam file="$(find robotx_nav)/config/local_costmap_params.yaml" command="load" unless="$(arg isreal)" />
-        <rosparam file="$(find robotx_nav)/config/global_costmap_params.yaml" command="load" unless="$(arg isreal)" />
-        <rosparam file="$(find robotx_nav)/config/base_local_planner_params.yaml" command="load" unless="$(arg isreal)" />
+        <rosparam file="$(find robotx_nav)/config/fake/costmap_common_params.yaml" command="load" ns="global_costmap" unless="$(arg isreal)" />
+        <rosparam file="$(find robotx_nav)/config/fake/costmap_common_params.yaml" command="load" ns="local_costmap" unless="$(arg isreal)" />
+        <rosparam file="$(find robotx_nav)/config/fake/local_costmap_params.yaml" command="load" unless="$(arg isreal)" />
+        <rosparam file="$(find robotx_nav)/config/fake/global_costmap_params.yaml" command="load" unless="$(arg isreal)" />
+        <rosparam file="$(find robotx_nav)/config/fake/base_local_planner_params.yaml" command="load" unless="$(arg isreal)" />
 
         <rosparam file="$(find robotx_nav)/config/wamv/costmap_common_params.yaml" command="load" ns="global_costmap" if="$(arg isreal)" />
         <rosparam file="$(find robotx_nav)/config/wamv/costmap_common_params.yaml" command="load" ns="local_costmap" if="$(arg isreal)" />

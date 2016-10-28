@@ -22,11 +22,11 @@ from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
 
-class StationKeeping(MoveBaseUtil):
+class HoldDirection(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target, radius, duration):
+    def __init__(self, nodename, target, radius, duration, cat):
         MoveBaseUtil.__init__(self, nodename)
 
         #get boat pose one time only
@@ -68,6 +68,9 @@ class StationKeeping(MoveBaseUtil):
             if (sqrt((target.linear.x-self.x0)**2 + (target.linear.y-self.y0)**2)<radius):
                 #pub.publish(Twist())
 		rospy.loginfo("inside inner radius")
+                theta=atan2(cat.y-self.y0,cat.x-self.x0)
+		if(abs(theta-self.yaw0)>10*pi/180):
+		    self.rotation(theta-self.yaw0)
 
             else:
 		rospy.loginfo("outside radius")
@@ -106,9 +109,11 @@ class StationKeeping(MoveBaseUtil):
         # rospy.loginfo([self.x0, self.y0, self.z0])
 
 
+
+
 if __name__ == '__main__':
     try:
-        StationKeeping("station_keeping_test", Twist(Point(7, 5, 0), Point(0, 0, 0.2)), 5, 180)
+        HoldDirection("station_keeping_test", Twist(Point(7, 5, 0), Point(0, 0, 0.2)), 5, 180, Point(5, 2, 0))
     except rospy.ROSInterruptException:
 	rospy.loginfo("Navigation test finished.")
         pass
