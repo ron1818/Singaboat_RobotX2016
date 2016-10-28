@@ -66,19 +66,20 @@ class MoveBaseUtil():
             # Send the goal pose to the MoveBaseAction server
             self.move_base.send_goal(goal)
 	  
-            finished_within_time = 'true'
-	    go_to_next= 'false'
+            finished_within_time = True
+	    go_to_next= False
            
   	    if mode==1: #continuous movement function, mode_param is the distance from goal that will set the next goal
 		while sqrt((self.x0-goal.target_pose.pose.position.x)**2+(self.y0-goal.target_pose.pose.position.y)**2)>mode_param:
 		    rospy.sleep(rospy.Duration(1))
-		go_to_next='true'
+		go_to_next=True
 
 	    elif mode==2: #stop and rotate mode, mode_param is rotational angle in rad
 		finished_within_time = self.move_base.wait_for_result(rospy.Duration(40 * 1))
 		self.rotation(mode_param)
 		self.rotation(-2*mode_param)
-		self.rotation(mode_param)		
+		self.rotation(mode_param)
+		
 	    else: #normal stop in each waypoint mode, mode_param is unused
 		finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
 
