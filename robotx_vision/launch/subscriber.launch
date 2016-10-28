@@ -1,0 +1,12 @@
+<launch>
+<node
+	pkg="robotx_vision"
+	type="subscriber"
+	name="my_subscriber"
+	required="true"
+	output="screen"
+>
+<param name="subscribed_image_topic" value="my_object"/>
+</node>
+
+</launch>
