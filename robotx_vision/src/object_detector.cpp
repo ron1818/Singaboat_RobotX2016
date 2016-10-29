@@ -35,20 +35,23 @@ std::string output_topic_name;
 //Image transport vars
 cv_bridge::CvImagePtr cv_ptr;
 
-//Variables to give info back to ROS from OpenCV
+//Must-have var
 vector<robotx_vision::object_detection> object;
 
-//OpenCV image processing vars (used only within opencv object detection)
+//OpenCV image processing method dependent vars 
+std::vector<std::vector<cv::Point> > contours;
+std::vector<cv::Vec4i> hierarchy;
+std::vector<cv::Point> approx;
 cv::Mat src, hsv;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
-cv::Mat red,green;
-cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5,5));
-std::vector<std::vector<cv::Point> > contours;
-std::vector<cv::Vec4i> hierarchy;
+cv::Mat red,green,black;
+cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(10,10));
 cv::Rect r;
 cv::RotatedRect mr;
 int height, width;
+int min_area = 1500;
+double area, r_area;
 const double eps = 0.15;
 
 //Functions
@@ -89,7 +92,7 @@ robotx_vision::object_detection object_return(std::string frame_id, std::string 
   return obj;
 }
 
-void totem_detect_red()
+void detect_totem_red()
 {
   //Filter red color
   cv::inRange(hsv, cv::Scalar(0, 170, 150), cv::Scalar(10, 255, 255), lower_hue_range);
@@ -103,7 +106,7 @@ void totem_detect_red()
   for (int i = 0; i < contours.size(); i++)
   {
     // Skip small objects 
-    if (std::fabs(cv::contourArea(contours[i])) < 500) continue;
+    if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
     vector<Point> hull;
     convexHull(contours[i], hull, 0, 1);
     r = cv::boundingRect(contours[i]);
@@ -121,7 +124,7 @@ void totem_detect_red()
   }
 }
 
-void totem_detect_green()
+void detect_totem_green()
 {
   //Filter green color
   cv::inRange(hsv, cv::Scalar(70, 180, 90), cv::Scalar(90, 255, 255), green);
@@ -133,7 +136,7 @@ void totem_detect_green()
   for (int i = 0; i < contours.size(); i++)
   {
     // Skip small objects 
-    if(std::fabs(cv::contourArea(contours[i])) < 2000) continue;
+    if(std::fabs(cv::contourArea(contours[i])) < min_area) continue;
     //Calculate areas of object
     vector<Point> hull;
     convexHull(contours[i], hull, 0, 1);
@@ -150,6 +153,34 @@ void totem_detect_green()
       object.push_back(object_return(frame_id,"totem","green",r));         //Push the object to the vector
     }
   }
+}
+
+void detect_obstacle()
+{
+	//Filter black color
+	cv::inRange(hsv, cv::Scalar(100, 40, 0), cv::Scalar(150, 255, 100), black);
+	//Reduce noise
+	reduce_noise(&black);
+	//Finding shapes
+	cv::findContours(black.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+	//Detect shape for each contour
+	for (int i = 0; i < contours.size(); i++)
+	{
+		// Approximate contour with accura cy proportional to the contour perimeter
+		cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
+		// Skip small or non-convex objects 
+		if ((std::fabs(cv::contourArea(contours[i])) < min_area) /*|| (!cv::isContourConvex(approx))*/) continue;
+		//Find black buoys
+		area = cv::contourArea(contours[i]);
+		r = cv::boundingRect(contours[i]);
+		if(r.height > r.width) continue;
+		r_area = r.height*r.width;
+		if((std::abs(area/r_area - 3.141593/4) <= 0.1))
+    {//Detected
+  		cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
+  		object.push_back(object_return(frame_id,"obstacle","black",r));		//Push the object to the vector
+    }
+	}
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -174,8 +205,10 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   width = src.cols;
   height = src.rows;
 
-  totem_detect_red();
-  totem_detect_green();
+  //Detect stuffs
+  detect_totem_red();
+  detect_totem_green();
+  detect_obstacle();
 
   //Show output on screen
   //ROS_INFO("Node is working.");
@@ -194,6 +227,7 @@ int main(int argc, char** argv)
 
   //Initiate windows
   cv::namedWindow("src",WINDOW_NORMAL);
+  cv::resizeWindow("src",640,480);
   cv::startWindowThread();
 
   //Start ROS subscriber...
@@ -206,10 +240,9 @@ int main(int argc, char** argv)
 
   while (nh.ok())
   {
+  	//Publish every object detected
     for(vector<robotx_vision::object_detection>::iterator it = object.begin(); it != object.end(); it++)
-    {
       pub.publish(*it);
-    }
     //Reinitialize the object counting vars
     object.clear();
 

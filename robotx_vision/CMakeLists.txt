@@ -143,14 +143,21 @@ add_executable(object_detector src/object_detector.cpp)
 target_link_libraries(object_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(object_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(publisher src/publisher.cpp)
-target_link_libraries(publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(symbol_identifier src/symbol_identifier.cpp)
+target_link_libraries(symbol_identifier ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(symbol_identifier ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(image_publisher src/image_publisher.cpp)
+target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(image_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(video_publisher src/video_publisher.cpp)
+target_link_libraries(video_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(video_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(subscriber src/subscriber.cpp)
 target_link_libraries(subscriber ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above

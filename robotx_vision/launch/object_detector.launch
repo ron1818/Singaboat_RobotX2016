@@ -6,7 +6,7 @@
 	required="true"
 	output="screen"
 >
-<param name="subscribed_image_topic" value="my_image"/>
+<param name="subscribed_image_topic" value="my_video"/>
 <param name="frame_id" value="my_camera"/>
 <param name="output_topic_name" value="my_object"/>
 </node>
