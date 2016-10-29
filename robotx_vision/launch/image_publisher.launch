@@ -1,0 +1,11 @@
+<launch>
+<node
+	pkg="robotx_vision"
+	type="publisher"
+	name="my_publisher"
+	required="true"
+	output="screen"
+>
+<param name="image_file" value="/home/echo/catkin_ws/src/robotx_vision/src/image/z4.png"/>
+</node>
+</launch>
