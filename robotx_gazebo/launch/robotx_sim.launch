@@ -1,14 +1,40 @@
 <launch>
+    <arg name="tf_prefix" default="$(optenv ROS_NAMESPACE)"/>
+
+    <arg name="x" default="0.0"/>
+    <arg name="y" default="0.0"/>
+
+    <arg name="use_ground_truth_for_tf" default="true" />
+    <arg name="use_ground_truth_for_control" default="true" />
+    <arg name="use_pose_estimation" if="$(arg use_ground_truth_for_control)" default="false"/>
+    <arg name="use_pose_estimation" unless="$(arg use_ground_truth_for_control)" default="true"/>
+
+    <arg name="world_frame" default="map"/> 
+    <arg name="base_link_frame" default="$(arg tf_prefix)/base_link"/>
+
 
     <!-- these are the arguments you can pass this launch file, for example paused:=true -->
     <param name="/use_sim_time" value="true" />
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
-    <!--include file="$(find robotx_gazebo)/launch/robotx_empty_world.launch" /-->
-    <include file="$(find robotx_gazebo)/launch/robotx_test.launch" >
-        <param name="world_name" value="$(find robotx_gazebo)/worlds/test0.world" />
-    </include>
+    <include file="$(find robotx_gazebo)/launch/robotx_empty_world.launch" />
+    <!-- include some obstacles -->
+    <include file="$(find robotx_gazebo)/launch/test2.launch" />
 
-    <include file="$(find robotx_control)/launch/fake_control.launch"/>
-
+    <!-- use ground_truth for odom and tf -->
+    <node name="ground_truth_to_tf" pkg="message_to_tf" type="message_to_tf" output="screen">
+        <param name="odometry_topic" value="ground_truth/state" />
+        <param name="frame_id" value="$(arg world_frame)" />
+        <param name="tf_prefix" value="$(arg tf_prefix)" if="$(arg use_ground_truth_for_tf)" />
+        <param name="tf_prefix" value="$(arg tf_prefix)/ground_truth" unless="$(arg use_ground_truth_for_tf)" />
+    </node>
+    <group if="$(arg use_pose_estimation)">
+        <node name="pose_estimation" pkg="hector_quadrotor_pose_estimation" type="hector_quadrotor_pose_estimation" output="screen">
+            <rosparam file="$(find hector_quadrotor_pose_estimation)/params/simulation.yaml" />
+            <param name="nav_frame" value="$(arg tf_prefix)/nav" />
+            <param name="publish_world_nav_transform" value="true" />
+            <param name="tf_prefix" value="$(arg tf_prefix)" unless="$(arg use_ground_truth_for_tf)" />
+            <param name="tf_prefix" value="$(arg tf_prefix)/pose_estimation" if="$(arg use_ground_truth_for_tf)" />
+        </node>
+    </group>
 </launch>

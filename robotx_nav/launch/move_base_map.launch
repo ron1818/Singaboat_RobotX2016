@@ -1,19 +1,19 @@
 <launch>
     <arg name="mapname" default="blank_map" />
-    <arg name="isreal" default="false" />
-    <param name="/use_sim_time" value="$(arg isreal)"/>
+    <arg name="isgazebo" default="false" />
+    <param name="/use_sim_time" value="true" />
 
     <!-- Launch move_base and load all navigation parameters -->
     <include file="$(find robotx_nav)/launch/move_base.launch">
-        <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isreal)" />
-        <arg name="odom_topic" value="/odom" unless="$(arg isreal)" />
+        <arg name="odom_topic" value="ground_truth/state" if="$(arg isgazebo)" />
+        <arg name="odom_topic" value="odom" unless="$(arg isgazebo)" />
     </include>
 
     <!-- Run the map server with a blank map -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/$(arg mapname).yaml" />
 
     <!-- Run a static transform between /odom and /map -->
-    <node pkg="tf" type="static_transform_publisher" name="odom_map_broadcaster" args="0 0 0 0 0 0 /map /odom 100" unless="$(arg isreal)" />
+    <node pkg="tf" type="static_transform_publisher" name="odom_map_broadcaster" args="0 0 0 0 0 0 /map /odom 100" unless="$(arg isgazebo)" />
     <!--node pkg="tf" type="static_transform_publisher" name="baselink_odom_broadcaster" args="0 0 0 0 0 0 /odom /base_link 100" /-->
 
 </launch>

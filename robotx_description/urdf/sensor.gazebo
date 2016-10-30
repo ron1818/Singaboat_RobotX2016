@@ -62,25 +62,25 @@
                 </camera>
                 <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
                     <!--robotNamespace>${position1}_stereo/${position2}</robotNamespace-->
-                    <alwaysOn>true</alwaysOn>
-                    <updateRate>30.0</updateRate>
-                    <cameraName>${position1}_stereo/${position2}</cameraName>
-                    <imageTopicName>image_raw</imageTopicName>
-                    <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-                    <frameName>${position1}_stereo/${position2}/camera_link</frameName>
-                    <hackBaseline>0.07</hackBaseline>
-                    <distortionK1>0.0</distortionK1>
-                    <distortionK2>0.0</distortionK2>
-                    <distortionK3>0.0</distortionK3>
-                    <distortionT1>0.0</distortionT1>
-                    <distortionT2>0.0</distortionT2>
-                </plugin>
-            </sensor>
-        </gazebo>
-    </xacro:macro>
+                <alwaysOn>true</alwaysOn>
+                <updateRate>30.0</updateRate>
+                <cameraName>${position1}_stereo/${position2}</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>${position1}_stereo/${position2}/camera_link</frameName>
+                <hackBaseline>0.07</hackBaseline>
+                <distortionK1>0.0</distortionK1>
+                <distortionK2>0.0</distortionK2>
+                <distortionK3>0.0</distortionK3>
+                <distortionT1>0.0</distortionT1>
+                <distortionT2>0.0</distortionT2>
+            </plugin>
+        </sensor>
+    </gazebo>
+</xacro:macro>
 
-    <xacro:imu_gazebo position1="middle" position2="middle" />
-    <!--xacro:imu_gazebo position1="front" position2="right" />
+<xacro:imu_gazebo position1="middle" position2="middle" />
+<!--xacro:imu_gazebo position1="front" position2="right" />
     <xacro:imu_gazebo position1="rear" position2="left" />
     <xacro:imu_gazebo position1="rear" position2="right" /-->
 
@@ -91,17 +91,17 @@
     <xacro:camera_gazebo position1="starboard" position2="left" />
     <xacro:camera_gazebo position1="starboard" position2="right" />
 
-        
-        <!-- Set up gps configuration -->
-        <gazebo>
-            <plugin name="gps" filename="libhector_gazebo_ros_gps.so">
-                <alwaysOn>true</alwaysOn>
-                <updateRate>10.0</updateRate>
-                <frameId>gps_link</frameId>
-                <bodyName>shelf_link</bodyName>
-                <topicName>navsat/fix</topicName>
-                <velocityTopicName>navsat/vel</velocityTopicName>
-                <referenceLatitude>0</referenceLatitude>
+
+    <!-- Set up gps configuration -->
+    <gazebo>
+        <plugin name="gps" filename="libhector_gazebo_ros_gps.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>10.0</updateRate>
+            <frameId>gps_link</frameId>
+            <bodyName>shelf_link</bodyName>
+            <topicName>navsat/fix</topicName>
+            <velocityTopicName>navsat/vel</velocityTopicName>
+            <referenceLatitude>0</referenceLatitude>
             <referenceLongitude>0</referenceLongitude>
             <!--referenceLatitude>1.35012856</referenceLatitude>
             <referenceLongitude>103.687695</referenceLongitude-->
@@ -113,6 +113,15 @@
             <velocityGaussianNoise>0.1 0.1 0.1</velocityGaussianNoise>
         </plugin>
     </gazebo>
+
+    <gazebo>
+        <plugin name="groundtruth_sim" filename="libgazebo_ros_p3d.so">
+            <updateRate>100.0</updateRate>
+            <bodyName>base_link</bodyName>
+            <topicName>ground_truth/state</topicName>
+            <gaussianNoise>0.0</gaussianNoise>
+            <frameName>map</frameName>
+    </plugin></gazebo>
 
     <!-- Set up kinect configuration >
     <xacro:if value="$(arg kinect_enabled)">
@@ -219,11 +228,11 @@
                 </ray>
 
                 <plugin name="gazebo_ros_hokuyo_utm30lx_model_controller" filename="libgazebo_ros_laser.so">
-                <bodyName>base_link</bodyName>
-                <topicName>laser/scan</topicName>
-                <frameName>hokuyo_link</frameName>
-            </plugin>
-        </sensor>
-    </gazebo>
-</xacro:if>
+                    <bodyName>base_link</bodyName>
+                    <topicName>laser/scan</topicName>
+                    <frameName>hokuyo_link</frameName>
+                </plugin>
+            </sensor>
+        </gazebo>
+    </xacro:if>
 </robot>
