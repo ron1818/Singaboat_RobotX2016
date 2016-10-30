@@ -1,14 +1,9 @@
 <launch>
-
     <!-- these are the arguments you can pass this launch file, for example paused:=true -->
     <param name="/use_sim_time" value="true" />
 
     <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
-    <!--include file="$(find robotx_gazebo)/launch/robotx_empty_world.launch" /-->
-    <include file="$(find robotx_gazebo)/launch/robotx_test.launch" >
-        <param name="world_name" value="$(find robotx_gazebo)/worlds/test0.world" />
-    </include>
-
-    <include file="$(find robotx_control)/launch/fake_control.launch"/>
-
+    <include file="$(find robotx_gazebo)/launch/robotx_empty_world.launch" />
+    <!-- include some obstacles -->
+    <include file="$(find robotx_gazebo)/launch/test2.launch" />
 </launch>
