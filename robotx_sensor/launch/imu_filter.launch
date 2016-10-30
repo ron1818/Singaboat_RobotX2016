@@ -1,9 +1,14 @@
+<?xml version="1.0"?>
 <launch>
 
     <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_node" output="screen">
-        <remap from="imu/data_raw" to="middle_middle_imu/imu/data"/>
-        <remap from="imu/data" to="/imu/filtered"/>
-
+        <remap from="imu/data_raw" to="middle_middle_imu/imu/data_raw"/>
+        <remap from="imu/mag" to="middle_middle_imu/imu/mag"/>
+        <remap from="imu/data" to="middle_middle_imu/imu/data"/>
+        <param name="use_mag" value="true"/>
+        <param name="use_magetic_field_msg" value="true"/>
+        <param name="fixed_frame" value="odom"/>
+        <param name="publish_tf" value="false"/>
     </node>
 
 </launch>
