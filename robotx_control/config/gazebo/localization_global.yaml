@@ -1,5 +1,5 @@
-map_frame: map
-odom_frame: odom
+# map_frame: map
+odom_frame: map
 base_link_frame: base_link
 world_frame: map
 sensor_timeout: 0.5
