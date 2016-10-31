@@ -1,7 +1,7 @@
 # map_frame: map
-odom_frame: map
+odom_frame: odom
 base_link_frame: base_link
-world_frame: map
+world_frame: odom
 sensor_timeout: 0.5
 two_d_mode: true
 
@@ -95,4 +95,6 @@ imu0_remove_gravitational_acceleration: true
 # imu3_queue_size: 10
 # imu3_remove_gravitational_acceleration: true
 
+smooth_lagged_data: true
+history_length: 5
 print_diagnostics: true

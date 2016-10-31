@@ -4,11 +4,11 @@
     <arg name="polygon" default="6" />
     <arg name="is_ccw" default="true" />
     <arg name="is_relative" default="false" />
-    <arg name="isreal" default="false" />
-    <param name="/use_sim_time" value="$(arg isreal)"/>
+    <arg name="isgazebo" default="false" />
+    <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
     <node pkg="robotx_nav" type="move_base_loiter.py" name="loiter_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isreal)" />
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
         <param name="radius" value="$(arg radius)" />
         <param name="polygon" value="$(arg polygon)" />
         <param name="is_ccw" value="$(arg is_ccw)" />
