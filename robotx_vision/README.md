@@ -61,7 +61,6 @@ OBJECT DETECTION
 ### 30/10/2016 ###
 object detected will be published as a custom message type (msg/object_detection.msg)
 # naming convetion of custom message
-```bash
 `frame_id`  camera, using convetional naming
 `type`      object's type: `marker`, `totem`, `obstacle`, `triangle`, `circle`, `cruciform`, `code` (*)
 `color`     object's color: `red`, `green`, `blue`, `black`, `white`
@@ -71,7 +70,6 @@ object detected will be published as a custom message type (msg/object_detection
 `angle_r`   right angle of detected object on image
 
 (*) `code`: LED screen detected in [Scan the code] task
-```
 
 ### object_detector ###
 1. unfinished: only has functions to recognize black buoys and green/red marker totems
