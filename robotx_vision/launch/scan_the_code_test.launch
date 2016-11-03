@@ -1,0 +1,23 @@
+<launch>
+<node
+	pkg="robotx_vision"
+	type="video_publisher"
+	name="my_video_publisher"
+	required="true"
+	output="screen"
+>
+<param name="video_file" value="/home/[YOUR PC NAME HERE]/catkin_ws/src/Singaboat_RobotX2016/robotx_vision/src/image/vid.avi"/>
+</node>
+
+<node
+	pkg="robotx_vision"
+	type="sequence_scanner"
+	name="sequence_scanner"
+	required="true"
+	output="screen"
+>
+<param name="subscribed_image_topic" value="test"/>
+<param name="frame_id" value="my_camera"/>
+<param name="output_topic_name" value="my_object"/>
+</node>
+</launch>

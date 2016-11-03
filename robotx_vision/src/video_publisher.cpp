@@ -22,7 +22,7 @@ int main(int argc, char** argv)
   cv::VideoCapture cap(video_file);
 
   image_transport::ImageTransport it(nh);
-  image_transport::Publisher pub = it.advertise("my_video", 1);
+  image_transport::Publisher pub = it.advertise("test", 1);
   cv::waitKey(30);
   
   ros::Rate loop_rate(5);

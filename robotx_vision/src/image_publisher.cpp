@@ -13,7 +13,7 @@ int main(int argc, char** argv)
   ros::NodeHandle pnh("~");
   pnh.getParam("image_file", image_file);
   image_transport::ImageTransport it(nh);
-  image_transport::Publisher pub = it.advertise("my_image", 1);
+  image_transport::Publisher pub = it.advertise("test", 1);
   cv::Mat image = cv::imread(image_file, CV_LOAD_IMAGE_COLOR);
   cv::waitKey(30);
   sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", image).toImageMsg();
