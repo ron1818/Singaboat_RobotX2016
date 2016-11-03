@@ -55,11 +55,11 @@ follow opencv website for more info
 OBJECT DETECTION
 --------
 ### 03/11/2016 ###
-Update algoritm of `object_detector` & `symbol_identifier`
-Add node `sequence_scanner` and launch file
+1. Update algoritm of `object_detector` & `symbol_identifier`
+2. Add node `sequence_scanner` and launch file
 
 ### 30/10/2016 ###
-object detected will be publish as a custom message type (msg/object_detection.msg)
+object detected will be published as a custom message type (msg/object_detection.msg)
 # naming convetion of custom message
 ```bash
 `frame_id`  camera, using convetional naming
