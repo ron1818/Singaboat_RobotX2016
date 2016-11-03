@@ -92,7 +92,8 @@ class Result_GUI(object):
 	self.canvas.create_rectangle(50, 297.5, 150, 327.5, fill="white", )
 	self.canvas.create_rectangle(225, 297.5, 325, 327.5, fill="white", )
 	if pic1 == "CIR":
-	    im = Image.open('/home/rm/catkin_ws/src/Singaboat_RobotX2016/robotx_gui/picture/CIR.jpg')#Must change the location of the image in here
+	    im = Image.open('/home/rm/catkin_ws/src/Singaboat_RobotX2016/robotx_gui/picture/CIR.jpg')
+	    #Must change the location of the image in here
 	    self.canvas.create_text(100,312.5,font=("Purisa", 12), text="CIRCLE")	 
 	elif pic1 == "TRI":
 	    im = Image.open('/home/rm/catkin_ws/src/Singaboat_RobotX2016/robotx_gui/picture/TRI.jpg')
@@ -102,8 +103,7 @@ class Result_GUI(object):
 	    self.canvas.create_text(100,312.5,font=("Purisa", 12), text="CRUCIFORM")	
 	else:
 	    self.canvas.create_rectangle(50, 297.5, 150, 327.5, fill="white", )
-	    rospy.loginfo("no picture")
-	    #im = Image.open('/home/duy/NONE.jpg')
+	    im = Image.open('/home/rm/catkin_ws/src/Singaboat_RobotX2016/robotx_gui/picture/NONE.jpg')
 
 	if pic2 == "CIR":
 	    im2 = Image.open('/home/rm/catkin_ws/src/Singaboat_RobotX2016/robotx_gui/picture/CIR.jpg')
@@ -117,8 +117,7 @@ class Result_GUI(object):
 	    self.canvas.create_text(275,312.5,font=("Purisa", 12), text="CRUCIFORM")
 	else:
 	    self.canvas.create_rectangle(225, 297.5, 325, 327.5, fill="white", )
-	    rospy.loginfo("no picture")
-	    #im = Image.open('/home/duy/NONE.jpg')
+	    im2 = Image.open('/home/rm/catkin_ws/src/Singaboat_RobotX2016/robotx_gui/picture/NONE.jpg')
 
 	self.canvas.image = ImageTk.PhotoImage(im)
 	self.canvas.create_image(50, 340, image=self.canvas.image, anchor='nw')
