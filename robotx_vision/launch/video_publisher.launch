@@ -6,6 +6,6 @@
 	required="true"
 	output="screen"
 >
-<param name="video_file" value="/home/echo/catkin_ws/src/robotx_vision/src/image/scene.avi"/>
+<param name="video_file" value="/home/echo/catkin_ws/src/Singaboat_RobotX2016/robotx_vision/src/image/vid.avi"/>
 </node>
 </launch>

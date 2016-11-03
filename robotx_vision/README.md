@@ -54,18 +54,36 @@ follow opencv website for more info
 
 OBJECT DETECTION
 --------
-object detected will be publish as a custom message type (msg/object_detection.msg)
-### naming convetion of custom message ###
-```bash
-[frame_id]  camera, using convetional naming
-[type]      object's type: marker, totem, obstacle, triangle, circle, cruciform
-[color]     object's color: red, green, blue, black, white
-[angle_t]   top angle of detected object on image
-[angle_b]   bottom angle of detected object on image
-[angle_l]   left angle of detected object on image
-[angle_r]   right angle of detected object on image
-```
-### launch object detection node ###
+### 03/11/2016 ###
+1. Update algoritm of `object_detector` & `symbol_identifier`
+2. Add node `sequence_scanner` and launch file
+
+### 30/10/2016 ###
+object detected will be published as a custom message type (msg/object_detection.msg)
+#### naming convetion of custom message ####
+1. `frame_id`  camera, using convetional naming
+2. `type`      object's type: `marker`, `totem`, `obstacle`, `triangle`, `circle`, `cruciform`, `code` (*)
+3. `color`     object's color: `red`, `green`, `blue`, `black`, `white`
+4. `angle_t`   top angle of detected object on image
+5. `angle_b`   bottom angle of detected object on image
+6. `angle_l`   left angle of detected object on image
+7. `angle_r`   right angle of detected object on image
+
+(*) `code`: LED screen detected in [Scan the code] task
+
+#### object_detector ####
+1. unfinished: only has functions to recognize black buoys and green/red marker totems
+2. to be added functions to recognize "Tiki" totems of color red/green/blue/yellow
+3. to be added functions to recognize white marker totems (there was a change in preliminary tasks)
+
+#### symbol_identifier ####
+1. finished, but color value must be manually adjusted depending on environment.
+
+#### sequence_scanner ####
+1. finished but need to test on real environment (due to the color of LED screen really bright)
+2. a video is added in robotx_vision/src/image/vid.avi for testing purpose.
+
+# launch object detection node
 paramater need to be adjusted depends on the subscribed camera's topic
 ```bash
 catkin_make

@@ -15,7 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   roslaunch
 )
 
-find_package(OpenCV REQUIRED core ocl)
+find_package(OpenCV REQUIRED)
 roslaunch_add_file_check(launch)
 
 ## System dependencies are found with CMake's conventions
@@ -146,6 +146,10 @@ add_dependencies(object_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 add_executable(symbol_identifier src/symbol_identifier.cpp)
 target_link_libraries(symbol_identifier ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(symbol_identifier ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(sequence_scanner src/sequence_scanner.cpp)
+target_link_libraries(sequence_scanner ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(sequence_scanner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(image_publisher src/image_publisher.cpp)
 target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

@@ -46,12 +46,12 @@ cv::Mat src, hsv;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
 cv::Mat color;
-cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(10,10));
+cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3,3));
 cv::Rect r;
 cv::RotatedRect mr;
 int height, width;
 int min_area = 1500;
-double area, r_area;
+double area, r_area, m_area;
 const double eps = 0.15;
 
 //Functions
@@ -79,7 +79,7 @@ void reduce_noise(cv::Mat* bgr)
 {
   cv::morphologyEx(*bgr, *bgr, cv::MORPH_CLOSE, str_el);
   cv::morphologyEx(*bgr, *bgr, cv::MORPH_OPEN, str_el);
-  cv::blur(*bgr,*bgr,Size(3,3));
+  cv::blur(*bgr,*bgr,Size(2,2));
 }
 
 robotx_vision::object_detection object_return(std::string frame_id, std::string type, std::string color, cv::Rect rect)
@@ -94,7 +94,7 @@ robotx_vision::object_detection object_return(std::string frame_id, std::string 
 
 int tri_detect(int i, std::string obj_color)
 {
-  if((fabs(area/r_area-0.5)<=0.08) /*&& cv::isContourConvex(approx)*/)
+  if((fabs(area/m_area-0.5)<0.08) /*&& cv::isContourConvex(approx)*/)
   {
     cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
     object.push_back(object_return(frame_id,"triangle",obj_color,r));         //Push the object to the vector
@@ -105,7 +105,7 @@ int tri_detect(int i, std::string obj_color)
 
 int cir_detect(int i, std::string obj_color)
 {
-  if((std::abs(area/r_area - 3.141593/4) <= 0.16) && cv::isContourConvex(approx))
+  if((std::abs(area/m_area - 3.141593/4) < 0.12) && cv::isContourConvex(approx))
   {
     cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
     object.push_back(object_return(frame_id,"circle",obj_color,r));         //Push the object to the vector
@@ -122,7 +122,6 @@ int cru_detect(int i, std::string obj_color)
   convexHull(contours[i], hull, 0, 1);
   Point2f hull_center(hull.size());
   float hull_radius(hull.size());
-  double area = contourArea(contours[i]);
   double hull_area = contourArea(hull);
   minEnclosingCircle(contours[i], center, radius);
   minEnclosingCircle(hull, hull_center, hull_radius);
@@ -161,15 +160,17 @@ void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim,
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
 
-    area = cv::contourArea(contours[i]);
     r = cv::boundingRect(contours[i]);
+    mr = cv::minAreaRect(contours[i]);
+
+    area = cv::contourArea(contours[i]);
     r_area = r.height*r.width;
+    m_area = (mr.size).height*(mr.size).width;
 
-    if(tri_detect(i, obj_color)) {}
-    else if(cir_detect(i, obj_color))  {}
-    else cru_detect(i, obj_color);  //These else-ifs are to nullify the situations where multiple shapes are detected in same color (which cannot be the case)
+    if(tri_detect(i, obj_color)) break;
+    if(cir_detect(i, obj_color)) break;
+    if(cru_detect(i, obj_color)) break;
   }
-
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -196,8 +197,8 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 
   //Detect stuffs
   detect_symbol("blue", cv::Scalar(105, 100, 100), cv::Scalar(130, 255, 255));
-  detect_symbol("green", cv::Scalar(75, 100, 70), cv::Scalar(96, 255, 255));
-  detect_symbol("red", cv::Scalar(0, 80, 100), cv::Scalar(1, 255, 255), cv::Scalar(160, 80, 100), cv::Scalar(179, 255, 255));
+  detect_symbol("green", cv::Scalar(50, 130, 70), cv::Scalar(96, 255, 255));
+  detect_symbol("red", cv::Scalar(0, 80, 100), cv::Scalar(1, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(176, 255, 255));
 
   //Show output on screen
   //ROS_INFO("Node is working.");
