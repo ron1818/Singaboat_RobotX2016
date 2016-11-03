@@ -1,12 +1,15 @@
 COMMANDS
 --------
+### changelog ###
+####@2016-10-31####
++ change from `isreal` to `isgazebo` to differentiate gazebo simulated boat from real boat
 
 ### launch fake wamv and movebase ###
 ```bash
 # lauch robot state description
 roslaunch robotx_bringup fake_wamv.launch
 # launch movebase
-roslaunch robotx_nav move_base_map.launch isreal:=false mapname:=pandan
+roslaunch robotx_nav move_base_map.launch isgazebo:=false mapname:=pandan
 # launch rviz
 rosrun rviz rviz -d `rospack find robotx_rviz`/rviz/fake_move_base.rviz
 # run your behavior file, makesure *.py is executable< chmod +x *.py
@@ -15,13 +18,13 @@ rosrun robotx_nav move_base_forward.py
 rosrun robotx_nav move_base_scout.py
 rosrun robotx_nav move_base_zigzag.py
 # OR
-roslaunch robotx_nav loiter_behavior.launch isreal:=false
-roslaunch robotx_nav constant_heading_behavior.launch isreal:=false
-roslaunch robotx_nav scout_behavior.launch isreal:=false
-roslaunch robotx_nav zigzag_behavior.launch isreal:=false
-roslaunch robotx_nav reverse_behavior.launch isreal:=false
-roslaunch robotx_nav rotation_behavior.launch isreal:=false
-roslaunch robotx_nav station_keep_behavior.launch isreal:=false
+roslaunch robotx_nav loiter_behavior.launch isgazebo:=false
+roslaunch robotx_nav constant_heading_behavior.launch isgazebo:=false
+roslaunch robotx_nav scout_behavior.launch isgazebo:=false
+roslaunch robotx_nav zigzag_behavior.launch isgazebo:=false
+roslaunch robotx_nav reverse_behavior.launch isgazebo:=false
+roslaunch robotx_nav rotation_behavior.launch isgazebo:=false
+roslaunch robotx_nav station_keep_behavior.launch isgazebo:=false
 ```
 
 ### launch gazebo and movebase ###
@@ -29,15 +32,15 @@ roslaunch robotx_nav station_keep_behavior.launch isreal:=false
 # lauch robot state description
 roslaunch robotx_gazebo robotx_test.launch
 # launch movebase
-roslaunch robotx_nav move_base_map.launch isreal:=true mapname:=pandan
+roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
 # launch rviz
 rosrun rviz rviz -d `rospack find robotx_rviz`/rviz/move_base.rviz
 # launch behavior
-roslaunch robotx_nav loiter_behavior.launch isreal:=true
-roslaunch robotx_nav constant_heading_behavior.launch isreal:=true
-roslaunch robotx_nav scout_behavior.launch isreal:=true
-roslaunch robotx_nav zigzag_behavior.launch isreal:=true
-roslaunch robotx_nav reverse_behavior.launch isreal:=true
-roslaunch robotx_nav rotation_behavior.launch isreal:=true
-roslaunch robotx_nav station_keep_behavior.launch isreal:=true
+roslaunch robotx_nav loiter_behavior.launch isgazebo:=true
+roslaunch robotx_nav constant_heading_behavior.launch isgazebo:=true
+roslaunch robotx_nav scout_behavior.launch isgazebo:=true
+roslaunch robotx_nav zigzag_behavior.launch isgazebo:=true
+roslaunch robotx_nav reverse_behavior.launch isgazebo:=true
+roslaunch robotx_nav rotation_behavior.launch isgazebo:=true
+roslaunch robotx_nav station_keep_behavior.launch isgazebo:=true
 ```

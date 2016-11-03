@@ -26,7 +26,10 @@
     </include>
 
     <!-- launch robot localization/-->
-    <include file="$(find robotx_control)/launch/fake_control.launch"/>
+    <!--include file="$(find robotx_control)/launch/fake_control.launch"/-->
+    <include file="$(find robotx_control)/launch/gazebo_r_l_control.launch"/>
+    <!-- imu filter by madgwick/-->
+    <include file="$(find robotx_sensor)/launch/imu_filter.launch"/>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"

@@ -12,17 +12,28 @@
                 <updateRate>20.0</updateRate>
                 <frameId>${position1}_${position2}_imu_link</frameId>
                 <bodyName>shelf_link</bodyName>
-                <topicName>imu/data</topicName>
+                <topicName>imu/data_raw</topicName>
                 <serviceName>imu</serviceName>
                 <xyzOffset>0 0 0</xyzOffset> 
-                <rpyOffset>0 0 0</rpyOffset> 
+                <rpyOffset>0 0 -${M_PI/2}</rpyOffset> 
                 <gaussianNoise>0</gaussianNoise> 
-                <accelDrift>0.5 0.5 0.5</accelDrift>
+                <!--accelDrift>0.005 0.005 0.005</accelDrift>
                 <accelGaussianNoise>0.35 0.35 0.3</accelGaussianNoise>
-                <rateDrift>0.1 0.1 0.1</rateDrift>
+                <rateDrift>0.0001 0.0001 0.0001</rateDrift>
                 <rateGaussianNoise>0.05 0.05 0.015</rateGaussianNoise>
-                <headingDrift>0.1</headingDrift>
-                <headingGaussianNoise>0.05</headingGaussianNoise>
+                <headingDrift>0.0001</headingDrift>
+                <headingGaussianNoise>0.05</headingGaussianNoise-->
+            </plugin>
+        </gazebo>
+        <gazebo>
+            <plugin name="mag" filename="libhector_gazebo_ros_magnetic.so">
+                <robotNamespace>${position1}_${position2}_imu</robotNamespace>
+                <updateRate>20.0</updateRate>
+                <frameId>${position1}_${position2}_imu_link</frameId>
+                <bodyName>shelf_link</bodyName>
+                <topicName>imu/mag</topicName>
+                <declination>0.0043</declination>
+                <inclination>0.0</inclination>
             </plugin>
         </gazebo>
     </xacro:macro>
@@ -90,10 +101,10 @@
                 <bodyName>shelf_link</bodyName>
                 <topicName>navsat/fix</topicName>
                 <velocityTopicName>navsat/vel</velocityTopicName>
-                <referenceLatitude>0</referenceLatitude>
-            <referenceLongitude>0</referenceLongitude>
-            <!--referenceLatitude>1.35012856</referenceLatitude>
-            <referenceLongitude>103.687695</referenceLongitude-->
+                <!--referenceLatitude>0</referenceLatitude>
+            <referenceLongitude>0</referenceLongitude-->
+            <referenceLatitude>1.35012856</referenceLatitude>
+            <referenceLongitude>103.687695</referenceLongitude>
             <referenceHeading>0</referenceHeading>
             <referenceAltitude>0</referenceAltitude>
             <drift>5.0 5.0 5.0</drift>

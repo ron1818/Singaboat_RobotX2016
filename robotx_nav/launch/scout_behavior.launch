@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="isreal" default="false" />
-    <param name="/use_sim_time" value="$(arg isreal)"/>
+    <arg name="isgazebo" default="false" />
+    <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
     <node pkg="robotx_nav" type="move_base_scout.py" name="scout_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isreal)" />
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
     </node>
 
 </launch>
