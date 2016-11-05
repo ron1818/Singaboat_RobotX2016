@@ -3,7 +3,7 @@
     <arg name="isgazebo" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
-    <node pkg="robotx_nav" type="move_base_zigzag.py" name="zigzag_behavior" >
+    <node pkg="robotx_nav" type="move_base_rotation.py" name="rotation_behavior" >
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
     </node>
 

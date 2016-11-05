@@ -8,11 +8,11 @@
 import rospy
 import actionlib
 from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist
+from geometry_msgs.msg import Pose, Point, Quaternion, Twist, Vector3
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler
 from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos
+from math import radians, pi, sin, cos, sqrt
 
 class MoveBaseUtil():
     def __init__(self, nodename="nav_test"):
@@ -62,22 +62,57 @@ class MoveBaseUtil():
 
         return [center, heading]
 
-    def move(self, goal):
+    def move(self, goal, mode, mode_param):
             # Send the goal pose to the MoveBaseAction server
             self.move_base.send_goal(goal)
+	  
+            finished_within_time = True
+	    go_to_next= False
+           
+  	    if mode==1: #continuous movement function, mode_param is the distance from goal that will set the next goal
+		while sqrt((self.x0-goal.target_pose.pose.position.x)**2+(self.y0-goal.target_pose.pose.position.y)**2)>mode_param:
+		    rospy.sleep(rospy.Duration(1))
+		go_to_next=True
 
-            # Allow 1 minute to get there
-            finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
+	    elif mode==2: #stop and rotate mode, mode_param is rotational angle in rad
+		finished_within_time = self.move_base.wait_for_result(rospy.Duration(40 * 1))
+		self.rotation(mode_param)
+		self.rotation(-2*mode_param)
+		self.rotation(mode_param)
+		
+	    else: #normal stop in each waypoint mode, mode_param is unused
+		finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
 
             # If we don't get there in time, abort the goal
-            if not finished_within_time:
+            if not finished_within_time or go_to_next:
                 self.move_base.cancel_goal()
-                rospy.loginfo("Timed out achieving goal")
+                rospy.loginfo("Goal cancelled, next...")
             else:
                 # We made it!
                 state = self.move_base.get_state()
                 if state == GoalStatus.SUCCEEDED:
                     rospy.loginfo("Goal succeeded!")
+
+    def rotation(self, ang):
+
+        pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
+        rate = rospy.Rate(10)
+        an_vel=0.2
+        duration=ang/an_vel;
+        msg=Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, an_vel))
+
+        start_time = rospy.get_time()
+
+        while not rospy.is_shutdown():
+            current_time=rospy.get_time()
+            if (current_time - start_time) > duration:
+                pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2*an_vel)))
+                rospy.sleep(0.3)
+                pub.publish(Twist())
+                break
+            pub.publish(msg)
+            rate.sleep()
+
 
     def init_markers(self):
         # Set up our waypoint markers

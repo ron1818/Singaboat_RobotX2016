@@ -50,7 +50,7 @@ class Forward(MoveBaseUtil):
 	# set the distance between waypoints
    	self.forward["waypoint_distance"]=rospy.get_param("~waypoint_distance", 5)
         # check whether absolute or relative target
-   	self.forward["is_relative"]=rospy.get_param("~is_relative", "false")
+   	self.forward["is_relative"]=rospy.get_param("~is_relative", False)
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = \
@@ -75,6 +75,7 @@ class Forward(MoveBaseUtil):
             p = Point()
             p = waypoint.position
             self.markers.points.append(p)
+	    
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
@@ -111,9 +112,9 @@ class Forward(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal)
-
+            self.move(goal, 1, 3)
             i += 1
+
         else:  # escape constant forward and continue to the next waypoint
             pass
 

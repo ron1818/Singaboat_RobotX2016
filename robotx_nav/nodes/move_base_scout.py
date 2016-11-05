@@ -39,15 +39,22 @@ class Scout(MoveBaseUtil):
         # information about map, length (X), width (Y), position of the center wrt boat: boat-center
         # TODO (1) map center to absolute
         #      (2) get parameters by rospy.get_param()
-        self.map_info = {"l":60, "w":60, "center_x": 30, "center_y":30}
+        self.map_length = rospy.get_param("~length", 20)
+        self.map_width = rospy.get_param("~width", 20)
+        self.map_center_x = rospy.get_param("~center_x", 10)
+        self.map_center_y = rospy.get_param("~center_y", 10)
         # set the offset distance from border
-        offset=3
+        self.map_offset = rospy.get_param("~offset", 3)
+
+        # self.map_info = {"l":self.map_length, "w":self.map_width,
+        #                  "center_x":self.map_center_x, "center_y":self.map_center_y}
 
         while not self.odom_received:
             rospy.sleep(1)
 
         # create waypoints
-        waypoints = self.scout_waypoints(self.map_info["l"], self.map_info["w"], self.map_info["center_x"], self.map_info["center_y"], offset)
+        waypoints = self.scout_waypoints(self.map_length, self.map_width,
+                                         self.map_center_x, self.map_center_y, self.map_offset)
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -90,7 +97,7 @@ class Scout(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal)
+            self.move(goal, 1, 2)
 
             i += 1
         else:  # escape constant forward and continue to the next waypoint
@@ -133,7 +140,7 @@ class Scout(MoveBaseUtil):
 
         # waypoints that joins corners
         waypoints=list()
-        for i in range(N - 1):
+        for i in range(len(corners)-1):
             waypoints=self.straight_waypoints(corners[i], corners[i+1], waypoints)
 
         # return the resultant waypoints
