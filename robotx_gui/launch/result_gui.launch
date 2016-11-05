@@ -1,0 +1,14 @@
+<launch>
+  <param name="gui/color1" value="white" type="str"/>
+  <param name="gui/color2" value="white" type="str"/>
+  <param name="gui/color3" value="white" type="str"/>
+
+  <param name="gui/shape1" value="NONE" type="str"/>
+  <param name="gui/shape2" value="NONE" type="str"/>
+
+  <param name="gui/break_number" value="0" type="int"/>
+ 
+  <node pkg="robotx_gui" type="result_gui.py" name="result_gui_display">
+  </node>
+
+</launch>
