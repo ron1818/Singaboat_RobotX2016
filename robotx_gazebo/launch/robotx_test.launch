@@ -53,4 +53,11 @@
     <!-- bring visual odometry -->
     <!--include file="$(find robotx_bringup)/launch/vo_stereo.launch"/-->
 
+    <!-- robot description from auv_ros_description package -->
+    <include file="$(find robotx_description)/launch/description.launch"/>
+    <!-- bring stereo image -->
+    <include file="$(find robotx_bringup)/launch/stereo_proc.launch"/>
+    <!-- bring visual odometry -->
+    <include file="$(find robotx_bringup)/launch/vo_stereo.launch"/>
+
 </launch>
