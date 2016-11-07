@@ -116,16 +116,16 @@ class ColorDetection(object):
 
             for i, cnt in enumerate(contours):
                 cv2.drawContours(self.image, cnt, -1, (0, 255, 0), 3)
-                approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
+                approx = cv2.approxPolyDP(cnt, 0.05 * cv2.arcLength(cnt, True), True)
                 if len(approx) > 15:
                     print "circle"
                 elif len(approx) == 3:
                     print "triangle"
-                elif len(approx) > 4 and cv2.isContourConvex(cnt):
+                elif len(approx) > 4 and not cv2.isContourConvex(cnt):
                     print "cross"
 
                 x, y, w, h = cv2.boundingRect(approx)
-                cv2.rectangle(self.image, (x, y), (x+w, y+h), (0, 255, 0), 3)
+                cv2.rectangle(self.image, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
             # cv2.imshow('res', res_bw)
             cv2.imshow('image', self.image)
@@ -140,6 +140,6 @@ class ColorDetection(object):
 if __name__ == "__main__":
     # cd = ColorDetection(dev=0, col_under_det="red")
     # cd = ColorDetection(dev=0, col_under_det="green")
-    cd = ColorDetection(dev=1, col_under_det="blue")
+    cd = ColorDetection(dev=0, col_under_det="blue")
     # cd.hsv_calibartion()
     cd.color_inrange()
