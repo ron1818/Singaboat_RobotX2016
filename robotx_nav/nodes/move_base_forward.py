@@ -26,8 +26,9 @@ from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos, tan, ceil, atan2, sqrt
+from math import ceil, atan2, sqrt
 from move_base_util import MoveBaseUtil
+
 
 class Forward(MoveBaseUtil):
     # initialize boat pose param
@@ -36,30 +37,29 @@ class Forward(MoveBaseUtil):
     def __init__(self, nodename, target):
         MoveBaseUtil.__init__(self, nodename)
 
-        self.forward={}
+        self.forward = {}
 
         # get boat position, one time only
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
         while not self.odom_received:
             rospy.sleep(1)
 
-
-	# set the distance between waypoints
-   	self.forward["waypoint_distance"]=rospy.get_param("~waypoint_distance", 5)
+        # set the distance between waypoints
+        self.forward["waypoint_distance"] = rospy.get_param("~waypoint_distance", 5)
         # check whether absolute or relative target
-   	self.forward["is_relative"]=rospy.get_param("~is_relative", False)
+        self.forward["is_relative"] = rospy.get_param("~is_relative", False)
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = \
-                    self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
-        else: # absolute
+                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+        else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
             self.forward["translation"] = (target.x, target.y, target.z)  # (x, y, 0)
-            self.forward["goal_distance"]= sqrt((target.x - self.x0) ** 2 + (target.y - self.y0) ** 2)
+            self.forward["goal_distance"] = sqrt((target.x - self.x0) ** 2 + (target.y - self.y0) ** 2)
             # heading from boat to center
             self.forward["heading"] = atan2(target.y - self.y0, target.x - self.x0)
 
@@ -67,7 +67,7 @@ class Forward(MoveBaseUtil):
         waypoints = self.create_waypoints()
         # print type(waypoints)
 
-        ## Initialize the visualization markers for RViz
+        # Initialize the visualization markers for RViz
         # self.init_markers()
 
         # Set a visualization marker at each waypoint
@@ -75,7 +75,6 @@ class Forward(MoveBaseUtil):
             p = Point()
             p = waypoint.position
             self.markers.points.append(p)
-	    
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
@@ -127,8 +126,8 @@ class Forward(MoveBaseUtil):
         # then calculate the position wrt to the center
         # need polar to catersian transform
 
-	#stores number of waypoints
-	N = ceil(self.forward["goal_distance"]/self.forward["waypoint_distance"])
+        # stores number of waypoints
+        N = ceil(self.forward["goal_distance"] / self.forward["waypoint_distance"])
         N = int(N)
 
         # Then convert the angles to quaternions, all have the same heading angles

@@ -23,9 +23,10 @@ from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos, tan, atan2
+from math import pi, sin, cos, atan2
 from move_base_util import MoveBaseUtil
-import thread
+# import thread
+
 
 class Loiter(MoveBaseUtil):
     # initialize boat pose param
@@ -34,12 +35,12 @@ class Loiter(MoveBaseUtil):
     def __init__(self, nodename, target):
         MoveBaseUtil.__init__(self, nodename)
 
-        self.loiter={}
+        self.loiter = {}
 
         # get boat position, one time only
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
         while not self.odom_received:
             rospy.sleep(1)
@@ -58,8 +59,8 @@ class Loiter(MoveBaseUtil):
         if self.loiter["is_relative"]:
             print self.loiter["is_relative"]
             self.loiter["center"], self.loiter["heading"] = \
-                    self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
-        else: # absolute
+                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+        else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
             self.loiter["center"] = (target.x, target.y, target.z)  # (x, y, 0)
@@ -118,7 +119,7 @@ class Loiter(MoveBaseUtil):
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
-	    rospy.loginfo("end")
+            rospy.loginfo("end")
             pass
 
     def create_waypoints(self):
@@ -133,14 +134,14 @@ class Loiter(MoveBaseUtil):
         if self.loiter["is_ccw"]:  # counterclockwise
             # position theta related to center point with heading,
             # - pi is looking back from buoy to boat
-            position_theta =  [2 * pi * i / self.loiter["polygon"] - pi
-                               + self.loiter["heading"]
-                               for i in range(self.loiter["polygon"])]
+            position_theta = [2 * pi * i / self.loiter["polygon"] - pi +
+                              self.loiter["heading"]
+                              for i in range(self.loiter["polygon"])]
             euler_angles = [i + pi / 2 for i in position_theta]
         else:  # clockwise
-            position_theta =  [2 * pi * i / self.loiter["polygon"] - pi
-                               - self.loiter["heading"]
-                               for i in reversed(range(self.loiter["polygon"]))]
+            position_theta = [2 * pi * i / self.loiter["polygon"] - pi -
+                              self.loiter["heading"]
+                              for i in reversed(range(self.loiter["polygon"]))]
             euler_angles = [i - pi / 2 for i in position_theta]
 
         # Then convert the angles to quaternions
@@ -163,7 +164,7 @@ class Loiter(MoveBaseUtil):
 
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
-        for i in range(self.loiter["polygon"]+1):
+        for i in range(self.loiter["polygon"] + 1):
             waypoints.append(Pose(Point(catersian_x[i], catersian_y[i], 0.0),
                              quaternions[i]))
         # return the resultant waypoints
@@ -187,7 +188,7 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Loiter(nodename="loiter_test", target = Point(10, 10, 0))
+        Loiter(nodename="loiter_test", target=Point(10, 10, 0))
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
