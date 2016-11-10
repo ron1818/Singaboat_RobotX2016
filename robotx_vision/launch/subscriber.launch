@@ -1,0 +1,15 @@
+<launch>
+<param name="gui/color1" value="white" type="str"/>
+<param name="gui/color2" value="white" type="str"/>
+<param name="gui/color3" value="white" type="str"/>
+<node
+	pkg="robotx_vision"
+	type="subscriber"
+	name="my_subscriber"
+	required="true"
+	output="screen"
+>
+<param name="subscribed_image_topic" value="my_object"/>
+</node>
+
+</launch>
