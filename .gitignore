@@ -40,6 +40,8 @@ qtcreator-*
 
 *~
 
+*.bag
+
 # Emacs
 .#*
 

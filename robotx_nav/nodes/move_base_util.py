@@ -14,6 +14,7 @@ from tf.transformations import quaternion_from_euler
 from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, sqrt
 
+
 class MoveBaseUtil():
     def __init__(self, nodename="nav_test"):
         rospy.init_node(nodename, anonymous=False)
@@ -28,7 +29,6 @@ class MoveBaseUtil():
 
         # * create angles
         # * convert the angles to quaternions
-
 
         # * Append each of the four waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
@@ -65,23 +65,24 @@ class MoveBaseUtil():
     def move(self, goal, mode, mode_param):
             # Send the goal pose to the MoveBaseAction server
             self.move_base.send_goal(goal)
-	  
-            finished_within_time = True
-	    go_to_next= False
-           
-  	    if mode==1: #continuous movement function, mode_param is the distance from goal that will set the next goal
-		while sqrt((self.x0-goal.target_pose.pose.position.x)**2+(self.y0-goal.target_pose.pose.position.y)**2)>mode_param:
-		    rospy.sleep(rospy.Duration(1))
-		go_to_next=True
 
-	    elif mode==2: #stop and rotate mode, mode_param is rotational angle in rad
-		finished_within_time = self.move_base.wait_for_result(rospy.Duration(40 * 1))
-		self.rotation(mode_param)
-		self.rotation(-2*mode_param)
-		self.rotation(mode_param)
-		
-	    else: #normal stop in each waypoint mode, mode_param is unused
-		finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
+            finished_within_time = True
+            go_to_next = False
+
+            if mode == 1:  # continuous movement function, mode_param is the distance from goal that will set the next goal
+                while sqrt((self.x0 - goal.target_pose.pose.position.x) ** 2 +
+                           (self.y0 - goal.target_pose.pose.position.y) ** 2) > mode_param:
+                    rospy.sleep(rospy.Duration(1))
+                go_to_next = True
+
+            elif mode == 2:  # stop and rotate mode, mode_param is rotational angle in rad
+                finished_within_time = self.move_base.wait_for_result(rospy.Duration(40 * 1))
+                self.rotation(mode_param)
+                self.rotation(-2 * mode_param)
+                self.rotation(mode_param)
+
+            else:  # normal stop in each waypoint mode, mode_param is unused
+                finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
 
             # If we don't get there in time, abort the goal
             if not finished_within_time or go_to_next:
@@ -97,27 +98,26 @@ class MoveBaseUtil():
 
         pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         rate = rospy.Rate(10)
-        an_vel=0.2
-        duration=ang/an_vel;
-        msg=Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, an_vel))
+        an_vel = 0.2
+        duration = ang / an_vel
+        msg = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, an_vel))
 
         start_time = rospy.get_time()
 
         while not rospy.is_shutdown():
-            current_time=rospy.get_time()
+            current_time = rospy.get_time()
             if (current_time - start_time) > duration:
-                pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2*an_vel)))
+                pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2 * an_vel)))
                 rospy.sleep(0.3)
                 pub.publish(Twist())
                 break
             pub.publish(msg)
             rate.sleep()
 
-
     def init_markers(self):
         # Set up our waypoint markers
         marker_scale = 0.2
-        marker_lifetime = 0 # 0 is forever
+        marker_lifetime = 0  # 0 is forever
         marker_ns = 'waypoints'
         marker_id = 0
         marker_color = {'r': 1.0, 'g': 0.7, 'b': 1.0, 'a': 1.0}
