@@ -41,10 +41,10 @@ class MoveToGeo(MoveBaseUtil):
         rate = rospy.Rate(10)
 
         self.odom_received = False
-        # rospy.wait_for_message("/odom", Odometry)
-        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
-        rospy.wait_for_message("/odometry/filtered/global", Odometry)
-        rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
+        rospy.wait_for_message("/odom", Odometry)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        # rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
         while not self.odom_received:
             rospy.sleep(1)
 
