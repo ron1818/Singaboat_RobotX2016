@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+
 <launch>
 
     <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_node" output="screen">

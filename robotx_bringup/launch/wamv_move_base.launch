@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<launch>
+    <include file="$(find robotx_nav)/launch/move_base_map.launch" >
+        <arg name="isgazebo" value="false" />
+        <arg name="cmd_vel_topic" value="move_base_cmd_vel" />
+        <arg name="mapname" value="nanyanglake" />
+    </include>
+
+    <include file="$(find robotx_control)/launch/mux_joystick_teleop.launch" />
+    <include file="$(find robotx_control)/launch/mux_keyboard_teleop.launch" output="screen" />
+
+    <include file="$(find robotx_control)/launch/yocs_cmd_vel_with_keyboard.launch" />
+</launch>

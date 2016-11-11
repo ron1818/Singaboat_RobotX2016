@@ -1,0 +1,25 @@
+
+<launch>
+    <arg name="isgazebo" default="false" />
+    <param name="/use_sim_time" value="$(arg isgazebo)"/>
+    <arg name="station_x" default="0" />
+    <arg name="station_y" default="10" />
+    <arg name="station_yaw" default="0.2" />
+    <arg name="r" default="5" />
+    <arg name="time" default="0" />
+    <arg name="box_x" default="5" />
+    <arg name="box_y" default="5" />
+
+    <node pkg="robotx_nav" type="move_base_hold_direction.py" name="hold_direction_behavior" >
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <param name="station/x" value="$(arg station_x)" type="double"/>
+ 	<param name="station/y" value="$(arg station_y)" type="double"/>
+	<param name="station/yaw" value="$(arg station_yaw)" type="double"/>
+	<param name="radius" value="$(arg r)" type="double"/>
+	<param name="duration" value="$(arg time)" type="double"/>
+        <param name="box/x" value="$(arg box_x)" type="double"/>
+        <param name="box/y" value="$(arg box_y)" type="double"/>
+
+    </node>
+
+</launch>

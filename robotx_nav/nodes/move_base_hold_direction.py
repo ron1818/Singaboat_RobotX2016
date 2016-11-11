@@ -27,7 +27,7 @@ class HoldDirection(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target, radius, duration, cat):
+    def __init__(self, nodename, target, radius, duration, box):
         MoveBaseUtil.__init__(self, nodename)
 
         # get boat pose one time only
@@ -65,11 +65,11 @@ class HoldDirection(MoveBaseUtil):
         # get start time
         start_time = rospy.get_time()
 
-        while (rospy.get_time() - start_time < duration) and not rospy.is_shutdown():
+        while (rospy.get_time() - start_time < duration) or not duration and not rospy.is_shutdown():
             if (sqrt((target.linear.x - self.x0)**2 + (target.linear.y - self.y0) ** 2) < radius):
                 # pub.publish(Twist())
                 rospy.loginfo("inside inner radius")
-                theta = atan2(cat.y - self.y0, cat.x - self.x0)
+                theta = atan2(box.y - self.y0, box.x - self.x0)
                 if(abs(theta - self.yaw0) > 10 * pi / 180):
                     self.rotation(theta - self.yaw0)
 
@@ -110,7 +110,13 @@ class HoldDirection(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        HoldDirection("station_keeping_test", Twist(Point(7, 5, 0), Point(0, 0, 0.2)), 5, 180, Point(5, 2, 0))
+	
+	station=Twist(Point(rospy.get_param("/hold_direction_behavior/station/x"), rospy.get_param("/hold_direction_behavior/station/y"), 0), Point(0, 0, rospy.get_param("/hold_direction_behavior/station/yaw")))
+	r=rospy.get_param("/hold_direction_behavior/radius")
+	time=rospy.get_param("/hold_direction_behavior/duration")
+	target_point=Point(rospy.get_param("/hold_direction_behavior/box/x"), rospy.get_param("/hold_direction_behavior/box/y"), 0)
+	
+        HoldDirection("hold_direction_test", target=station, radius=r, duration=time, box=target_point)
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
         pass

@@ -111,7 +111,7 @@ class Forward(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal, 1, 3)
+            self.move(goal, 1, 2)
             i += 1
 
         else:  # escape constant forward and continue to the next waypoint
@@ -168,6 +168,8 @@ class Forward(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Forward(nodename="constantheading_test", target=Point(10, 20, 0))
+	goal=Point(rospy.get_param("/forward_behavior/goal/x"), rospy.get_param("/forward_behavior/goal/y"), 0.0)
+        Forward(nodename="constantheading_test", target=goal)
+
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

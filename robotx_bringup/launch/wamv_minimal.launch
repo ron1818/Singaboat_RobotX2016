@@ -1,10 +1,25 @@
 <?xml version="1.0"?>
 <launch>
-    <node pkg="robotx_bringup" type="tf_broadcaster.py" name="tf_broadcast_node" output="screen">
+    <!-- robot state publisher -->
+    <include file="$(find robotx_description)/launch/description.launch" />
+    <!-- if use custom made tf publisher -->
+    <!--node pkg="robotx_bringup" type="tf_broadcaster.py" name="tf_broadcast_node" output="screen">
         <param name="base_frame" value="base_link"/>
         <param name="laser_frame" value="lidar_link"/>
         <param name="camera_frame" value="camera_link"/>
         <param name="gps_frame" value="gps_link"/>
         <param name="imu_frame" value="imu_link"/>
-    </node>
+    </node-->
+
+    <!-- rosserial to launch motor controller -->
+    <include file="$(find robotx_control)/launch/start_motor.launch" />
+    
+    <!-- gps launcher -->
+    <include file="$(find robotx_sensor)/launch/gps_serial.launch" />
+    <!-- imu launcher -->
+    <include file="$(find robotx_sensor)/launch/imu_filter.launch" />
+    <include file="$(find robotx_sensor)/launch/imu_razor.launch" />
+
+    <!-- robot localization -->
+    <include file="$(find robotx_control)/launch/wamv_r_l_control.launch" />
 </launch>
