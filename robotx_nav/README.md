@@ -79,3 +79,11 @@ there is a `yocs` related mux-controller so that we can use joystick and keyboar
 
 for the test, we mainly want to check `constant_heading_hebavior` and `gps_waypoint` can work or not.
 
+you can use gazebo to test the code as mentioned above.
+notice that way can set mapname to nanyang lake now.
+```bash
+roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
+```
+
+#### migrate from gazebo to real boat ####
+TODO
