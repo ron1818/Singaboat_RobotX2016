@@ -87,3 +87,14 @@ roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
 
 #### migrate from gazebo to real boat ####
 TODO
+
+#### detailed tasks ####
+1. move boat by RC controller
+2. move boat by keyboard
+3. move boat to a constant heading, say (10, 1.57, 0) 
+4. move boat around a marker, say (5, 5, 0)
+5. move boat to a specific gps point, say (1.345122, 103.684729)
+6. check the three color led
+7. check hydrophone topic
+8. check station keeping
+

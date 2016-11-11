@@ -28,7 +28,7 @@ class MoveToGeo(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0, lon0, lat0 = 0, 0, 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target_geo, waypoint_distance=10):
+    def __init__(self, nodename, target_geo):  #, waypoint_distance=10):
         MoveBaseUtil.__init__(self, nodename)
 
         # set the distance between waypoints
@@ -36,7 +36,7 @@ class MoveToGeo(MoveBaseUtil):
         self.target_lat = rospy.get_param("~target_latitude", target_geo[0])
         self.target_lon = rospy.get_param("~target_longitude", target_geo[1])
         self.geo["goal_heading"] = rospy.get_param("~target_heading", target_geo[2])
-        self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
+        #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
 
         rate = rospy.Rate(10)
 
@@ -90,7 +90,7 @@ class MoveToGeo(MoveBaseUtil):
         # Start the robot moving toward the goal
         self.move(goal, mode=0, mode_param=3)
         # rospy.sleep(1.)
-        rospy.spin()
+        # rospy.spin()
 
 
     def create_waypoint(self):
@@ -103,7 +103,8 @@ class MoveToGeo(MoveBaseUtil):
         self.geo["goal_distance"] = result['s12']  # distance from boat position to target
 
         azi = result['azi1'] * pi / 180
-        theta =pi / 2 - (self.yaw0 - azi)
+        print self.yaw0
+        theta =pi / 2 - self.yaw0 - azi
 
         rospy.loginfo(str(self.geo["goal_distance"]) + "," + str(theta))
 

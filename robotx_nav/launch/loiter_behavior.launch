@@ -1,4 +1,5 @@
 <launch>
+    <arg name="target" default="[10, 5, 0]" />
     <arg name="radius" default="5" />
     <arg name="polygon" default="6" />
     <arg name="is_ccw" default="true" />
