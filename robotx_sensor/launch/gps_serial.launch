@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+
 <launch>
     <!-- call nmea_navsat to output gps /fix message-->
     <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="gps_serial">
