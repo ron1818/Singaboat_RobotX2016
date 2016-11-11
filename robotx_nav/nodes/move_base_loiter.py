@@ -54,19 +54,20 @@ class Loiter(MoveBaseUtil):
         self.loiter["polygon"] = rospy.get_param("~polygon", 6)  # hexagon
         # loiter clockwise or counter clockwise?
         self.loiter["is_ccw"] = rospy.get_param("~is_ccw", True)  # 1 for ccw, 0 for cw
+        self.target = rospy.get_param("~target", target)
 
         # find the target
         if self.loiter["is_relative"]:
             print self.loiter["is_relative"]
             self.loiter["center"], self.loiter["heading"] = \
-                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], (self.target.x, self.target.y))
         else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
-            self.loiter["center"] = (target.x, target.y, target.z)  # (x, y, 0)
+            self.loiter["center"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
 
             # heading from boat to center
-            self.loiter["heading"] = atan2(target.y - self.y0, target.x - self.x0)
+            self.loiter["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
 
         # create waypoints
         waypoints = self.create_waypoints()

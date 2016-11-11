@@ -28,7 +28,7 @@ class MoveToGeo(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0, lon0, lat0 = 0, 0, 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target_geo, waypoint_distance=10):
+    def __init__(self, nodename, target_geo):  #, waypoint_distance=10):
         MoveBaseUtil.__init__(self, nodename)
 
         # set the distance between waypoints
@@ -36,7 +36,7 @@ class MoveToGeo(MoveBaseUtil):
         self.target_lat = rospy.get_param("~target_latitude", target_geo[0])
         self.target_lon = rospy.get_param("~target_longitude", target_geo[1])
         self.geo["goal_heading"] = rospy.get_param("~target_heading", target_geo[2])
-        self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
+        #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
 
         rate = rospy.Rate(10)
 
