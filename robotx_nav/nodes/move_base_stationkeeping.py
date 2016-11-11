@@ -64,7 +64,7 @@ class StationKeeping(MoveBaseUtil):
         #get start time
         start_time= rospy.get_time()
 
-        while (rospy.get_time()-start_time < duration) and not rospy.is_shutdown():
+        while ((rospy.get_time()-start_time < duration) or not duration) and not rospy.is_shutdown():
             if (sqrt((target.linear.x-self.x0)**2 + (target.linear.y-self.y0)**2)<radius):
                 #pub.publish(Twist())
 		rospy.loginfo("inside inner radius")
@@ -108,7 +108,11 @@ class StationKeeping(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        StationKeeping("station_keeping_test", Twist(Point(7, 5, 0), Point(0, 0, 0.2)), 5, 180)
+	goal=Twist(Point(rospy.get_param("station_keep_behavior/target/x"),rospy.get_param("station_keep_behavior/target/y"),0.0), Point(0,0,rospy.get_param("station_keep_behavior/angle")))
+	r=rospy.get_param("station_keep_behavior/radius")
+	t=rospy.get_param("station_keep_behavior/duration")
+
+        StationKeeping("station_keeping_test", target=goal, radius=r, duration=t)
     except rospy.ROSInterruptException:
 	rospy.loginfo("Navigation test finished.")
         pass

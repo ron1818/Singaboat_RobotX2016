@@ -34,7 +34,7 @@ class Forward(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target):
+    def __init__(self, nodename, target, waypoint_distance=5, is_relative=False):
         MoveBaseUtil.__init__(self, nodename)
 
         self.forward = {}
@@ -48,9 +48,9 @@ class Forward(MoveBaseUtil):
             rospy.sleep(1)
 
         # set the distance between waypoints
-        self.forward["waypoint_distance"] = rospy.get_param("~waypoint_distance", 5)
+        self.forward["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
         # check whether absolute or relative target
-        self.forward["is_relative"] = rospy.get_param("~is_relative", False)
+        self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = \
@@ -111,7 +111,7 @@ class Forward(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal, 1, 3)
+            self.move(goal, 1, 2)
             i += 1
 
         else:  # escape constant forward and continue to the next waypoint
@@ -168,6 +168,8 @@ class Forward(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Forward(nodename="constantheading_test", target=Point(10, 20, 0))
+	goal=Point(rospy.get_param("/forward_behavior/goal/x"), rospy.get_param("/forward_behavior/goal/y"), 0.0)
+        Forward(nodename="constantheading_test", target=goal)
+
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

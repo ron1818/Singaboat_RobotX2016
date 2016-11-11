@@ -32,7 +32,7 @@ class Loiter(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target):
+    def __init__(self, nodename, target, radius, polygon, is_ccw):
         MoveBaseUtil.__init__(self, nodename)
 
         self.loiter = {}
@@ -49,11 +49,11 @@ class Loiter(MoveBaseUtil):
         self.loiter["is_relative"] = rospy.get_param("~is_relative", False)
 
         # How big is the loiter radius?
-        self.loiter["radius"] = rospy.get_param("~radius", 5.0)  # meters
+        self.loiter["radius"] = radius# meters
         # How many waypoints is the loiter? default 6 (hexagon)
-        self.loiter["polygon"] = rospy.get_param("~polygon", 6)  # hexagon
+        self.loiter["polygon"] = polygon  # hexagon
         # loiter clockwise or counter clockwise?
-        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", True)  # 1 for ccw, 0 for cw
+        self.loiter["is_ccw"] = is_ccw  # 1 for ccw, 0 for cw
 
         # find the target
         if self.loiter["is_relative"]:
@@ -188,7 +188,13 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Loiter(nodename="loiter_test", target=Point(10, 10, 0))
+ 	center=Point(rospy.get_param("/loiter_behavior/center/x"),rospy.get_param("/loiter_behavior/center/y"),0)
+
+	r=rospy.get_param("/loiter_behavior/radius") #double
+	poly=rospy.get_param("/loiter_behavior/polygon") #int
+	ccw=rospy.get_param("/loiter_behavior/is_ccw") #bool
+
+        Loiter(nodename="loiter_test", target=center, radius=r, polygon=poly, is_ccw=ccw)
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

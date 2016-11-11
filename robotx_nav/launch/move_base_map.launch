@@ -1,5 +1,6 @@
 <launch>
     <arg name="mapname" default="blank_map" />
+    <arg name="cmd_vel_topic" default="move_base_cmd_vel" />
     <arg name="isgazebo" default="true" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
@@ -8,6 +9,7 @@
         <arg name="isgazebo" value="$(arg isgazebo)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isgazebo)" />
         <arg name="odom_topic" value="/odom" unless="$(arg isgazebo)" />
+        <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" />
     </include>
 
     <!-- Run the map server with a blank map -->

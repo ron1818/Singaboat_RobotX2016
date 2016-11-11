@@ -46,8 +46,6 @@
     <include file="$(find robotx_gazebo)/launch/test7.launch" if="$(arg test7)" />
     <include file="$(find robotx_gazebo)/launch/test8.launch" if="$(arg test8)" />
 
-    <!-- robot description from auv_ros_description package -->
-    <include file="$(find robotx_description)/launch/description.launch"/>
     <!-- bring stereo image -->
     <!--include file="$(find robotx_bringup)/launch/stereo_proc.launch"/-->
     <!-- bring visual odometry -->
@@ -55,9 +53,10 @@
 
     <!-- robot description from auv_ros_description package -->
     <include file="$(find robotx_description)/launch/description.launch"/>
+    <!-- not in use -->
     <!-- bring stereo image -->
-    <include file="$(find robotx_bringup)/launch/stereo_proc.launch"/>
+    <!--include file="$(find robotx_bringup)/launch/stereo_proc.launch"/-->
     <!-- bring visual odometry -->
-    <include file="$(find robotx_bringup)/launch/vo_stereo.launch"/>
+    <!--include file="$(find robotx_bringup)/launch/vo_stereo.launch"/-->
 
 </launch>

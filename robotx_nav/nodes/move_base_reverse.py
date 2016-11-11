@@ -34,6 +34,7 @@ def reverse(dis):
 
 if __name__ == '__main__':
     try:
-        reverse(5)
+	dis=rospy.get_param("/reverse_behavior/dis")
+        reverse(dis)
     except rospy.ROSInterruptException:
         pass
