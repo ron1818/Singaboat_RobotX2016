@@ -4,9 +4,9 @@
    station keeping
     @Weiwei
     2016-10-25
-    
+
    corrected: reinaldo
-   
+
 
 """
 
@@ -22,6 +22,7 @@ from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
 
+
 class HoldDirection(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
@@ -29,10 +30,10 @@ class HoldDirection(MoveBaseUtil):
     def __init__(self, nodename, target, radius, duration, cat):
         MoveBaseUtil.__init__(self, nodename)
 
-        #get boat pose one time only
+        # get boat pose one time only
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
         while not self.odom_received:
             rospy.sleep(1)
@@ -53,45 +54,43 @@ class HoldDirection(MoveBaseUtil):
 
         q_angle = quaternion_from_euler(0, 0, target.angular.z)
         angle = Quaternion(*q_angle)
-        station=Pose(target.linear, angle)
-	
-	p = Point()
+        station = Pose(target.linear, angle)
+
+        p = Point()
         p = station.position
         self.markers.points.append(p)
 
         self.marker_pub.publish(self.markers)
 
-        #get start time
-        start_time= rospy.get_time()
+        # get start time
+        start_time = rospy.get_time()
 
-        while (rospy.get_time()-start_time < duration) and not rospy.is_shutdown():
-            if (sqrt((target.linear.x-self.x0)**2 + (target.linear.y-self.y0)**2)<radius):
-                #pub.publish(Twist())
-		rospy.loginfo("inside inner radius")
-                theta=atan2(cat.y-self.y0,cat.x-self.x0)
-		if(abs(theta-self.yaw0)>10*pi/180):
-		    self.rotation(theta-self.yaw0)
+        while (rospy.get_time() - start_time < duration) and not rospy.is_shutdown():
+            if (sqrt((target.linear.x - self.x0)**2 + (target.linear.y - self.y0) ** 2) < radius):
+                # pub.publish(Twist())
+                rospy.loginfo("inside inner radius")
+                theta = atan2(cat.y - self.y0, cat.x - self.x0)
+                if(abs(theta - self.yaw0) > 10 * pi / 180):
+                    self.rotation(theta - self.yaw0)
 
             else:
-		rospy.loginfo("outside radius")
+                rospy.loginfo("outside radius")
                 # Intialize the waypoint goal
-        	goal = MoveBaseGoal()
+                goal = MoveBaseGoal()
 
-        	# Use the map frame to define goal poses
-        	goal.target_pose.header.frame_id = 'map'
+                # Use the map frame to define goal poses
+                goal.target_pose.header.frame_id = 'map'
 
-        	# Set the time stamp to "now"
-        	goal.target_pose.header.stamp = rospy.Time.now()
+                # Set the time stamp to "now"
+                goal.target_pose.header.stamp = rospy.Time.now()
 
-        	# Set the goal pose to the waypoint
-        	goal.target_pose.pose = station
+                # Set the goal pose to the waypoint
+                goal.target_pose.pose = station
 
-        	# Start the robot moving toward the goal
+                # Start the robot moving toward the goal
 
-        	self.move(goal, 0, 0)
-		rospy.loginfo("goal sent")
-
-
+                self.move(goal, 0, 0)
+                rospy.loginfo("goal sent")
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
@@ -109,11 +108,9 @@ class HoldDirection(MoveBaseUtil):
         # rospy.loginfo([self.x0, self.y0, self.z0])
 
 
-
-
 if __name__ == '__main__':
     try:
         HoldDirection("station_keeping_test", Twist(Point(7, 5, 0), Point(0, 0, 0.2)), 5, 180, Point(5, 2, 0))
     except rospy.ROSInterruptException:
-	rospy.loginfo("Navigation test finished.")
+        rospy.loginfo("Navigation test finished.")
         pass

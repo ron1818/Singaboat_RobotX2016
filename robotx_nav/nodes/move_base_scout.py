@@ -24,6 +24,7 @@ import math
 # from math import radians, pi, sin, cos, tan, ceil
 from move_base_util import MoveBaseUtil
 
+
 class Scout(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
@@ -34,7 +35,7 @@ class Scout(MoveBaseUtil):
         # get boat position, one time only
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
         # information about map, length (X), width (Y), position of the center wrt boat: boat-center
         # TODO (1) map center to absolute
@@ -104,7 +105,6 @@ class Scout(MoveBaseUtil):
             rospy.loginfo("Navigation test finished.")
             pass
 
-
     def scout_waypoints(self, map_x, map_y, center_x, center_y, offset):
 
         dis_x = self.x0 - center_x
@@ -112,7 +112,6 @@ class Scout(MoveBaseUtil):
 
         sign_x = math.copysign(1, dis_x)
         sign_y = math.copysign(1, dis_y)
-
 
         # Create a list to hold the target quaternions (orientations)
         corners = list()
@@ -139,9 +138,9 @@ class Scout(MoveBaseUtil):
         corners.append(Point(center_x, center_y, 0))
 
         # waypoints that joins corners
-        waypoints=list()
-        for i in range(len(corners)-1):
-            waypoints=self.straight_waypoints(corners[i], corners[i+1], waypoints)
+        waypoints = list()
+        for i in range(len(corners) - 1):
+            waypoints = self.straight_waypoints(corners[i], corners[i + 1], waypoints)
 
         # return the resultant waypoints
         return waypoints
@@ -151,28 +150,28 @@ class Scout(MoveBaseUtil):
         # Create a list to hold the target quaternions (orientations)
         quaternions = list()
 
-        #stores number of waypoints
-        N=math.ceil(math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2) / 5)
+        # stores number of waypoints
+        N = math.ceil(math.sqrt((end.x - start.x) ** 2 + (end.y - start.y) ** 2) / 5)
         N = int(N)
-
 
         # Then convert the angles to quaternions, all have the same heading angles
         for i in range(N):
             q_angle = quaternion_from_euler(0, 0,
-                                            math.atan2((end.y - start.y),(end.x - start.x)))
+                                            math.atan2((end.y - start.y),
+                                                       (end.x - start.x)))
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
         catersian_x = [start.x + i * (end.x - start.x) / N
                        for i in range(N)]
         catersian_y = [start.y + i * (end.y - start.y) / N
-                       for i in range(0,N)]
+                       for i in range(0, N)]
 
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
         for i in range(N):
             waypoints.append(Pose(Point(catersian_x[i], catersian_y[i], 0.0),
-                quaternions[i]))
+                             quaternions[i]))
             # return the resultant waypoints
         return waypoints
 
