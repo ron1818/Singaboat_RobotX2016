@@ -41,10 +41,10 @@ class MoveToGeo(MoveBaseUtil):
         rate = rospy.Rate(10)
 
         self.odom_received = False
-        rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
-        # rospy.wait_for_message("/odometry/filtered/global", Odometry)
-        # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
+        # rospy.wait_for_message("/odom", Odometry)
+        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
         while not self.odom_received:
             rospy.sleep(1)
 
@@ -90,7 +90,7 @@ class MoveToGeo(MoveBaseUtil):
         # Start the robot moving toward the goal
         self.move(goal, mode=0, mode_param=3)
         # rospy.sleep(1.)
-        rospy.spin()
+        # rospy.spin()
 
 
     def create_waypoint(self):
@@ -103,7 +103,8 @@ class MoveToGeo(MoveBaseUtil):
         self.geo["goal_distance"] = result['s12']  # distance from boat position to target
 
         azi = result['azi1'] * pi / 180
-        theta =pi / 2 - (self.yaw0 - azi)
+        print self.yaw0
+        theta =pi / 2 - self.yaw0 - azi
 
         rospy.loginfo(str(self.geo["goal_distance"]) + "," + str(theta))
 
