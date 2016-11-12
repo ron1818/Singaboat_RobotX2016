@@ -1,6 +1,8 @@
-
+<?xml version="1.0"?>
 <launch>
     <arg name="isgazebo" default="false" />
+    <arg name="isfake" default="false" />
+    <arg name="iswamv" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
     <arg name="quad" default="0" />
     <arg name="length" default="60" />
@@ -11,6 +13,7 @@
 
     <node pkg="robotx_nav" type="move_base_zigzag.py" name="zigzag_behavior" >
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
         <param name="quadrant" value="$(arg quad)" type="double"/>
 	<param name="map_length" value="$(arg length)" type="double"/>
 	<param name="map_width" value="$(arg width)" type="double"/>

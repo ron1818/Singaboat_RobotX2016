@@ -1,19 +1,27 @@
 <launch>
-
     <arg name="odom_topic" default="odom" />
     <arg name="cmd_vel_topic" default="cmd_vel" />
-    <arg name="isgazebo" default="true" />
+    <arg name="isgazebo" default="false" />
+    <arg name="isfake" default="false" />
+    <arg name="iswamv" default="false" />
     <arg name="/use_sim_time" value="$(arg isgazebo)" />
     
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
         <!-- topic remap -->
         <remap from="odom" to="$(arg odom_topic)" />
         <remap from="cmd_vel" to="$(arg cmd_vel_topic)" />
-        <rosparam file="$(find robotx_nav)/config/fake/costmap_common_params.yaml" command="load" ns="global_costmap" unless="$(arg isgazebo)" />
-        <rosparam file="$(find robotx_nav)/config/fake/costmap_common_params.yaml" command="load" ns="local_costmap" unless="$(arg isgazebo)" />
-        <rosparam file="$(find robotx_nav)/config/fake/local_costmap_params.yaml" command="load" unless="$(arg isgazebo)" />
-        <rosparam file="$(find robotx_nav)/config/fake/global_costmap_params.yaml" command="load" unless="$(arg isgazebo)" />
-        <rosparam file="$(find robotx_nav)/config/fake/base_local_planner_params.yaml" command="load" unless="$(arg isgazebo)" />
+        <!-- load params -->
+        <rosparam file="$(find robotx_nav)/config/fake/costmap_common_params.yaml" command="load" ns="global_costmap" if="$(arg isfake)" />
+        <rosparam file="$(find robotx_nav)/config/fake/costmap_common_params.yaml" command="load" ns="local_costmap" if="$(arg isfake)" />
+        <rosparam file="$(find robotx_nav)/config/fake/local_costmap_params.yaml" command="load" if="$(arg isfake)" />
+        <rosparam file="$(find robotx_nav)/config/fake/global_costmap_params.yaml" command="load" if="$(arg isfake)" />
+        <rosparam file="$(find robotx_nav)/config/fake/base_local_planner_params.yaml" command="load" if="$(arg isfake)" />
+
+        <rosparam file="$(find robotx_nav)/config/wamv/costmap_common_params.yaml" command="load" ns="global_costmap" if="$(arg iswamv)" />
+        <rosparam file="$(find robotx_nav)/config/wamv/costmap_common_params.yaml" command="load" ns="local_costmap" if="$(arg iswamv)" />
+        <rosparam file="$(find robotx_nav)/config/wamv/local_costmap_params.yaml" command="load" if="$(arg iswamv)" />
+        <rosparam file="$(find robotx_nav)/config/wamv/global_costmap_params.yaml" command="load" if="$(arg iswamv)" />
+        <rosparam file="$(find robotx_nav)/config/wamv/base_local_planner_params.yaml" command="load" if="$(arg iswamv)" />
 
         <rosparam file="$(find robotx_nav)/config/gazebo/costmap_common_params.yaml" command="load" ns="global_costmap" if="$(arg isgazebo)" />
         <rosparam file="$(find robotx_nav)/config/gazebo/costmap_common_params.yaml" command="load" ns="local_costmap" if="$(arg isgazebo)" />

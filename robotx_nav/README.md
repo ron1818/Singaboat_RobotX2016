@@ -3,6 +3,8 @@ COMMANDS
 ### changelog ###
 ####@2016-10-31####
 + change from `isreal` to `isgazebo` to differentiate gazebo simulated boat from real boat
+####@2016-11-11####
++ add `iswamv` to tell for real boat
 
 ### launch fake wamv and movebase ###
 ```bash
@@ -86,7 +88,22 @@ roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
 ```
 
 #### migrate from gazebo to real boat ####
-TODO
+```bash
+# bringup boat 
+roslaunch robotx_bringup wamv_minimal.launvh
+# bringuo movebase
+roslaunch robotx_bringup wamv_move_base.launch
+# launch rviz
+rosrun rviz rviz -d `rospack find robotx_rviz`/rviz/move_base.rviz
+# launch individual behavior, you can check one by one
+roslaunch robotx_nav loiter_behavior.launch iswamv:=true
+roslaunch robotx_nav constant_heading_behavior.launch iswamv:=true
+roslaunch robotx_nav scout_behavior.launch iswamv:=true
+roslaunch robotx_nav zigzag_behavior.launch iswamv:=true
+roslaunch robotx_nav reverse_behavior.launch iswamv:=true
+roslaunch robotx_nav rotation_behavior.launch iswamv:=true
+roslaunch robotx_nav station_keep_behavior.launch iswamv:=true
+```
 
 #### detailed tasks ####
 1. move boat by RC controller

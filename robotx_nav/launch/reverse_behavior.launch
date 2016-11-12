@@ -1,12 +1,15 @@
-
+<?xml version="1.0"?>
 <launch>
     <arg name="isgazebo" default="false" />
+    <arg name="isfake" default="false" />
+    <arg name="iswamv" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
     <arg name="distance" default="6" />
 
     <node pkg="robotx_nav" type="move_base_reverse.py" name="reverse_behavior" >
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
 	<param name="dis" value="$(arg distance)" type="double"/>
     </node>
 

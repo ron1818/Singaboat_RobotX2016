@@ -4,11 +4,14 @@
     <arg name="latitude" default="1.345124" />
     <arg name="longitude" default="103.684729" />
     <arg name="heading" default="1.57" />
+    <arg name="isfake" default="false" />
     <arg name="isgazebo" default="false" />
+    <arg name="iswamv" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
     <node pkg="robotx_nav" type="move_base_waypoint_geo.py" name="gps_waypoint_behavior" >
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
         <param name="target_latitude" value="$(arg latitude)" />
         <param name="target_longitude" value="$(arg longitude)" />
         <param name="target_heading" value="$(arg heading)" />

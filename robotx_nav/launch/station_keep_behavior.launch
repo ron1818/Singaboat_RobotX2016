@@ -1,5 +1,8 @@
+<?xml version="1.0"?>
 <launch>
     <arg name="isgazebo" default="false" />
+    <arg name="isfake" default="false" />
+    <arg name="iswamv" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
     <arg name="target_x" default="10" />
     <arg name="target_y" default="10" />
@@ -9,6 +12,7 @@
 
     <node pkg="robotx_nav" type="move_base_stationkeeping.py" name="station_keep_behavior" >
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
 	<param name="target/x" value="$(arg target_x)" type="double"/>
 	<param name="target/y" value="$(arg target_y)" type="double"/>
 	<param name="radius" value="$(arg r)" type="double"/>
