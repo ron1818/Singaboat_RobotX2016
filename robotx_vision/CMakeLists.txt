@@ -139,9 +139,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 # add_dependencies(robotx_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(object_detector src/object_detector.cpp)
-target_link_libraries(object_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(object_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(gate_detector src/gate_detector.cpp)
+target_link_libraries(gate_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(gate_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(obstacle_tiki_detector src/obstacle_tiki_detector.cpp)
+target_link_libraries(obstacle_tiki_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(obstacle_tiki_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(symbol_identifier src/symbol_identifier.cpp)
 target_link_libraries(symbol_identifier ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

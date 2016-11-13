@@ -58,6 +58,7 @@ OBJECT DETECTION
 1. Add `underwater` node for Coral Survey task.
 2. Scan the code sequence will be updated through parameter server `/gui/color1`, `/gui/color2`, `/gui/color3`.
 3. Add function to detect white totem marker.
+4. Tweak update.
 
 ### 03/11/2016 ###
 1. Update algoritm of `object_detector` & `symbol_identifier`
@@ -73,18 +74,6 @@ object detected will be published as a custom message type (msg/object_detection
 5. `angle_b`   bottom angle of detected object on image
 6. `angle_l`   left angle of detected object on image
 7. `angle_r`   right angle of detected object on image
-
-#### object_detector ####
-1. unfinished: only has functions to recognize black buoys and green/red marker totems
-2. to be added functions to recognize "Tiki" totems of color red/green/blue/yellow
-3. to be added functions to recognize white marker totems (there was a change in preliminary tasks)
-
-#### symbol_identifier ####
-1. finished, but color value must be manually adjusted depending on environment.
-
-#### sequence_scanner ####
-1. finished but need to test on real environment (due to the color of LED screen really bright)
-2. a video is added in robotx_vision/src/image/vid.avi for testing purpose.
 
 # launch node
 paramater need to be adjusted depends on the subscribed camera's topic
