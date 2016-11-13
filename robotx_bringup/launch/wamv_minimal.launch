@@ -23,9 +23,7 @@
     <!-- gps launcher -->
     <include file="$(find robotx_sensor)/launch/gps_serial.launch" />
     <!-- imu launcher -->
-    <include file="$(find robotx_bringup)/launch/wamv_imu_bringup.launch" >
-        <arg name="use_filter" value="true" />
-    </include>
+	<include file="$(find robotx_bringup)/launch/imu_razor_pub.launch" />
 
     <!-- robot localization -->
     <include file="$(find robotx_control)/launch/wamv_r_l_control.launch" />
