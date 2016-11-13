@@ -1,17 +1,14 @@
 #!/usr/bin/env python
 
-""" movebase loiter
+""" Mission 1-DEMONSTRATE NAVIGATION AND CONTROL 
 
-    Command a robot to move in a polygon around a centerpoint,
-    inspired from moos-ivp loiter behavior
-
-    borrowed from rbx1 move base square
-
-    Ren Ye
-    2016-09-30
-
-    # changelog
-    @2016-10-19: class inheritate from movebaseutil
+    Go to start point 
+    Rotate in position to detect red_1 and green_1 buoys
+    Plot perpendicular waypoints wrt to position of red and green buoys
+    Move towards waypoints move_base_forward
+    after passing first gate, while requesting positions of red_2 and green_2
+    	shutdown move_base_forward, create new move_base_forward towards mid of red_2 and green_2
+    terminate if boat position passes gate 
 
 """
 

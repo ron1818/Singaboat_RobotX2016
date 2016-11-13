@@ -11,7 +11,7 @@
 
 
     <!-- camera array joint -->
-    <xacro:macro name="sport_camera_array" params="position1">
+    <xacro:macro name="spot_camera_array" params="position1">
         <joint name="${position1}_camera_array_joint" type="fixed">
             <origin xyz="0 0 0" rpy="0 0 0" />
             <parent link="shelf_link"/>
@@ -88,9 +88,9 @@
     <xacro:imu position1="rear" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
     <xacro:imu position1="rear" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" /-->
 
-    <xacro:sport_camera_array position1="bow" />
-    <xacro:sport_camera_array position1="port" />
-    <xacro:sport_camera_array position1="starboard" />
+    <xacro:spot_camera_array position1="bow" />
+    <xacro:spot_camera_array position1="port" />
+    <xacro:spot_camera_array position1="starboard" />
 
     <xacro:spot_camera position1="bow" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" z="${5*camera_height}" yaw="0"/>
     <xacro:spot_camera position1="bow" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" z="${5*camera_height}" yaw="0"/>
@@ -191,11 +191,11 @@
         </link>
     </xacro:if -->
 
-    <!-- Hokuyo Laser >
+    <!-- Hokuyo Laser -->
     <xacro:if value="$(arg lidar_enabled)">
         <joint name="hokuyo_joint" type="fixed">
-            <origin xyz="0.2 0.0 0.2" rpy="0 0 0"/>
-            <parent link="base_link"/>
+            <origin xyz="${shelf_length/2} 0.0 0.4" rpy="0 0 0"/>
+            <parent link="shelf_link"/>
             <child link="hokuyo_link"/>
         </joint>
 
@@ -220,7 +220,7 @@
                 <inertia ixx="2.632e-4" ixy="0" ixz="0" iyy="2.632e-4" iyz="0" izz="1.62e-4" />
             </inertial>
         </link>
-    </xacro:if-->
+    </xacro:if>
 
 </robot>
 

@@ -84,7 +84,8 @@ class StationKeeping(MoveBaseUtil):
         	goal.target_pose.pose = station
 
         	# Start the robot moving toward the goal
-        	self.move(goal)
+
+        	self.move(goal, 0, 0)
 		rospy.loginfo("goal sent")
 
 
@@ -107,7 +108,7 @@ class StationKeeping(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        StationKeeping("station_keeping_test", Twist(Point(10, 5, 0), Point(0, 0, 0.2)), 5, 180)
+        StationKeeping("station_keeping_test", Twist(Point(7, 5, 0), Point(0, 0, 0.2)), 5, 180)
     except rospy.ROSInterruptException:
 	rospy.loginfo("Navigation test finished.")
         pass
