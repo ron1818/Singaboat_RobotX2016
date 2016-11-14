@@ -1,3 +1,7 @@
+/*This node funtions are:
+  + Detect light sequence of the light buoy
+*/
+
 //ROS libs
 #include <ros/ros.h>
 #include <ros/console.h>

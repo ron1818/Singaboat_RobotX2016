@@ -1,6 +1,5 @@
 /*This node funtions are:
-	+ Detect symbols: circles, triangles, cruciform (and their color)
-	+ Detect white totem marker (since this task's area is marked by white totem marker)
+  + Detect undewater symbols: circles, triangles, cruciform
 */
 
 //ROS libs
@@ -47,11 +46,11 @@ vector<robotx_vision::object_detection> object;
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
 std::vector<cv::Point> approx;
-cv::Mat src, hsv, hls;
+cv::Mat src, dst;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
-cv::Mat color,white;
-cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3,3));
+cv::Mat color;
+cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4,4));
 cv::Rect r;
 cv::RotatedRect mr;
 int height, width;
@@ -146,15 +145,16 @@ void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim,
 {
   //Filter desired color
   if(up_lim_wrap == low_lim_wrap)
-    cv::inRange(hsv, up_lim, low_lim, color);
+    cv::inRange(dst, up_lim, low_lim, color);
   else
   {//In case of red color
-    cv::inRange(hsv, up_lim, low_lim, lower_hue_range);
-    cv::inRange(hsv, up_lim_wrap, low_lim_wrap, upper_hue_range);
+    cv::inRange(dst, up_lim, low_lim, lower_hue_range);
+    cv::inRange(dst, up_lim_wrap, low_lim_wrap, upper_hue_range);
     cv::addWeighted(lower_hue_range,1.0,upper_hue_range,1.0,0.0,color);
   }
   //Reduce noise
   reduce_noise(&color);
+  cv::imshow("color", color);
   //Finding shapes
   cv::findContours(color.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
   //Detect shape for each contour
@@ -178,36 +178,6 @@ void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim,
   }
 }
 
-void detect_white_marker()
-{
-  //Filter red color
-  cv::inRange(hls, cv::Scalar(5, 225, 2), cv::Scalar(255, 255, 255), white);
-  //Reduce noise
-  reduce_noise(&white);
-  //Finding shapes
-  cv::findContours(white.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-  //Detect shape for each contour
-  for (int i = 0; i < contours.size(); i++)
-  {
-    // Skip small objects 
-    if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
-    vector<Point> hull;
-    convexHull(contours[i], hull, 0, 1);
-    r = cv::boundingRect(contours[i]);
-    mr = cv::minAreaRect(contours[i]);
-
-    double area = cv::contourArea(contours[i]);
-    double r_area = (mr.size).height*(mr.size).width;
-    double hull_area = contourArea(hull);
-
-    if((fabs((double)r.height/r.width - 1.9) < (0.2+eps)) && (fabs((double)area/r_area - 0.65) < eps) && (fabs(((double)area/hull_area - 0.85) < eps)) || (fabs((double)r.height/r.width - 1.9) < (0.2+eps)) && ((area/r_area - 0.8) < eps))
-    { //If a white totem is detected
-      cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 8, 8, 0);
-      object.push_back(object_return(frame_id,"marker_totem","white",r));         //Push the object to the vector
-    }
-  }
-}
-
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
   try
@@ -224,15 +194,11 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   //newImage = true;
   //Start the shape detection code
   if (src.empty()) return;
-  cv::cvtColor(src,hsv,COLOR_BGR2HSV);
-  cv::cvtColor(src,hls,COLOR_BGR2HLS);
+  cv::cvtColor(src,dst,COLOR_BGR2HLS);
   width = src.cols;
   height = src.rows;
   //Detect stuffs
-  detect_white_marker();
-  detect_symbol("blue", cv::Scalar(105, 100, 100), cv::Scalar(130, 255, 255));
-  detect_symbol("green", cv::Scalar(50, 130, 70), cv::Scalar(96, 255, 255));
-  detect_symbol("red", cv::Scalar(0, 80, 100), cv::Scalar(1, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(176, 255, 255));
+  detect_symbol("white", cv::Scalar(0, 89, 0), cv::Scalar(179, 255, 255));
   //Show output on screen
   //ROS_INFO("Node is working.");
   cv::imshow("src", src);
@@ -250,6 +216,7 @@ int main(int argc, char** argv)
   //Initiate windows
   cv::namedWindow("src",WINDOW_NORMAL);
   cv::resizeWindow("src",640,480);
+  cv::namedWindow("color",WINDOW_NORMAL);
   cv::startWindowThread();
   //Start ROS subscriber...
   image_transport::ImageTransport it(nh);

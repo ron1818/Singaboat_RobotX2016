@@ -1,3 +1,8 @@
+/*This node funtions are:
+  + Detect red and green totem marker for task 1 (navigation)
+  + For better accuracy, white totem marker detecting function is located in symbol_identifier node
+*/
+
 //ROS libs
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -45,12 +50,12 @@ std::vector<cv::Point> approx;
 cv::Mat src, hsv;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
-cv::Mat red,green,black;
-cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(10,10));
+cv::Mat red,green;
+cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4,4));
 cv::Rect r;
 cv::RotatedRect mr;
 int height, width;
-int min_area = 1500;
+const int min_area = 400;
 double area, r_area;
 const double eps = 0.15;
 
@@ -92,7 +97,7 @@ robotx_vision::object_detection object_return(std::string frame_id, std::string 
   return obj;
 }
 
-void detect_totem_red()
+void detect_marker_red()
 {
   //Filter red color
   cv::inRange(hsv, cv::Scalar(0, 170, 150), cv::Scalar(10, 255, 255), lower_hue_range);
@@ -115,16 +120,15 @@ void detect_totem_red()
     double area = cv::contourArea(contours[i]);
     double r_area = (mr.size).height*(mr.size).width;
     double hull_area = contourArea(hull);
-
-    if( ((fabs(r.height/r.width - 1.9) < eps ) && (fabs(area/r_area - 0.65) < eps) && (fabs(area/hull_area - 0.85) < eps)) || (fabs(r.height/r.width) > (1.9-eps)) && ((area/r_area - 0.8) < eps))
+    if(((fabs(r.height/r.width - 2.7) < (eps+0.8)) && (fabs(area/r_area - 0.65) < eps) && (fabs(area/hull_area - 0.85) < eps)) || (fabs(r.height/r.width - 1.9) < (eps+0.5)) && ((area/r_area - 0.8) < eps))
     { //If a red totem is detected
       cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 8, 8, 0);
-      object.push_back(object_return(frame_id,"totem","red",r));         //Push the object to the vector
+      object.push_back(object_return(frame_id,"marker_totem","red",r));         //Push the object to the vector
     }
   }
 }
 
-void detect_totem_green()
+void detect_marker_green()
 {
   //Filter green color
   cv::inRange(hsv, cv::Scalar(70, 180, 90), cv::Scalar(90, 255, 255), green);
@@ -150,37 +154,9 @@ void detect_totem_green()
     if((fabs(r.height/r.width) > (1.9-eps)) && (hull_area/r_area > (0.95-eps)))
     { //If a green totem is detected
       cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 8, 8, 0);
-      object.push_back(object_return(frame_id,"totem","green",r));         //Push the object to the vector
+      object.push_back(object_return(frame_id,"marker_totem","green",r));         //Push the object to the vector
     }
   }
-}
-
-void detect_obstacle()
-{
-	//Filter black color
-	cv::inRange(hsv, cv::Scalar(100, 40, 0), cv::Scalar(150, 255, 100), black);
-	//Reduce noise
-	reduce_noise(&black);
-	//Finding shapes
-	cv::findContours(black.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-	//Detect shape for each contour
-	for (int i = 0; i < contours.size(); i++)
-	{
-		// Approximate contour with accura cy proportional to the contour perimeter
-		cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
-		// Skip small or non-convex objects 
-		if ((std::fabs(cv::contourArea(contours[i])) < min_area) /*|| (!cv::isContourConvex(approx))*/) continue;
-		//Find black buoys
-		area = cv::contourArea(contours[i]);
-		r = cv::boundingRect(contours[i]);
-		if(r.height > r.width) continue;
-		r_area = r.height*r.width;
-		if((std::abs(area/r_area - 3.141593/4) <= 0.1))
-    {//Detected
-  		cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
-  		object.push_back(object_return(frame_id,"obstacle","black",r));		//Push the object to the vector
-    }
-	}
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -194,22 +170,17 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-
   //Get the image in OpenCV format
   src = cv_ptr->image;
   //newImage = true;
-
   //Start the shape detection code
   if (src.empty()) return;
   cv::cvtColor(src,hsv,COLOR_BGR2HSV);
   width = src.cols;
   height = src.rows;
-
   //Detect stuffs
-  detect_totem_red();
-  detect_totem_green();
-  detect_obstacle();
-
+  detect_marker_red();
+  detect_marker_green();
   //Show output on screen
   //ROS_INFO("Node is working.");
   cv::imshow("src", src);
@@ -218,22 +189,19 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 int main(int argc, char** argv)
 {
   //Initiate node
-  ros::init(argc, argv, "object_detector");
+  ros::init(argc, argv, "gate_detector");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
   pnh.getParam("frame_id", frame_id);
   pnh.getParam("output_topic_name", output_topic_name);
-
   //Initiate windows
   cv::namedWindow("src",WINDOW_NORMAL);
   cv::resizeWindow("src",640,480);
   cv::startWindowThread();
-
   //Start ROS subscriber...
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe(subscribed_image_topic, 1, imageCb);
-
   //...and ROS publisher
   ros::Publisher pub = nh.advertise<robotx_vision::object_detection>(output_topic_name, 1000);
   ros::Rate r(30);

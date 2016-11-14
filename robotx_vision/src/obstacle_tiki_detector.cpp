@@ -1,6 +1,7 @@
 /*This node funtions are:
-	+ Detect symbols: circles, triangles, cruciform (and their color)
-	+ Detect white totem marker (since this task's area is marked by white totem marker)
+  + Detect red, yellow, green, and blue tiki totem for task 2 (navigation)
+  + Detect black buoys (which are obstacles)
+  + Detect white totem marker (since this task's area is marked by white totem marker)
 */
 
 //ROS libs
@@ -50,12 +51,12 @@ std::vector<cv::Point> approx;
 cv::Mat src, hsv, hls;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
-cv::Mat color,white;
+cv::Mat color, white;
 cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3,3));
 cv::Rect r;
 cv::RotatedRect mr;
 int height, width;
-int min_area = 1500;
+const int min_area = 400;
 double area, r_area, m_area;
 const double eps = 0.15;
 
@@ -97,52 +98,7 @@ robotx_vision::object_detection object_return(std::string frame_id, std::string 
   return obj;
 }
 
-int tri_detect(int i, std::string obj_color)
-{
-  if((fabs(area/m_area-0.5)<0.08) /*&& cv::isContourConvex(approx)*/)
-  {
-    cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
-    object.push_back(object_return(frame_id,"triangle",obj_color,r));         //Push the object to the vector
-    return 1;
-  }
-  return 0;
-}
-
-int cir_detect(int i, std::string obj_color)
-{
-  if((std::abs(area/m_area - 3.141593/4) < 0.12) && cv::isContourConvex(approx))
-  {
-    cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
-    object.push_back(object_return(frame_id,"circle",obj_color,r));         //Push the object to the vector
-    return 1;
-  }
-  return 0;
-}
-
-int cru_detect(int i, std::string obj_color)
-{
-  vector<Point> hull;
-  Point2f center(contours[i].size());
-  float radius(contours[i].size());
-  convexHull(contours[i], hull, 0, 1);
-  Point2f hull_center(hull.size());
-  float hull_radius(hull.size());
-  double hull_area = contourArea(hull);
-  minEnclosingCircle(contours[i], center, radius);
-  minEnclosingCircle(hull, hull_center, hull_radius);
-  double cir_area = 3.1416*radius*radius;
-  double hull_cir_area = 3.1416*hull_radius*hull_radius;
-  double eps = (2 - fabs(area/cir_area - 0.5) - fabs(hull_area/hull_cir_area - 0.8))/2-1;
-  if(fabs(eps)<=0.1)
-  {
-    cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
-    object.push_back(object_return(frame_id,"cruciform",obj_color,r));         //Push the object to the vector
-    return 1;
-  }
-  return 0;
-}
-
-void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim, cv::Scalar up_lim_wrap = cv::Scalar(0,0,0), cv::Scalar low_lim_wrap = cv::Scalar(0,0,0))
+void detect_tiki(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim, cv::Scalar up_lim_wrap = cv::Scalar(0,0,0), cv::Scalar low_lim_wrap = cv::Scalar(0,0,0))
 {
   //Filter desired color
   if(up_lim_wrap == low_lim_wrap)
@@ -171,10 +127,40 @@ void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim,
     area = cv::contourArea(contours[i]);
     r_area = r.height*r.width;
     m_area = (mr.size).height*(mr.size).width;
+    //Detect
+    if((fabs(r.height/r.width - 2) < (0.2+eps)) && (area/m_area > (0.95-eps)))
+    { //If a tiki totem is detected
+      cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 8, 8, 0);
+      object.push_back(object_return(frame_id,"tiki_totem",obj_color,r));         //Push the object to the vector
+    }
+  }
+}
 
-    if(tri_detect(i, obj_color)) break;
-    if(cir_detect(i, obj_color)) break;
-    if(cru_detect(i, obj_color)) break;
+void detect_obstacle()
+{
+  //Filter black color
+  cv::inRange(hsv, cv::Scalar(117, 40, 4), cv::Scalar(140, 255, 150), color);
+  //Reduce noise
+  reduce_noise(&color);
+  //Finding shapes
+  cv::findContours(color.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
+  //Detect shape for each contour
+  for (int i = 0; i < contours.size(); i++)
+  {
+    // Approximate contour with accura cy proportional to the contour perimeter
+    cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
+    // Skip small or non-convex objects 
+    if ((std::fabs(cv::contourArea(contours[i])) < min_area) /*|| (!cv::isContourConvex(approx))*/) continue;
+    //Find black buoys
+    area = cv::contourArea(contours[i]);
+    r = cv::boundingRect(contours[i]);
+    if(r.height > r.width) continue;
+    r_area = r.height*r.width;
+    if((std::abs(area/r_area - 3.141593/4) <= 0.1) && (std::abs((double)r.height/r.width - 0.833) < 0.2))
+    {//Detected
+      cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
+      object.push_back(object_return(frame_id,"obstacle","black",r));   //Push the object to the vector
+    }
   }
 }
 
@@ -230,9 +216,12 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   height = src.rows;
   //Detect stuffs
   detect_white_marker();
-  detect_symbol("blue", cv::Scalar(105, 100, 100), cv::Scalar(130, 255, 255));
-  detect_symbol("green", cv::Scalar(50, 130, 70), cv::Scalar(96, 255, 255));
-  detect_symbol("red", cv::Scalar(0, 80, 100), cv::Scalar(1, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(176, 255, 255));
+  detect_tiki("blue", cv::Scalar(105, 100, 100), cv::Scalar(130, 255, 255));
+  detect_tiki("green", cv::Scalar(50, 130, 70), cv::Scalar(96, 255, 255));
+  detect_tiki("yellow", cv::Scalar(20, 100, 100), cv::Scalar(30, 255, 255));
+  detect_tiki("red", cv::Scalar(0, 80, 100), cv::Scalar(1, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(179, 255, 255));
+  cv::imshow("color",color);
+  detect_obstacle();
   //Show output on screen
   //ROS_INFO("Node is working.");
   cv::imshow("src", src);
@@ -241,22 +230,27 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
 int main(int argc, char** argv)
 {
   //Initiate node
-  ros::init(argc, argv, "object_detector");
+  ros::init(argc, argv, "obstacle_tiki_detector");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
   pnh.getParam("frame_id", frame_id);
   pnh.getParam("output_topic_name", output_topic_name);
+
   //Initiate windows
   cv::namedWindow("src",WINDOW_NORMAL);
   cv::resizeWindow("src",640,480);
+  cv::namedWindow("color",WINDOW_NORMAL);
   cv::startWindowThread();
+
   //Start ROS subscriber...
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe(subscribed_image_topic, 1, imageCb);
+
   //...and ROS publisher
   ros::Publisher pub = nh.advertise<robotx_vision::object_detection>(output_topic_name, 1000);
   ros::Rate r(30);
+
   while (nh.ok())
   {
   	//Publish every object detected
