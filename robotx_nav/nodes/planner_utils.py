@@ -4,28 +4,51 @@ import numpy as np
 import math
 import random
 import time
+import itertools
 
 
 
-def random_walk(map_corners, current_position, style, *args, **kwargs):
+def random_walk(map_corners, style, *args, **kwargs):
     """ create random walk points and avoid valid centers """
-    delta_y = kwargs["delta"]
     target = None
-    x0, y0 = current_posistion
     map_center = [np.mean(map_corners[:,0]), np.mean(map_corners[:,1])]
-    sigma = kwargs["sigma"]
-    line_points = kwargs["line_points"]
-    if style == "gaussian":
+
+    if style == "unif":
+        centers = kwargs["center"]
+        threshold = kwargs["threshold"]
+        # do a uniform distribution by grid search
+        x_range = range(np.min(map_corners[:,0]), np.max(map_corners[:,0]), 5)
+        y_range = range(np.min(map_corners[:,1]), np.max(map_corners[:,1]), 5)
+        grid = list(itertools.product(x_range, y_range))
+        print grid
+        # filter out those who is before the gate line
+        while not target:
+            candidate_target = random.choice(grid)
+            print candidate_target
+            for center in centers:  # too close to the center
+                print center
+                print center[0:2]
+                if center != []:
+                    if distance(candidate_target, center[0:2]) < threshold:
+                        target = None
+            else:
+                target = candidate_target
+
+    elif style == "gaussian":
+        sigma = kwargs["sigma"]
         while not within_map(map_corners, target):
             target = [random.gauss(map_center[0], sigma[0]),
                       random.gauss(map_center[1], sigma[1])]
 
     elif style == "nearby":  # near the current position
         # do a gaussian distribution with center be the boat's current position and
+        sigma = kwargs["sigma"]
+        x0, y0 = kwargs["current_position"]
         while not within_map(map_corners, target):
             target = [random.gauss(x0, sigma[0]), random.gauss(y0, sigma[1])]
 
     elif style == "near_line":  # gate data partially known, need to go around the line area
+        delta_y = kwargs["delta"]
         x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
         y_estimate = [self.roughline.predict(x) - delta_y * self.before_roughline_sign for x in x_range]
         choices_idx = range(len(x_range))
@@ -38,6 +61,7 @@ def random_walk(map_corners, current_position, style, *args, **kwargs):
                 target = None
 
     elif style == "along_line":  # gate data known, need to go to the three listener point
+        line_points = kwargs["line_points"]
         while not within_map(map_corners, target):
             target = random.choice(line_points)
 
@@ -54,7 +78,8 @@ def random_walk(map_corners, current_position, style, *args, **kwargs):
                 target = candidate_target
             else:
                 target = None
-    return target + [0]
+    print target
+    return [target[0], target[1], 0]
 
 def within_map(map_corners, point):
     """ determine whether a point is within a map (four corners),

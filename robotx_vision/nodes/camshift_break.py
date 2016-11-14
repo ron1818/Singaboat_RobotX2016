@@ -131,7 +131,7 @@ class CamShiftBreak(ROS2OpenCV2):
         else:  # only one blob found
             self.area_ratio = 0
 
-        # print self.area_ratio
+        print self.area_ratio
 
 
     def morphological(self, mask):
@@ -228,7 +228,7 @@ class CamShiftBreak(ROS2OpenCV2):
         bin_count = self.hist.shape[0]
         bin_w = 24
         img = np.zeros((256, bin_count*bin_w, 3), np.uint8)
-        # print np.argmax(self.hist)
+        print np.argmax(self.hist)
         self.hist_prob = np.argmax(self.hist)
         for i in xrange(bin_count):
             h = int(self.hist[i])
