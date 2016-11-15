@@ -67,7 +67,7 @@ roscore
 3. sync time by:
 ```bash
 # on the observer
-sudo ntudate -b <masterip>
+sudo ntpdate -b <masterip>
 ```
 anytime you find the command has time problem (mostly in movebase), run this command.
 
