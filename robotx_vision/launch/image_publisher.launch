@@ -1,0 +1,11 @@
+<launch>
+<node
+	pkg="robotx_vision"
+	type="image_publisher"
+	name="my_publisher"
+	required="true"
+	output="screen"
+>
+<param name="image_file" value="/home/echo/opencv_code/image/t5.png"/>
+</node>
+</launch>

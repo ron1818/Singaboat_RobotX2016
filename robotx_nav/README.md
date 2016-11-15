@@ -69,3 +69,21 @@ please think about how to use that to publish a `/map` topic.
 here the `\cmd_vel` is published by `/move_base` only. and in the `robotx_control/launch` folder,
 there is a `yocs` related mux-controller so that we can use joystick and keyboard to interrupt the move_base command. However, it will not allowed in the actual competition (human interruption).
 
+
+### nanyang lake test @ 2016-11-12 ###
++ make sure gps and imu are working:
+ - gps should output `navsat/fix` (`sensor_msgs/NavSatFix`) and `navsat/vel`
+ - imu should output `middle_middle_imu/imu/data_raw` (`sensor_msgs/Imu`) and `middle_middle_imu/imu/mag` (`sensor_msgs/MagneticField`)
++ make sure `navsat_transform` can convert `navsat/fix` to `odometry/gps`
++ make sure `imu_filter` can output `middle_middle_imu/imu/data`
+
+for the test, we mainly want to check `constant_heading_hebavior` and `gps_waypoint` can work or not.
+
+you can use gazebo to test the code as mentioned above.
+notice that way can set mapname to nanyang lake now.
+```bash
+roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
+```
+
+#### migrate from gazebo to real boat ####
+TODO

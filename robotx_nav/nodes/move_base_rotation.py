@@ -33,6 +33,7 @@ def rotation(ang):
 
 if __name__ == '__main__':
     try:
-        rotation(1.8)
+	theta=rospy.get_param("/rotation_behavior/theta")
+        rotation(theta)
     except rospy.ROSInterruptException:
         pass

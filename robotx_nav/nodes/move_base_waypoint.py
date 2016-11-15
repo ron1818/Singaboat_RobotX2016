@@ -31,6 +31,8 @@ class MoveTo(MoveBaseUtil):
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        # rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
         self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
@@ -100,6 +102,6 @@ class MoveTo(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        MoveTo(nodename="moveto_test", target=Point(10,5,0))
+        MoveTo(nodename="moveto_waypoint", target=Point(10,5,0))
     except rospy.ROSInterruptException:
         pass

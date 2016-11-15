@@ -1,0 +1,14 @@
+
+Current
+UNO:
+arduino_serial_pwm
+
+Uses pwm to pass signal to Mega
+
+MEGA:
+arduino_motor_pwm
+
+Receive pwm from UNO and run motor through SPI
+
+
+arduino_serial and arduino_motor is another alternative using I2C

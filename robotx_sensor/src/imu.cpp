@@ -6,7 +6,7 @@
 #include "geometry_msgs/Quaternion.h"
 //#include "sensor_msgs/Imu.msg"
 #include <sensor_msgs/Imu.h>
-//#include "sensor_msgs"
+#include <sensor_msgs/MagneticField.h>
 #include <tf/transform_broadcaster.h>
 #include <cmath>
 
@@ -43,11 +43,19 @@ int main(int argc, char **argv)
   geometry_msgs::Vector3 rpy;
   geometry_msgs::Vector3 gyro;
   geometry_msgs::Vector3 acc;
+<<<<<<< HEAD
   geometry_msgs::Vector3 mag;
   geometry_msgs::Quaternion quat;
   
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("imu/data", 1000);
   ros::Publisher mag_pub = n.advertise<geometry_msgs::Vector3> ("mag/data", 1000);
+=======
+  sensor_msgs::MagneticField mag;
+  geometry_msgs::Quaternion quat;
+  
+  ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("middle_middle_imu/imu/data_raw", 1000);
+  ros::Publisher mag_pub = n.advertise<sensor_msgs::MagneticField> ("middle_middle_imu/imu/mag", 1000);
+>>>>>>> 779df6f840757f771e5ad8ef1847d75932ef7b04
   ros::Rate loop_rate(50);
   ser=new Serial("/dev/USBimu", 57600, serial::Timeout::simpleTimeout(250));
 
@@ -83,9 +91,15 @@ int main(int argc, char **argv)
    acc.x=s[8]/Gravity;
    acc.y=s[9]/Gravity;
    acc.z=s[10]/Gravity;
+<<<<<<< HEAD
    mag.x=s[12];
    mag.y=s[13];
    mag.z=s[14];
+=======
+   mag.magnetic_field.x=s[12];
+   mag.magnetic_field.y=s[13];
+   mag.magnetic_field.z=s[14];
+>>>>>>> 779df6f840757f771e5ad8ef1847d75932ef7b04
    
 
    

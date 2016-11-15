@@ -26,7 +26,7 @@ class Zigzag(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, quadrant):
+    def __init__(self, nodename, quadrant, map_length, map_width, half_period, half_amplitude, offset):
         MoveBaseUtil.__init__(self, nodename)
 
         # get boat position, one time only
@@ -41,13 +41,13 @@ class Zigzag(MoveBaseUtil):
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
         # information about map, length (X), width (Y), position of the initial point
-        self.map_length = rospy.get_param("~length", 60)
-        self.map_width = rospy.get_param("~width", 60)
+        self.map_length = map_length
+        self.map_width = map_width
 
         # set the half period and half amplitude
-        map_half_period = rospy.get_param("~half_period", 10)
-        map_half_amplitude = rospy.get_param("~half_amplitude", 10)
-        map_offset = rospy.get_param("~offset", 5)
+        map_half_period = half_period
+        map_half_amplitude = half_amplitude
+        map_offset = offset
 
         while not self.odom_received:
             rospy.sleep(1)
@@ -55,24 +55,19 @@ class Zigzag(MoveBaseUtil):
         # assumption point 0,0 is the left-bottom of map
         if quadrant == 1:
             # create waypoints for quadrant 1
-                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2,
-                                                  self.map_length / 2, self.map_width / 2)
+                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2, self.map_length / 2, self.map_width / 2)
         elif quadrant == 2:
             # create waypoints for quadrant 2
-                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2,
-                                                  0, self.map_width / 2)
+                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2, 0, self.map_width / 2)
         elif quadrant == 3:
             # create waypoints for quadrant 3
-                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2,
-                                                  0, 0)
+                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2, 0, 0)
         elif quadrant == 4:
             # create waypoints for quadrant 4
-                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2,
-                                                  self.map_length / 2, 0)
+                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length / 2, self.map_width / 2, self.map_length / 2, 0)
         else:
             # create waypoints for the whole map
-                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length, self.map_width,
-                                                  0, 0)
+                waypoints = self.create_waypoints(map_half_period, map_half_amplitude, map_offset, self.map_length, self.map_width, 0, 0)
 
         # Initialize the visualization markers for RViz
         self.init_markers()
@@ -184,10 +179,15 @@ class Zigzag(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Zigzag(nodename="zigzag_test", quadrant=1)
-        Zigzag(nodename="zigzag_test", quadrant=2)
-        Zigzag(nodename="zigzag_test", quadrant=3)
-        Zigzag(nodename="zigzag_test", quadrant=4)
-        Zigzag(nodename="zigzag_test", quadrant=0)
+
+
+	quad=rospy.get_param("/zigzag_behavior/quadrant")
+        length=rospy.get_param("/zigzag_behavior/map_length")
+        width=rospy.get_param("/zigzag_behavior/map_width")
+        period=rospy.get_param("/zigzag_behavior/half_period")
+        amplitude=rospy.get_param("/zigzag_behavior/half_amplitude")
+        off=rospy.get_param("/zigzag_behavior/offset")
+        Zigzag(nodename="zigzag_test", quadrant=quad, map_length=length, map_width=width, half_period=period, half_amplitude=amplitude, offset=off)
+
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

@@ -52,11 +52,40 @@ roslaunch robotx_vision camshift_color.launch namespace:=/camera/rgb input_rgb_i
 must first install opencv 2.4.13.1 from source (github),
 follow opencv website for more info
 
-#### tuananh's part ####
-# src files: nodes/blackbuoy.cpp & nodes/identifySymbol.cpp
-# subscribed topic: std::string subscribedTopic = "/port/right/image_rect_color";
-catkin_make
-# run node with:
-rosrun robotx_vision symbol
-rosrun robotx_vision blackbuoy
+OBJECT DETECTION
+--------
+### 03/11/2016 ###
+1. Update algoritm of `object_detector` & `symbol_identifier`
+2. Add node `sequence_scanner` and launch file
 
+### 30/10/2016 ###
+object detected will be published as a custom message type (msg/object_detection.msg)
+#### naming convetion of custom message ####
+1. `frame_id`  camera, using convetional naming
+2. `type`      object's type: `marker`, `totem`, `obstacle`, `triangle`, `circle`, `cruciform`, `code` (*)
+3. `color`     object's color: `red`, `green`, `blue`, `black`, `white`
+4. `angle_t`   top angle of detected object on image
+5. `angle_b`   bottom angle of detected object on image
+6. `angle_l`   left angle of detected object on image
+7. `angle_r`   right angle of detected object on image
+
+(*) `code`: LED screen detected in [Scan the code] task
+
+#### object_detector ####
+1. unfinished: only has functions to recognize black buoys and green/red marker totems
+2. to be added functions to recognize "Tiki" totems of color red/green/blue/yellow
+3. to be added functions to recognize white marker totems (there was a change in preliminary tasks)
+
+#### symbol_identifier ####
+1. finished, but color value must be manually adjusted depending on environment.
+
+#### sequence_scanner ####
+1. finished but need to test on real environment (due to the color of LED screen really bright)
+2. a video is added in robotx_vision/src/image/vid.avi for testing purpose.
+
+# launch object detection node
+paramater need to be adjusted depends on the subscribed camera's topic
+```bash
+catkin_make
+roslaunch robotx_vision object_detector.launch
+``` 

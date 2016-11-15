@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/localization.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/bag"/>
+    </node>
+
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/gps_navsat_transform.yaml" />
+        <remap from="gps/fix" to="fix" />
+        <remap from="imu/data" to="imu" />
+        <remap from="odometry/filtered" to="odometry/filtered/bag"/>
+        <remap from="odometry/gps" to="odometry/gps/bag"/>
+    </node>
+
+</launch>
