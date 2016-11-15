@@ -152,11 +152,8 @@ git clone https://github.com/xxx/Singaboat_RobotX2016
 sudo apt-get install ros-indigo-gazebo* \
 ros-indigo-amcl ros-indigo-gmapping ros-indigo-move-base ros-indigo-map* \
 ros-indigo-robot-localization ros-indigo-nmea-navsat-driver \
-ros-indigo-stereo-image* ros-indigo-viso2*
-```
-
+ros-indigo-stereo-image*
 #### install python and opencv ####
-```bash
 sudo apt-get install python-numpy python-scipy python-serial
 sudo apt-get install ros-indigo-turtlebot-bringup \
 ros-indigo-turtlebot-create-desktop ros-indigo-openni-* \
@@ -177,6 +174,7 @@ ros-indigo-amcl git subversion mercurial
 cd ~/catkin_ws/src
 git clone https://github.com/bosch-ros-pkg/usb_cam.git
 git clone https://github.com/srv/viso2
+git clone https://github.com/KristofRobot/razor_imu_9dof
 cd ~/catkin_ws
 catkin_make
 rospack profile
