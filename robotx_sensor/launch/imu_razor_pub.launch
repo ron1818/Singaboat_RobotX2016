@@ -2,6 +2,7 @@
   <arg name="razor_config_file" default="$(find robotx_sensor)/config/my_razor.yaml"/>
   <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" 
    output="screen" ns="middle_middle_imu">
+    <remap from="imu" to="imu/data" />
     <rosparam file="$(arg razor_config_file)" command="load"/>
   </node>
  <!-- this razor imu's orientation: x: towards short edge with soldering pins
