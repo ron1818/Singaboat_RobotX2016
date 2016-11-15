@@ -3,6 +3,8 @@ COMMANDS
 ### changelog ###
 ####@2016-10-31####
 + change from `isreal` to `isgazebo` to differentiate gazebo simulated boat from real boat
+####@2016-11-11####
++ add `iswamv` to tell for real boat
 
 ### launch fake wamv and movebase ###
 ```bash
@@ -86,4 +88,30 @@ roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
 ```
 
 #### migrate from gazebo to real boat ####
-TODO
+```bash
+# bringup boat 
+roslaunch robotx_bringup wamv_minimal.launvh
+# bringuo movebase
+roslaunch robotx_bringup wamv_move_base.launch
+# launch rviz
+rosrun rviz rviz -d `rospack find robotx_rviz`/rviz/move_base.rviz
+# launch individual behavior, you can check one by one
+roslaunch robotx_nav loiter_behavior.launch iswamv:=true
+roslaunch robotx_nav constant_heading_behavior.launch iswamv:=true
+roslaunch robotx_nav scout_behavior.launch iswamv:=true
+roslaunch robotx_nav zigzag_behavior.launch iswamv:=true
+roslaunch robotx_nav reverse_behavior.launch iswamv:=true
+roslaunch robotx_nav rotation_behavior.launch iswamv:=true
+roslaunch robotx_nav station_keep_behavior.launch iswamv:=true
+```
+
+#### detailed tasks ####
+1. move boat by RC controller
+2. move boat by keyboard
+3. move boat to a constant heading, say (10, 1.57, 0) 
+4. move boat around a marker, say (5, 5, 0)
+5. move boat to a specific gps point, say (1.345122, 103.684729)
+6. check the three color led
+7. check hydrophone topic
+8. check station keeping
+

@@ -1,3 +1,7 @@
+<?xml version="1.0"?>
 <launch>
-    <node pkg="robotx_sensor" type="imu_node" name="imu_node" output="screen" />
+    <arg name="use_filter" default="true" />
+    <node pkg="robotx_sensor" type="imu_node" name="imu_node" output="screen" >
+        <remap from="middle_middle_imu/imu/data_raw" to="middle_middle_imu/imu/data" unless="$(arg use_filter)" />
+    </node>
 </launch>

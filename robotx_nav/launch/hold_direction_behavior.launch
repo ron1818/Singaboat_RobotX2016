@@ -1,6 +1,8 @@
-
+<?xml version="1.0"?>
 <launch>
     <arg name="isgazebo" default="false" />
+    <arg name="iswamv" default="false" />
+    <arg name="isfake" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
     <arg name="station_x" default="0" />
     <arg name="station_y" default="10" />
@@ -11,6 +13,7 @@
     <arg name="box_y" default="5" />
 
     <node pkg="robotx_nav" type="move_base_hold_direction.py" name="hold_direction_behavior" >
+        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
         <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
         <param name="station/x" value="$(arg station_x)" type="double"/>
  	<param name="station/y" value="$(arg station_y)" type="double"/>

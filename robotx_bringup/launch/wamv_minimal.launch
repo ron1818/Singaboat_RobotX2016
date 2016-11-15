@@ -1,9 +1,13 @@
 <?xml version="1.0"?>
 <launch>
     <!-- robot state publisher -->
-    <include file="$(find robotx_description)/launch/description.launch" />
+    <include file="$(find robotx_description)/launch/description.launch" >
+        <arg name="lidar_enabled" value="false" />
+    </include>
+
     <!-- if use custom made tf publisher -->
-    <!--node pkg="robotx_bringup" type="tf_broadcaster.py" name="tf_broadcast_node" output="screen">
+    <!--node pkg="robotx_bringup" type="tf_broadcaster.py" name="tf_broadcast_node" 
+     output="screen">
         <param name="base_frame" value="base_link"/>
         <param name="laser_frame" value="lidar_link"/>
         <param name="camera_frame" value="camera_link"/>
@@ -11,14 +15,15 @@
         <param name="imu_frame" value="imu_link"/>
     </node-->
 
-    <!-- rosserial to launch motor controller -->
-    <include file="$(find robotx_control)/launch/start_motor.launch" />
+    <!-- rosserial to launch motor controller, motor listen to cmd_vel,
+     cmd_vel is muxed and published in wamv_teleop.launch /-->
+    <include file="$(find robotx_control)/launch/start_motor_no_teleop.launch" />
+    <include file="$(find robotx_bringup)/launch/wamv_teleop.launch" />
     
     <!-- gps launcher -->
     <include file="$(find robotx_sensor)/launch/gps_serial.launch" />
     <!-- imu launcher -->
-    <include file="$(find robotx_sensor)/launch/imu_filter.launch" />
-    <include file="$(find robotx_sensor)/launch/imu_razor.launch" />
+	<include file="$(find robotx_sensor)/launch/imu_razor_pub.launch" />
 
     <!-- robot localization -->
     <include file="$(find robotx_control)/launch/wamv_r_l_control.launch" />

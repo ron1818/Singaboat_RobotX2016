@@ -1,4 +1,4 @@
-
+<?xml version="1.0"?>
 <launch>
 
     <arg name="goal_x" default="5" />
