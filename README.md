@@ -157,7 +157,7 @@ ros-indigo-stereo-image*
 sudo apt-get install python-numpy python-scipy python-serial
 sudo apt-get install ros-indigo-turtlebot-bringup \
 ros-indigo-turtlebot-create-desktop ros-indigo-openni-* \
-ros-indigo-openni2-* ros-indigo-freenect-* ros-indigo-usb-cam \
+ros-indigo-openni2-* ros-indigo-freenect-* \
 ros-indigo-laser-* ros-indigo-hokuyo-node \
 ros-indigo-audio-common gstreamer0.10-pocketsphinx \
 ros-indigo-pocketsphinx ros-indigo-slam-gmapping \
@@ -169,7 +169,7 @@ ros-indigo-depthimage-to-laserscan ros-indigo-arbotix-* \
 ros-indigo-turtlebot-teleop ros-indigo-move-base \
 ros-indigo-map-server ros-indigo-fake-localization ros-indigo-hector* \
 ros-indigo-gazebo-ros* ros-indigo-serial \
-ros-indigo-amcl git subversion mercurial
+git subversion mercurial
 
 cd ~/catkin_ws/src
 git clone https://github.com/bosch-ros-pkg/usb_cam.git
