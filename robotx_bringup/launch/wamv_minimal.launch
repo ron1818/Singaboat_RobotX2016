@@ -17,7 +17,7 @@
 
     <!-- rosserial to launch motor controller, motor listen to cmd_vel,
      cmd_vel is muxed and published in wamv_teleop.launch /-->
-    <include file="$(find robotx_control)/launch/start_motor_no_teleop.launch" />
+    <include file="$(find robotx_control)/launch/start_motor.launch" />
     <include file="$(find robotx_bringup)/launch/wamv_teleop.launch" />
     
     <!-- gps launcher -->

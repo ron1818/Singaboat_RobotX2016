@@ -4,7 +4,6 @@
     <arg name="goal_x" default="5" />
     <arg name="goal_y" default="5" />
 
-
     <node pkg="robotx_nav" type="move_base_forward.py" name="forward_behavior" >
 	<param name="goal/x" value="$(arg goal_x)" type="double"/>
 	<param name="goal/y" value="$(arg goal_y)" type="double"/>

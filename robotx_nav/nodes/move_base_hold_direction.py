@@ -38,9 +38,6 @@ class HoldDirection(MoveBaseUtil):
         while not self.odom_received:
             rospy.sleep(1)
 
-        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
-
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
@@ -66,9 +63,8 @@ class HoldDirection(MoveBaseUtil):
         start_time = rospy.get_time()
 
         while (rospy.get_time() - start_time < duration) or not duration and not rospy.is_shutdown():
-            if (sqrt((target.linear.x - self.x0)**2 + (target.linear.y - self.y0) ** 2) < radius):
-                # pub.publish(Twist())
-                rospy.loginfo("inside inner radius")
+            if (sqrt((target.linear.x - self.x0)**2 + (target.linear.y - self.y0) ** 2) < radius)
+                rospy.loginfo("inside inner radius, corrects orientation to face box")
                 theta = atan2(box.y - self.y0, box.x - self.x0)
                 if(abs(theta - self.yaw0) > 10 * pi / 180):
                     self.rotation(theta - self.yaw0)

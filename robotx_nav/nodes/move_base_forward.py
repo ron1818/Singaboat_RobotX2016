@@ -53,22 +53,8 @@ class Forward(MoveBaseUtil):
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 
         if self.forward["is_relative"]:
-            self.forward["translation"], self.forward["heading"] = \
-<<<<<<< HEAD
-<<<<<<< HEAD
-                    self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
-
-
-
-        else: # absolute
-=======
-                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
-        else:  # absolute
->>>>>>> b3dc2cdc05b41e8b116ae596da53f6a70111f686
-=======
-                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
-        else: # absolute
->>>>>>> 779df6f840757f771e5ad8ef1847d75932ef7b04
+            self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+        else:
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
             self.forward["translation"] = (target.x, target.y, target.z)  # (x, y, 0)
