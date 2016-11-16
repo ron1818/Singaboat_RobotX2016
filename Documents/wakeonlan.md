@@ -21,3 +21,5 @@ Shutdown the machine. You should be able to wake it up using:
 `wakeonlan your_mac`
 
 for intel nuc: f4:4d:30:63:08:aa 
+
+`wakeonlan f4:4d:30:63:08:aa`
