@@ -4,6 +4,7 @@
    output="screen" ns="middle_middle_imu">
     <remap from="imu" to="imu/data" />
     <rosparam file="$(arg razor_config_file)" command="load"/>
+    <remap from="imu" to="imu/data" />
   </node>
  <!-- this razor imu's orientation: x: towards short edge with soldering pins
       x: forward, y: right hand, z: downward -->
