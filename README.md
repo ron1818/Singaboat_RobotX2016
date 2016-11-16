@@ -67,7 +67,7 @@ roscore
 3. sync time by:
 ```bash
 # on the observer
-sudo ntudate -b <masterip>
+sudo ntpdate -b <masterip>
 ```
 anytime you find the command has time problem (mostly in movebase), run this command.
 
@@ -152,15 +152,12 @@ git clone https://github.com/xxx/Singaboat_RobotX2016
 sudo apt-get install ros-indigo-gazebo* \
 ros-indigo-amcl ros-indigo-gmapping ros-indigo-move-base ros-indigo-map* \
 ros-indigo-robot-localization ros-indigo-nmea-navsat-driver \
-ros-indigo-stereo-image* ros-indigo-viso2*
-```
-
+ros-indigo-stereo-image*
 #### install python and opencv ####
-```bash
 sudo apt-get install python-numpy python-scipy python-serial
 sudo apt-get install ros-indigo-turtlebot-bringup \
 ros-indigo-turtlebot-create-desktop ros-indigo-openni-* \
-ros-indigo-openni2-* ros-indigo-freenect-* ros-indigo-usb-cam \
+ros-indigo-openni2-* ros-indigo-freenect-* \
 ros-indigo-laser-* ros-indigo-hokuyo-node \
 ros-indigo-audio-common gstreamer0.10-pocketsphinx \
 ros-indigo-pocketsphinx ros-indigo-slam-gmapping \
@@ -172,11 +169,12 @@ ros-indigo-depthimage-to-laserscan ros-indigo-arbotix-* \
 ros-indigo-turtlebot-teleop ros-indigo-move-base \
 ros-indigo-map-server ros-indigo-fake-localization ros-indigo-hector* \
 ros-indigo-gazebo-ros* ros-indigo-serial \
-ros-indigo-amcl git subversion mercurial
+git subversion mercurial
 
 cd ~/catkin_ws/src
 git clone https://github.com/bosch-ros-pkg/usb_cam.git
 git clone https://github.com/srv/viso2
+git clone https://github.com/KristofRobot/razor_imu_9dof
 cd ~/catkin_ws
 catkin_make
 rospack profile
