@@ -1,14 +1,14 @@
-# map_frame: map
+map_frame: map
 odom_frame: odom
 base_link_frame: base_link
 world_frame: odom
 sensor_timeout: 0.5
 two_d_mode: true
 
-frequency: 10
+frequency: 20
 
 # odom0: odometry/gazebo
-# odom0_config: [true, true, false,
+# odom0_config: [true, true, true,
 #                false, false, true,
 #                true, false, false,
 #                false, false, true,
@@ -16,16 +16,16 @@ frequency: 10
 # odom0_differential: false # with GPS, must be false
 # odom0_queue_size: 10
 
-odom0: odometry/gps
-odom0_config: [true, true, false,
-               false, false, false,
-               false, false, false,
-               false, false, false,
-               false, false, false]
-odom0_differential: false # with GPS, must be false
-odom0_queue_size: 10
-
-# odom1: bow_stereo_odometer/odometry 
+# odom0: bow_stereo_odometer/odometry 
+# odom0_config: [true, true, false,
+#                false, false, true,
+#                true, false, false,
+#                false, false, true,
+#                false, false, false]
+# odom0_differential: false # with GPS, must be false
+# odom0_queue_size: 10
+# 
+# odom1: port_stereo_odometer/odometry 
 # odom1_config: [true, true, false,
 #                false, false, true,
 #                true, false, false,
@@ -33,8 +33,8 @@ odom0_queue_size: 10
 #                false, false, false]
 # odom1_differential: false # with GPS, must be false
 # odom1_queue_size: 10
-
-# odom2: rear_stereo_odometer/odometry 
+# 
+# odom2: starboard_stereo_odometer/odometry 
 # odom2_config: [true, true, false,
 #                false, false, true,
 #                true, false, false,
@@ -47,15 +47,13 @@ imu0: middle_middle_imu/imu/data
 imu0_config: [false, false, false,
               false, false, true,
               false, false, false,
-              false, false, true,
-              # true, true, true]
-              false, false, false]
+              true, true, true,
+              true, true, true]
 imu0_differential: false # with GPS, must be false
 imu0_queue_size: 10
-imu0_nodelay: true
+imu0_nodelay: 10
 imu0_remove_gravitational_acceleration: true
 
-# imu0_remove_gravitational_acceleration: true
 # imu0: front_left_imu/imu/data
 # imu0_config: [false, false, false,
 #               true, true, true,
@@ -96,6 +94,4 @@ imu0_remove_gravitational_acceleration: true
 # imu3_queue_size: 10
 # imu3_remove_gravitational_acceleration: true
 
-smooth_lagged_data: true
-history_length: 5
 print_diagnostics: true
