@@ -34,9 +34,6 @@ class MoveTo(MoveBaseUtil):
         # rospy.wait_for_message("/odometry/filtered/global", Odometry)
         # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
 
-        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
-
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
