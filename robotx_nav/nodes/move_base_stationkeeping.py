@@ -38,7 +38,7 @@ class StationKeeping(MoveBaseUtil):
             rospy.sleep(1)
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
 
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -66,9 +66,8 @@ class StationKeeping(MoveBaseUtil):
 
         while ((rospy.get_time()-start_time < duration) or not duration) and not rospy.is_shutdown():
             if (sqrt((target.linear.x-self.x0)**2 + (target.linear.y-self.y0)**2)<radius):
-                #pub.publish(Twist())
-		rospy.loginfo("inside inner radius")
-
+                self.cmd_vel_pub.publish(Twist())
+		rospy.loginfo("inside inner radius, no action")
             else:
 		rospy.loginfo("outside radius")
                 # Intialize the waypoint goal

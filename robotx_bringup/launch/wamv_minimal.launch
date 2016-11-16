@@ -15,9 +15,9 @@
         <param name="imu_frame" value="imu_link"/>
     </node-->
 
-    <!-- rosserial to launch motor controller, motor listen to cmd_vel,
-     cmd_vel is muxed and published in wamv_teleop.launch /-->
+	<!-- rosserial to launch motor controller, motor listen to cmd_vel -->
     <include file="$(find robotx_control)/launch/start_motor_no_teleop.launch" />
+	<!--cmd_vel is muxed and published in wamv_teleop.launch on base computer-->
     <!-- include file="$(find robotx_bringup)/launch/wamv_teleop.launch" /-->
     
     <!-- gps launcher -->

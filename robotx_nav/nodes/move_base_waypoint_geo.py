@@ -58,9 +58,7 @@ class MoveToGeo(MoveBaseUtil):
         rospy.loginfo("tar position: " + str(self.target_lat) + ", " + str(self.target_lon))
 
         # self.markers.points.append(waypoint.position)
-        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
-
+       
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 

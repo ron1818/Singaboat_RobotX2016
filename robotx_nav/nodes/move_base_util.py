@@ -18,6 +18,10 @@ from math import radians, pi, sin, cos, sqrt
 class MoveBaseUtil():
     def __init__(self, nodename="nav_test"):
         rospy.init_node(nodename, anonymous=False)
+	
+        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
+
 
         rospy.on_shutdown(self.shutdown)
 
@@ -96,7 +100,6 @@ class MoveBaseUtil():
 
     def rotation(self, ang):
 
-        pub = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         rate = rospy.Rate(10)
         an_vel = 0.2
         duration = ang / an_vel
@@ -107,7 +110,7 @@ class MoveBaseUtil():
         while not rospy.is_shutdown():
             current_time = rospy.get_time()
             if (current_time - start_time) > duration:
-                pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2 * an_vel)))
+                self.cmd_vel_pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2 * an_vel)))
                 rospy.sleep(0.3)
                 pub.publish(Twist())
                 break

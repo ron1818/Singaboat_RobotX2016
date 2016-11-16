@@ -34,9 +34,6 @@ class Zigzag(MoveBaseUtil):
         rospy.wait_for_message("/odom", Odometry)
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
-        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
-
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
@@ -179,14 +176,13 @@ class Zigzag(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-
-
 	quad=rospy.get_param("/zigzag_behavior/quadrant")
         length=rospy.get_param("/zigzag_behavior/map_length")
         width=rospy.get_param("/zigzag_behavior/map_width")
         period=rospy.get_param("/zigzag_behavior/half_period")
         amplitude=rospy.get_param("/zigzag_behavior/half_amplitude")
         off=rospy.get_param("/zigzag_behavior/offset")
+
         Zigzag(nodename="zigzag_test", quadrant=quad, map_length=length, map_width=width, half_period=period, half_amplitude=amplitude, offset=off)
 
     except rospy.ROSInterruptException:
