@@ -12,7 +12,7 @@
         <arg name="iswamv" value="$(arg iswamv)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg iswamv)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isgazebo)" />
-        <arg name="odom_topic" value="/odom" if="$(arg iswamv)" />
+        <arg name="odom_topic" value="/odom" if="$(arg isfake)" />
         <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" />
     </include>
 

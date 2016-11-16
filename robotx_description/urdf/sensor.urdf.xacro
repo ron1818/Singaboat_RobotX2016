@@ -48,9 +48,11 @@
         <joint name="${position1}_${position2}_imu_joint" type="fixed">
             <origin xyz="0 0 ${shelf_thickness/2}" rpy="0 0 0" />
             <parent link="imu_array_link"/>
-            <child link="${position1}_${position2}_imu_link"/>
+            <!--child link="${position1}_${position2}_imu_link"/-->
+            <child link="base_imu_link"/>
         </joint>
-        <link name="${position1}_${position2}_imu_link"/>
+        <!--link name="${position1}_${position2}_imu_link"/-->
+        <link name="base_imu_link"/>
     </xacro:macro>
 
     <joint name="gps_joint" type="fixed">
