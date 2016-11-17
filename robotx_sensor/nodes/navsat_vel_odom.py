@@ -31,7 +31,7 @@ class Vel_Imu_Odom(object):
         self.odom_topic = rospy.get_param("~odom_topic", "odometry/vel")
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.fixed_frame = rospy.get_param("~fixed_frame", "base_link")
-        self.is_pub_tf = rospy.get_param("~is_pub_tf", "false")
+        self.is_pub_tf = rospy.get_param("~is_pub_tf", False)
 
     def talker(self):
         rospy.Subscriber(self.vel_topic, TwistStamped, self.vel_callback)
@@ -90,12 +90,15 @@ class Vel_Imu_Odom(object):
             odom_msg.pose.pose.orientation.y = self.orientation.y
             odom_msg.pose.pose.orientation.z = self.orientation.z
             odom_msg.pose.pose.orientation.w = self.orientation.w
-            odom_msg.pose.covariance[0] = 0.00001
-            odom_msg.pose.covariance[7] = 0.00001
+            odom_msg.pose.covariance[0] = 0.25
+            odom_msg.pose.covariance[7] = 0.25
+            # odom_msg.pose.covariance[0] = 0.00001
+            # odom_msg.pose.covariance[7] = 0.00001
             odom_msg.pose.covariance[14] = 1000000000000.0
             odom_msg.pose.covariance[21] = 1000000000000.0
             odom_msg.pose.covariance[28] = 1000000000000.0
-            odom_msg.pose.covariance[35] = 0.001
+            # odom_msg.pose.covariance[35] = 0.001
+            odom_msg.pose.covariance[35] = 0.1
 
             odom_msg.child_frame_id = self.fixed_frame
             odom_msg.twist.twist.linear.x = math.sqrt(self.vel_x ** 2 + self.vel_y ** 2)
@@ -104,12 +107,15 @@ class Vel_Imu_Odom(object):
             odom_msg.twist.twist.angular.x = 0.0
             odom_msg.twist.twist.angular.y = 0.0
             odom_msg.twist.twist.angular.z = self.imu_z
-            odom_msg.twist.covariance[0] = 0.00001
-            odom_msg.twist.covariance[7] = 0.00001
+            # odom_msg.twist.covariance[0] = 0.00001
+            # odom_msg.twist.covariance[7] = 0.00001
+            odom_msg.twist.covariance[0] = 0.0025
+            odom_msg.twist.covariance[7] = 0.00025
             odom_msg.twist.covariance[14] = 1000000000000.0
             odom_msg.twist.covariance[21] = 1000000000000.0
             odom_msg.twist.covariance[28] = 1000000000000.0
-            odom_msg.twist.covariance[35] = 0.001
+            # odom_msg.twist.covariance[35] = 0.001
+            odom_msg.twist.covariance[35] = 0.1
 
             odom_pub.publish(odom_msg)
 
