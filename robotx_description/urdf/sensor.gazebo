@@ -10,7 +10,8 @@
             <plugin name="imu" filename="libhector_gazebo_ros_imu.so">
                 <robotNamespace>${position1}_${position2}_imu</robotNamespace>
                 <updateRate>20.0</updateRate>
-                <frameId>${position1}_${position2}_imu_link</frameId>
+                <!--frameId>${position1}_${position2}_imu_link</frameId-->
+                <frameId>base_imu_link</frameId>
                 <bodyName>shelf_link</bodyName>
                 <topicName>imu/data_raw</topicName>
                 <serviceName>imu</serviceName>
@@ -29,7 +30,8 @@
             <plugin name="mag" filename="libhector_gazebo_ros_magnetic.so">
                 <robotNamespace>${position1}_${position2}_imu</robotNamespace>
                 <updateRate>20.0</updateRate>
-                <frameId>${position1}_${position2}_imu_link</frameId>
+                <!--frameId>${position1}_${position2}_imu_link</frameId-->
+                <frameId>base_imu_link</frameId>
                 <bodyName>shelf_link</bodyName>
                 <topicName>imu/mag</topicName>
                 <declination>0.0043</declination>
