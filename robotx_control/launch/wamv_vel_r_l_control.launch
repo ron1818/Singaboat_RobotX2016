@@ -6,7 +6,7 @@
 
     <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
         <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_global.yaml" />
-        <remap from="odometry/filtered" to="odometry/filterd/global" />
+        <remap from="odometry/filtered" to="odometry/filtered/global" />
     </node>
 
     <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
