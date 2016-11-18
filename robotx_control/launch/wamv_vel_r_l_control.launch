@@ -1,24 +1,24 @@
 <?xml version="1.0"?>
 <launch>
-		<param name="/use_sim_time" value="false"/>
+    <param name="/use_sim_time" value="false"/>
 
-		<include file="$(find robotx_sensor)/launch/navsat_vel_odom.launch" />
+    <include file="$(find robotx_sensor)/launch/navsat_vel_odom.launch" />
 
-		<node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
-				<rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_global.yaml" />
-				<remap from="odometry/filtered" to="odometry/filterd/global" />
-		</node>
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_global.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/global" />
+    </node>
 
-		<node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
-				<rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_local.yaml" />
-				<remap from="odometry/filtered" to="odometry/filtered/local" />
-		</node>
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_local.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/local" />
+    </node>
 
-		<node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true" >
-				<rosparam command="load" file="$(find robotx_control)/config/wamv_vel/gps_navsat_transform.yaml" />
-				<remap from="gps/fix" to="navsat/fix" />
-				<remap from="imu/data" to="middle_middle_imu/imu/data" />
-				<remap from="odometry/filtered" to="odometry/flitered/global" />
-		</node>
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/gps_navsat_transform.yaml" />
+        <remap from="gps/fix" to="navsat/fix" />
+        <remap from="imu/data" to="middle_middle_imu/imu/data" />
+        <remap from="odometry/filtered" to="odometry/flitered/global" />
+    </node>
 
 </launch>

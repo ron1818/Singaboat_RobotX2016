@@ -1,8 +1,9 @@
 frequency: 30
 delay: 3
-zero_altitude: true
+zero_altitude: false
 magnetic_declination_radians: 0.0043
-yaw_offset: 1.5707963
+# mag north of razor is towards -x axis of accelometer
+yaw_offset: -1.5707963
 broadcast_utm_transform: true
 publish_filtered_gps: false
 use_odometry_yaw: false

@@ -43,27 +43,20 @@ int main(int argc, char **argv)
   geometry_msgs::Vector3 rpy;
   geometry_msgs::Vector3 gyro;
   geometry_msgs::Vector3 acc;
-<<<<<<< HEAD
-  geometry_msgs::Vector3 mag;
-  geometry_msgs::Quaternion quat;
-  
-  ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("imu/data", 1000);
-  ros::Publisher mag_pub = n.advertise<geometry_msgs::Vector3> ("mag/data", 1000);
-=======
+
   sensor_msgs::MagneticField mag;
   geometry_msgs::Quaternion quat;
-  
+
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("middle_middle_imu/imu/data_raw", 1000);
   ros::Publisher mag_pub = n.advertise<sensor_msgs::MagneticField> ("middle_middle_imu/imu/mag", 1000);
->>>>>>> 779df6f840757f771e5ad8ef1847d75932ef7b04
   ros::Rate loop_rate(50);
   ser=new Serial("/dev/USBimu", 57600, serial::Timeout::simpleTimeout(250));
 
   std::string frame_id="imu_link";
-  
+
 
   while (ros::ok())
-  { 
+  {
     i=0;
     pos=0;
     msg=ser->readline();
@@ -71,13 +64,13 @@ int main(int argc, char **argv)
     msg.erase(0,5);
     sensor_msgs::Imu imu_msg;
 
-    
+
     while((pos=msg.find(delimiter))!=std::string::npos){
-    
+
       	token=msg.substr(0,pos);
    	s[i]=::atof(token.c_str());
    	msg.erase(0,pos+delimiter.length());
-   	i++;  
+   	i++;
    }
    s[14]=::atof(msg.c_str());
 
@@ -91,26 +84,20 @@ int main(int argc, char **argv)
    acc.x=s[8]/Gravity;
    acc.y=s[9]/Gravity;
    acc.z=s[10]/Gravity;
-<<<<<<< HEAD
-   mag.x=s[12];
-   mag.y=s[13];
-   mag.z=s[14];
-=======
    mag.magnetic_field.x=s[12];
    mag.magnetic_field.y=s[13];
    mag.magnetic_field.z=s[14];
->>>>>>> 779df6f840757f771e5ad8ef1847d75932ef7b04
-   
 
-   
-   //geometry_msgs::Quaternion quat= tf::createQuaternionFromRPY(double rpy.x, double rpy.y, double rpy.z); 
-    
+
+
+   //geometry_msgs::Quaternion quat= tf::createQuaternionFromRPY(double rpy.x, double rpy.y, double rpy.z);
+
     quat= tf::createQuaternionMsgFromRollPitchYaw(rpy.x, rpy.y, rpy.z);
-    
-    
-    //static geometry_msgs::Quaternion quat=tf::createQuaternionFromRPY(rpy.x, rpy.y,rpy.z); 
 
-           
+
+    //static geometry_msgs::Quaternion quat=tf::createQuaternionFromRPY(rpy.x, rpy.y,rpy.z);
+
+
             imu_msg.header.stamp = ros::Time::now();
             imu_msg.header.frame_id = frame_id;
             imu_msg.orientation.x =quat.x;
@@ -126,12 +113,12 @@ int main(int argc, char **argv)
             imu_msg.orientation_covariance = covariance_ori;
             imu_msg.angular_velocity_covariance = covariance_an;
             imu_msg.linear_acceleration_covariance = covariance_acc;
-             
-            
-         
+
+
+
    imu_pub.publish(imu_msg);
    mag_pub.publish(mag);
-   
+
    ros::spinOnce();
    loop_rate.sleep();
   }
