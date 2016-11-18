@@ -9,7 +9,6 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, TwistStamped
 from sensor_msgs.msg import Imu
 import tf
-import threading
 
 
 class Vel_Imu_Odom(object):
@@ -23,6 +22,7 @@ class Vel_Imu_Odom(object):
     imu_z = 0
     vel_x = 0
     vel_y = 0
+    sign = 1
 
     def __init__(self, nodename):
         self.nodename = nodename
@@ -101,7 +101,8 @@ class Vel_Imu_Odom(object):
             odom_msg.pose.covariance[35] = 0.1
 
             odom_msg.child_frame_id = self.fixed_frame
-            odom_msg.twist.twist.linear.x = math.sqrt(self.vel_x ** 2 + self.vel_y ** 2)
+            odom_msg.twist.twist.linear.x = self.sign * \
+                math.sqrt(self.vel_x ** 2 + self.vel_y ** 2)
             odom_msg.twist.twist.linear.y = 0.0
             odom_msg.twist.twist.linear.z = 0.0
             odom_msg.twist.twist.angular.x = 0.0
@@ -128,11 +129,17 @@ class Vel_Imu_Odom(object):
 
     def imu_callback(self, msg):
         self.orientation = msg.orientation
+        # listen to angular rotational speed
         if msg.angular_velocity.z > -0.05 and msg.angular_velocity.z < 0:
             self.imu_z = 0
         else:
             # reversed
             self.imu_z = -1 * msg.angular_velocity.z
+        # listen to linear x speed, only used for sign
+        if msg.linear_velocity.x >= 0:
+            self.sign = 1
+        else:
+            self.sign = -1
 
     def vel_callback(self, msg):
             self.vel_x = msg.twist.linear.x
