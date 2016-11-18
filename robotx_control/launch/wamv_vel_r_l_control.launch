@@ -4,8 +4,8 @@
 
     <include file="$(find robotx_sensor)/launch/navsat_vel_odom.launch" />
 
-    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_locali$
-        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/lo$
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_local.yaml" />
         <remap from="odometry/filtered" to="odometry/filtered/local" />
     </node>
 
