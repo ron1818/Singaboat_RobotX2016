@@ -19,7 +19,7 @@
         <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/gps_navsat_transform.yaml" />
         <remap from="gps/fix" to="navsat/fix" />
         <remap from="imu/data" to="middle_middle_imu/imu/data" />
-        <remap from="odometry/filtered" to="odometry/flitered/global" />
+        <remap from="odometry/filtered" to="odometry/filtered/global" />
     </node>
 
 </launch>
