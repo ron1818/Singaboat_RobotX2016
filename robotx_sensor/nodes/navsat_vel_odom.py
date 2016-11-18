@@ -136,7 +136,7 @@ class Vel_Imu_Odom(object):
             # reversed
             self.imu_z = -1 * msg.angular_velocity.z
         # listen to linear x speed, only used for sign
-        if msg.linear_velocity.x >= 0:
+        if msg.linear_acceleration.x >= 0:
             self.sign = 1
         else:
             self.sign = -1
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     # odom_frame = rospy.get_param('~odom_frame', "odom")
     # is_pub_tf = rospy.get_param("~is_pub_tf", "false")
 
-    nodename="navsat_vel_odom_node"
+    nodename = "navsat_vel_odom_node"
     try:
         odom_publisher = Vel_Imu_Odom(nodename)
         odom_publisher.talker()

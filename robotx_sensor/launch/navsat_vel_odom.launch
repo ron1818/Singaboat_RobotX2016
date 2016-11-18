@@ -2,7 +2,7 @@
     <arg name="odom_topic" default="odometry/vel" />
     <node pkg="robotx_sensor" type="navsat_vel_odom.py" name="navsat_vel_odom" output="screen" >
         <remap from="imu/data" to="middle_middle_imu/imu/data"/>
-        <param name="odom_topic" to="$(arg odom_topic)"/>
+        <remap from="odometry/vel" to="$(arg odom_topic)"/>
         <param name="is_pub_tf" value="false"/>
         <param name="fixed_frame" value="base_link_fake"/>
     </node>

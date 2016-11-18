@@ -1,17 +1,21 @@
+<?xml version="1.0"?>
 <launch>
     <arg name="mapname" default="blank_map" />
     <arg name="cmd_vel_topic" default="move_base_cmd_vel" />
     <arg name="isgazebo" default="false" />
     <arg name="isfake" default="false" />
     <arg name="iswamv" default="false" />
+    <arg name="isbag" default="false" />
 
     <!-- Launch move_base and load all navigation parameters -->
     <include file="$(find robotx_nav)/launch/move_base.launch">
         <arg name="isgazebo" value="$(arg isgazebo)" />
         <arg name="isfake" value="$(arg isfake)" />
-        <arg name="iswamv" value="$(arg iswamv)" />
+        <arg name="iswamv" value="true" if="$(arg iswamv)" />
+        <arg name="iswamv" value="true" if="$(arg isbag)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg iswamv)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <arg name="odom_topic" value="/odometry/filtered/global/bag" if="$(arg isbag)" />
         <arg name="odom_topic" value="/odom" if="$(arg isfake)" />
         <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" />
     </include>

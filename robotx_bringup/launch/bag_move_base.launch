@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<launch>
+    <include file="$(find robotx_nav)/launch/move_base_map.launch" >
+        <arg name="isbag" value="true" />
+        <arg name="cmd_vel_topic" value="cmd_vel" />
+        <!--arg name="mapname" value="nanyanglake" /-->
+        <arg name="mapname" value="blank_map" />
+    </include>
+
+</launch>
