@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="robotx_sensor" type="imu_republish.py" name="imu_republish" output="screen" >
+        <remap from="imu_in" to="middle_middle_imu/imu/data"/>
+        <remap from="imu_out" to="middle_middle_imu/imu/data/republish"/>
+    </node>
+</launch>
