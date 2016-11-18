@@ -4,15 +4,16 @@
 
     <include file="$(find robotx_sensor)/launch/navsat_vel_odom.launch" />
 
-    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
-        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_global.yaml" />
-        <remap from="odometry/filtered" to="odometry/filterd/global" />
-    </node>
-
-    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
-        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_local.yaml" />
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_locali$
+        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/lo$
         <remap from="odometry/filtered" to="odometry/filtered/local" />
     </node>
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/localization_global.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/global" />
+    </node>
+
 
     <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true" >
         <rosparam command="load" file="$(find robotx_control)/config/wamv_vel/gps_navsat_transform.yaml" />
