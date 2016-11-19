@@ -16,8 +16,8 @@
         <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
         <param name="waypoint_separation" value="$(arg waypoint_separation)" />
         <param name="is_relative" value="$(arg is_relative)" />
-        <param name="target/x" value="$(arg target_x)" />
-        <param name="target/y" value="$(arg target_y)" />
+        <param name="target_x" value="$(arg target_x)" />
+        <param name="target_y" value="$(arg target_y)" />
     </node>
 
 </launch>

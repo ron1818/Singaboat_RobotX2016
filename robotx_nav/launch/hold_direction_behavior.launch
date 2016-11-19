@@ -16,13 +16,13 @@
         <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
         <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
         <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
-        <param name="station/x" value="$(arg station_x)" type="double"/>
- 	<param name="station/y" value="$(arg station_y)" type="double"/>
-	<param name="station/yaw" value="$(arg station_yaw)" type="double"/>
+        <param name="station_x" value="$(arg station_x)" type="double"/>
+ 	<param name="station_y" value="$(arg station_y)" type="double"/>
+	<param name="station_yaw" value="$(arg station_yaw)" type="double"/>
 	<param name="radius" value="$(arg r)" type="double"/>
 	<param name="duration" value="$(arg time)" type="double"/>
-        <param name="box/x" value="$(arg box_x)" type="double"/>
-        <param name="box/y" value="$(arg box_y)" type="double"/>
+        <param name="box_x" value="$(arg box_x)" type="double"/>
+        <param name="box_y" value="$(arg box_y)" type="double"/>
 
     </node>
 

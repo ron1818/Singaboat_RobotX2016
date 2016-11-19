@@ -33,9 +33,9 @@ class MoveToGeo(MoveBaseUtil):
 
         # set the distance between waypoints
         self.geo = {}
-        self.target_lat = target.x
-        self.target_lon = target.y
-        self.geo["goal_heading"] = target.z
+        self.target_lat = rospy.get_param("~latitude", target[0])
+        self.target_lon = rospy.get_param("~longitude", target[1])
+        self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
         #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
 
         rate = rospy.Rate(10)
@@ -152,10 +152,7 @@ if __name__ == '__main__':
         # MoveToGeo(nodename="movetogeo_test", target_lat=1.3489079, target_lon=103.6867139)
 
         # MoveToGeo(nodename="movetogeo_test", target_geo=(1.345124, 103.684729, 1.57))
-        target = Point(rospy.get_param("~latitude", 1.3489079),
-                       rospy.get_param("~longitude", 103.6867139),
-                       rospy.get_param("~heading", 1.57))
-
-        MoveToGeo(nodename="movetogeo_test", target=target)
+        target_geo=(1.345124, 103.684729, 1.57)
+        MoveToGeo(nodename="movetogeo_test", target=target_geo)
     except rospy.ROSInterruptException:
         pass

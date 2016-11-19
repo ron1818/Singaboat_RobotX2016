@@ -12,6 +12,7 @@ from geometry_msgs.msg import Twist, Point
 
 def rotation(ang):
 
+    ang = rospy.get_param("~theta", ang)
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
     rospy.init_node('rotation', anonymous=True)
     rate = rospy.Rate(10)
@@ -35,7 +36,6 @@ def rotation(ang):
 
 if __name__ == '__main__':
     try:
-	theta=rospy.get_param("/rotation_behavior/theta")
-        rotation(theta)
+        rotation(ang=5)
     except rospy.ROSInterruptException:
         pass

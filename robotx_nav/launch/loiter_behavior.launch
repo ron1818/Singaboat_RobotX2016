@@ -20,8 +20,8 @@
         <param name="radius" value="$(arg radius)" type="double"/>
         <param name="polygon" value="$(arg polygon)" type="int" />
         <param name="is_ccw" value="$(arg is_ccw)" type="bool"/>
-        <param name="target/x" value="$(arg target_x)" type="double"/>
-        <param name="target/y" value="$(arg target_y)" type="double"/>
+        <param name="target_x" value="$(arg target_x)" type="double"/>
+        <param name="target_y" value="$(arg target_y)" type="double"/>
         <param name="is_relative" value="$(arg is_relative)" />
     </node>
 

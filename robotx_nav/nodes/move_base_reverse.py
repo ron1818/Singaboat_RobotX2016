@@ -11,6 +11,7 @@ from geometry_msgs.msg import Twist, Vector3
 
 def reverse(duration):
 
+    duration = rospy.get_param("~duration", duration)
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
     rospy.init_node('reverse', anonymous=True)
     rate = rospy.Rate(10)
@@ -33,7 +34,6 @@ def reverse(duration):
 
 if __name__ == '__main__':
     try:
-	duration = rospy.get_param("~duration")
-        reverse(duration)
+        reverse(duration=10)
     except rospy.ROSInterruptException:
         pass
