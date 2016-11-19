@@ -203,7 +203,7 @@
     <!-- Hokuyo Laser -->
     <xacro:if value="$(arg lidar_enabled)">
         <joint name="hokuyo_joint" type="fixed">
-            <origin xyz="${shelf_length/2} 0 0.4" rpy="0 0.157 0"/>
+            <origin xyz="${shelf_length/2} 0 0.4" rpy="0 0 0"/>
             <parent link="shelf_link"/>
             <child link="hokuyo_link"/>
         </joint>
