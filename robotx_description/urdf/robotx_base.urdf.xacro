@@ -28,14 +28,14 @@
     <xacro:macro name="bouy" params="position">
         <link name="${position}_bouy_link">
             <collision>
-                <origin xyz="0 0 0" rpy="${PI/2} 0 0"/>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
                 <geometry>
                     <cylinder length="${bouy_length}" radius="${bouy_radius}"/>
                 </geometry>
             </collision>
 
             <visual>
-                <origin xyz="0 0 0" rpy="${PI/2} 0  0"/>
+                <origin xyz="0 0 0" rpy="0 ${PI/2}  0"/>
                 <geometry>
                     <cylinder length="${bouy_length}" radius="${bouy_radius}"/>
                 </geometry>
@@ -45,15 +45,15 @@
             <inertial>
                 <mass value="${bouy_mass}"/>
                 <inertia
-                    iyy="${bouy_mass / 12.0 * (3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius) + bouy_length*bouy_length)}" ixy="0.0" ixz="0.0"
-                    ixx="${bouy_mass / 12.0 * (3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius) + bouy_length*bouy_length)}" iyz="0.0"
+                    ixx="${bouy_mass / 12.0 * (3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius) + bouy_length*bouy_length)}" ixy="0.0" ixz="0.0"
+                    iyy="${bouy_mass / 12.0 * (3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius) + bouy_length*bouy_length)}" iyz="0.0"
                     izz="${bouy_mass / 12.0 * 3*(bouy_radius*bouy_radius + bouy_i_radius*bouy_i_radius)}"/>
             </inertial>
         </link>
     </xacro:macro>
 
     <!-- support bars -->
-    <xacro:macro name="bars" params="position1 position2 sign_x sign_y sign_roll sign_pitch" >
+    <xacro:macro name="bars" params="position1 position2 sign_x sign_y sign_roll" >
         <joint name="${position1}_${position2}_bar_joint" type="fixed">
         <parent link="shelf_link"/>
         <child link="${position1}_${position2}_bar_link"/>
@@ -61,13 +61,13 @@
     </joint>
     <link name="${position1}_${position2}_bar_link">
         <collision>
-            <origin xyz="${sign_x*shelf_width/2} ${sign_y*shelf_length/2} 0" rpy="${sign_roll*PI/8} ${sign_pitch*PI/8} 0"/>
+            <origin xyz="${sign_x*shelf_length/2} ${sign_y*shelf_width/2} 0" rpy="${sign_roll*PI/8} 0 0"/>
             <geometry>
                 <cylinder length="${shelf_height}" radius="0.01"/>
             </geometry>
         </collision>
         <visual>
-            <origin xyz="${sign_x*shelf_width/2} ${sign_y*shelf_length/2} 0" rpy="${sign_roll*PI/8} ${sign_pitch*PI/8} 0"/>
+            <origin xyz="${sign_x*shelf_length/2} ${sign_y*shelf_width/2} 0" rpy="${sign_roll*PI/8} 0 0"/>
             <geometry>
                 <cylinder length="${shelf_height}" radius="0.01"/>
             </geometry>
@@ -82,7 +82,7 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box size="${bouy_sep+2*bouy_radius} ${bouy_length} 0.01"/>
+                <box size="${bouy_length} ${bouy_sep+2*bouy_radius} 0.01"/>
             </geometry>
         </collision>
     </link>
@@ -91,8 +91,7 @@
     <joint name="left_bouy_joint" type="fixed">
         <parent link="base_link"/>
         <child link="left_bouy_link"/>
-        <origin xyz="-${bouy_sep/2} 0 ${bouy_radius}" rpy="0 0 0"/>
-
+        <origin xyz="0 -${bouy_sep/2} ${bouy_radius}" rpy="0 0 0"/>
     </joint>
 
     <!-- left bouy Link -->
@@ -102,7 +101,7 @@
     <joint name="right_bouy_joint" type="fixed">
         <parent link="base_link"/>
         <child link="right_bouy_link"/>
-        <origin xyz="${bouy_sep/2} 0 ${bouy_radius}" rpy="0 0 0"/>
+        <origin xyz="0 ${bouy_sep/2} ${bouy_radius}" rpy="0 0 0"/>
     </joint>
 
     <!-- right bouy Link -->
@@ -120,14 +119,14 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box size="${shelf_width} ${shelf_length} ${shelf_thickness}"/>
+                <box size="${shelf_length} ${shelf_width} ${shelf_thickness}"/>
             </geometry>
         </collision>
 
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box size="${shelf_width} ${shelf_length} ${shelf_thickness}"/>
+                <box size="${shelf_length} ${shelf_width} ${shelf_thickness}"/>
             </geometry>
             <material name="yellow"/>
         </visual>
@@ -136,24 +135,24 @@
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <mass value="${shelf_mass}"/>
             <inertia
-                iyy="${shelf_mass / 12.0 * (shelf_length*shelf_length + shelf_thickness*shelf_thickness)}" ixy="0.0" ixz="0.0"
-                ixx="${shelf_mass / 12.0 * (shelf_length*shelf_length + shelf_width*shelf_width)}" iyz="0.0"
+                ixx="${shelf_mass / 12.0 * (shelf_length*shelf_length + shelf_thickness*shelf_thickness)}" ixy="0.0" ixz="0.0"
+                iyy="${shelf_mass / 12.0 * (shelf_length*shelf_length + shelf_width*shelf_width)}" iyz="0.0"
                 izz="${shelf_mass / 12.0 * (shelf_width*shelf_width + shelf_thickness*shelf_thickness)}"/>
         </inertial>
     </link>
 
     <!-- bars -->
-    <xacro:bars position1="front" position2="left" sign_x="-1" sign_y="1" sign_roll="1" sign_pitch="1"/>
-    <xacro:bars position1="front" position2="right" sign_x="1" sign_y="1" sign_roll="1" sign_pitch="-1"/>
-    <xacro:bars position1="rear" position2="left" sign_x="-1" sign_y="-1" sign_roll="-1" sign_pitch="1"/>
-    <xacro:bars position1="rear" position2="right" sign_x="1" sign_y="-1" sign_roll="-1" sign_pitch="-1"/>
+    <xacro:bars position1="front" position2="left" sign_x="1" sign_y="-1" sign_roll="-1"/>
+    <xacro:bars position1="front" position2="right" sign_x="1" sign_y="1" sign_roll="1"/>
+    <xacro:bars position1="rear" position2="left" sign_x="-1" sign_y="-1" sign_roll="-1"/>
+    <xacro:bars position1="rear" position2="right" sign_x="-1" sign_y="1" sign_roll="1"/>
 
 
     <!-- sensor box joint-->
-    <joint name="imu_joint" type="fixed">
+    <joint name="sensor_box_joint" type="fixed">
         <parent link="shelf_link"/>
         <child link="base_imu_link"/>
-        <origin xyz="0 0.5 ${sensor_box_thickness/2+shelf_thickness/2}" rpy="0 0 0"/>
+        <origin xyz="0.5 0 ${sensor_box_thickness/2+shelf_thickness/2}" rpy="0 0 0"/>
     </joint>
 
     <!-- sensor box -->
@@ -161,14 +160,14 @@
         <collision>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box size="${sensor_box_width} ${sensor_box_length} ${sensor_box_thickness}"/>
+                <box size="${sensor_box_length} ${sensor_box_width} ${sensor_box_thickness}"/>
             </geometry>
         </collision>
 
         <visual>
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <geometry>
-                <box size="${sensor_box_width} ${sensor_box_length} ${sensor_box_thickness}"/>
+                <box size="${sensor_box_length} ${sensor_box_width} ${sensor_box_thickness}"/>
             </geometry>
             <material name="blue"/>
         </visual>
@@ -177,8 +176,8 @@
             <origin xyz="0 0 0" rpy="0 0 0"/>
             <mass value="${sensor_box_mass}"/>
             <inertia
-                iyy="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_thickness*sensor_box_thickness)}" ixy="0.0" ixz="0.0"
-                ixx="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_width*sensor_box_width)}" iyz="0.0"
+                ixx="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_thickness*sensor_box_thickness)}" ixy="0.0" ixz="0.0"
+                iyy="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_width*sensor_box_width)}" iyz="0.0"
                 izz="${sensor_box_mass / 12.0 * (sensor_box_width*sensor_box_width + sensor_box_thickness*sensor_box_thickness)}"/>
         </inertial>
     </link>
