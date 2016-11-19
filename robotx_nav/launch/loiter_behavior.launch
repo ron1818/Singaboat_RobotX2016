@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="target" default="[10, 5, 0]" />
     <arg name="radius" default="5" />
     <arg name="polygon" default="6" />
     <arg name="is_ccw" default="true" />
@@ -9,7 +8,7 @@
     <arg name="iswamv" default="false" />
     <arg name="isfake" default="false" />
     <arg name="center_x" default="10" />
-    <arg name="center_y" default="10" />
+    <arg name="center_y" default="1.57" />
 
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
@@ -19,7 +18,7 @@
         <param name="radius" value="$(arg radius)" type="double"/>
         <param name="polygon" value="$(arg polygon)" type="int" />
         <param name="is_ccw" value="$(arg is_ccw)" type="bool"/>
-	<param name="center/x" value="$(arg center_x)" type="double"/>
+        <param name="center/x" value="$(arg center_x)" type="double"/>
 	<param name="center/y" value="$(arg center_y)" type="double"/>
         <param name="is_relative" value="$(arg is_relative)" />
     </node>
