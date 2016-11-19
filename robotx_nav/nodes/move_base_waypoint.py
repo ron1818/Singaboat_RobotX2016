@@ -25,14 +25,12 @@ class MoveTo(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target):
+    def __init__(self, nodename, target, is_relative):
         MoveBaseUtil.__init__(self, nodename)
 
         self.odom_received = False
         rospy.wait_for_message("/odom", Odometry)
         rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
-        # rospy.wait_for_message("/odometry/filtered/global", Odometry)
-        # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
 
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -47,18 +45,21 @@ class MoveTo(MoveBaseUtil):
         while not self.odom_received:
             rospy.sleep(1)
 
-        q_angle = quaternion_from_euler(0, 0, atan2(target.y-self.y0, target.x-self.x0))
+        if is_relative:
+            x, y = self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
+        else:
+            x, y = target.x, target.y
+
+        q_angle = quaternion_from_euler(0, 0, atan2(y-self.y0, x-self.x0))
         angle = Quaternion(*q_angle)
 
-        waypoint=Pose(target, angle)
+        waypoint=Pose(Point(x, y, 0), angle)
 
         # Set a visualization marker at each waypoint
 
         p = Point()
         p = waypoint.position
         self.markers.points.append(p)
-
-
 
         rospy.loginfo("Connected to move base server")
         rospy.loginfo("Starting navigation test")
@@ -99,6 +100,8 @@ class MoveTo(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        MoveTo(nodename="moveto_waypoint", target=Point(10,5,0))
+	target = Point(rospy.get_param("~target/x"), rospy.get_param("~target/y"), 0.0)
+        is_relative = rospy.get_param("~is_relative", True)
+        MoveTo(nodename="moveto_waypoint", target=target, is_relative=is_relative)
     except rospy.ROSInterruptException:
         pass

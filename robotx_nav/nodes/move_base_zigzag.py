@@ -176,12 +176,12 @@ class Zigzag(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-	quad=rospy.get_param("/zigzag_behavior/quadrant")
-        length=rospy.get_param("/zigzag_behavior/map_length")
-        width=rospy.get_param("/zigzag_behavior/map_width")
-        period=rospy.get_param("/zigzag_behavior/half_period")
-        amplitude=rospy.get_param("/zigzag_behavior/half_amplitude")
-        off=rospy.get_param("/zigzag_behavior/offset")
+	quad=rospy.get_param("~quadrant")
+        length=rospy.get_param("~map_length")
+        width=rospy.get_param("~map_width")
+        period=rospy.get_param("~half_period")
+        amplitude=rospy.get_param("~half_amplitude")
+        off=rospy.get_param("~offset")
 
         Zigzag(nodename="zigzag_test", quadrant=quad, map_length=length, map_width=width, half_period=period, half_amplitude=amplitude, offset=off)
 

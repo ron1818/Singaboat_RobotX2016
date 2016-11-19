@@ -106,12 +106,12 @@ class HoldDirection(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-	
-	station=Twist(Point(rospy.get_param("/hold_direction_behavior/station/x"), rospy.get_param("/hold_direction_behavior/station/y"), 0), Point(0, 0, rospy.get_param("/hold_direction_behavior/station/yaw")))
-	r=rospy.get_param("/hold_direction_behavior/radius")
-	time=rospy.get_param("/hold_direction_behavior/duration")
-	target_point=Point(rospy.get_param("/hold_direction_behavior/box/x"), rospy.get_param("/hold_direction_behavior/box/y"), 0)
-	
+	station=Twist(Point(rospy.get_param("~station/x"), rospy.get_param("~station/y"), 0),
+                      Point(0, 0, rospy.get_param("~station/yaw")))
+	r=rospy.get_param("~radius")
+	time=rospy.get_param("~duration")
+	target_point=Point(rospy.get_param("~box/x"), rospy.get_param("~box/y"), 0)
+
         HoldDirection("hold_direction_test", target=station, radius=r, duration=time, box=target_point)
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

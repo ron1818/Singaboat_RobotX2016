@@ -9,14 +9,13 @@ import rospy
 from geometry_msgs.msg import Twist, Vector3
 
 
-def reverse(dis):
+def reverse(duration):
 
-    pub = rospy.Publisher('/move_base_cmd_vel', Twist, queue_size=10)
+    pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
     rospy.init_node('reverse', anonymous=True)
     rate = rospy.Rate(10)
 
     vel = 0.3
-    duration = dis / vel
     msg = Twist(Vector3(-vel, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
 
     start_time = rospy.get_time()
@@ -34,7 +33,7 @@ def reverse(dis):
 
 if __name__ == '__main__':
     try:
-	dis=rospy.get_param("/reverse_behavior/dis")
-        reverse(dis)
+	duration = rospy.get_param("~duration")
+        reverse(duration)
     except rospy.ROSInterruptException:
         pass

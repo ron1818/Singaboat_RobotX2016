@@ -4,9 +4,9 @@
    station keeping
     @Weiwei
     2016-10-25
-    
+
    corrected: reinaldo
-   
+
 
 """
 
@@ -38,7 +38,7 @@ class StationKeeping(MoveBaseUtil):
             rospy.sleep(1)
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
 
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -54,7 +54,7 @@ class StationKeeping(MoveBaseUtil):
         q_angle = quaternion_from_euler(0, 0, target.angular.z)
         angle = Quaternion(*q_angle)
         station=Pose(target.linear, angle)
-	
+
 	p = Point()
         p = station.position
         self.markers.points.append(p)
@@ -107,9 +107,9 @@ class StationKeeping(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-	goal=Twist(Point(rospy.get_param("station_keep_behavior/target/x"),rospy.get_param("station_keep_behavior/target/y"),0.0), Point(0,0,rospy.get_param("station_keep_behavior/angle")))
-	r=rospy.get_param("station_keep_behavior/radius")
-	t=rospy.get_param("station_keep_behavior/duration")
+	goal=Twist(Point(rospy.get_param("~target/x"), rospy.get_param("~target/y"),0.0), Point(0,0,rospy.get_param("~angle")))
+	r=rospy.get_param("~radius")
+	t=rospy.get_param("~duration")
 
         StationKeeping("station_keeping_test", target=goal, radius=r, duration=t)
     except rospy.ROSInterruptException:

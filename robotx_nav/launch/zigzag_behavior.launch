@@ -12,8 +12,9 @@
     <arg name="off" default="5" />
 
     <node pkg="robotx_nav" type="move_base_zigzag.py" name="zigzag_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
         <param name="quadrant" value="$(arg quad)" type="double"/>
 	<param name="map_length" value="$(arg length)" type="double"/>
 	<param name="map_width" value="$(arg width)" type="double"/>

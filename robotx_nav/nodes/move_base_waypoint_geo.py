@@ -28,14 +28,14 @@ class MoveToGeo(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0, lon0, lat0 = 0, 0, 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target_geo):  #, waypoint_distance=10):
+    def __init__(self, nodename, target):
         MoveBaseUtil.__init__(self, nodename)
 
         # set the distance between waypoints
         self.geo = {}
-        self.target_lat = rospy.get_param("~target_latitude", target_geo[0])
-        self.target_lon = rospy.get_param("~target_longitude", target_geo[1])
-        self.geo["goal_heading"] = rospy.get_param("~target_heading", target_geo[2])
+        self.target_lat = target.x
+        self.target_lon = target.y
+        self.geo["goal_heading"] = target.z
         #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
 
         rate = rospy.Rate(10)
@@ -57,8 +57,7 @@ class MoveToGeo(MoveBaseUtil):
         rospy.loginfo("org position: " + str(self.lat0) + ", " + str(self.lon0))
         rospy.loginfo("tar position: " + str(self.target_lat) + ", " + str(self.target_lon))
 
-        # self.markers.points.append(waypoint.position)
-       
+
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
@@ -151,7 +150,12 @@ class MoveToGeo(MoveBaseUtil):
 if __name__ == '__main__':
     try:
         # MoveToGeo(nodename="movetogeo_test", target_lat=1.3489079, target_lon=103.6867139)
+
         # MoveToGeo(nodename="movetogeo_test", target_geo=(1.345124, 103.684729, 1.57))
-        MoveToGeo(nodename="movetogeo_test", target_geo=(1.344452, 103.684460, 1.57))
+        target = Point(rospy.get_param("~latitude", 1.3489079),
+                       rospy.get_param("~longitude", 103.6867139),
+                       rospy.get_param("~heading", 1.57))
+
+        MoveToGeo(nodename="movetogeo_test", target=target)
     except rospy.ROSInterruptException:
         pass

@@ -3,23 +3,25 @@
     <arg name="radius" default="5" />
     <arg name="polygon" default="6" />
     <arg name="is_ccw" default="true" />
-    <arg name="is_relative" default="false" />
+    <arg name="is_relative" default="true" />
     <arg name="isgazebo" default="false" />
     <arg name="iswamv" default="false" />
     <arg name="isfake" default="false" />
-    <arg name="center_x" default="10" />
-    <arg name="center_y" default="1.57" />
+    <arg name="target_x" default="10" />
+    <arg name="target_y" default="1.57" /> 
+    <!-- if relative: 0: starboard, 1.57: bow, 3.14: port, -1.57: transom -->
 
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
     <node pkg="robotx_nav" type="move_base_loiter.py" name="loiter_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
         <param name="radius" value="$(arg radius)" type="double"/>
         <param name="polygon" value="$(arg polygon)" type="int" />
         <param name="is_ccw" value="$(arg is_ccw)" type="bool"/>
-        <param name="center/x" value="$(arg center_x)" type="double"/>
-	<param name="center/y" value="$(arg center_y)" type="double"/>
+        <param name="target/x" value="$(arg target_x)" type="double"/>
+        <param name="target/y" value="$(arg target_y)" type="double"/>
         <param name="is_relative" value="$(arg is_relative)" />
     </node>
 

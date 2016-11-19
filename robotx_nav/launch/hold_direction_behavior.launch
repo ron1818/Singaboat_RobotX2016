@@ -13,8 +13,9 @@
     <arg name="box_y" default="5" />
 
     <node pkg="robotx_nav" type="move_base_hold_direction.py" name="hold_direction_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
         <param name="station/x" value="$(arg station_x)" type="double"/>
  	<param name="station/y" value="$(arg station_y)" type="double"/>
 	<param name="station/yaw" value="$(arg station_yaw)" type="double"/>

@@ -34,7 +34,7 @@ class Forward(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target, waypoint_distance=5, is_relative=False):
+    def __init__(self, nodename, target, waypoint_separation=5, is_relative=False):
         MoveBaseUtil.__init__(self, nodename)
 
         self.forward = {}
@@ -48,9 +48,9 @@ class Forward(MoveBaseUtil):
             rospy.sleep(1)
 
         # set the distance between waypoints
-        self.forward["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
+        self.forward["waypoint_separation"] = waypoint_separation
         # check whether absolute or relative target
-        self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
+        self.forward["is_relative"] = is_relative
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], target)
@@ -126,7 +126,7 @@ class Forward(MoveBaseUtil):
         # need polar to catersian transform
 
         # stores number of waypoints
-        N = ceil(self.forward["goal_distance"] / self.forward["waypoint_distance"])
+        N = ceil(self.forward["goal_distance"] / self.forward["waypoint_separation"])
         N = int(N)
 
         # Then convert the angles to quaternions, all have the same heading angles
@@ -167,8 +167,10 @@ class Forward(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-	goal=Point(rospy.get_param("/forward_behavior/goal/x"), rospy.get_param("/forward_behavior/goal/y"), 0.0)
-        Forward(nodename="constantheading_test", target=goal)
+	target = Point(rospy.get_param("~target/x"), rospy.get_param("~target/y"), 0.0)
+        waypoint_separation = rospy.get_param("~separation", 5)
+        is_relative = rospy.get_param("~is_relative", True)
+        Forward(nodename="constantheading_test", target=target, waypoint_separation=waypoint_separation, is_relative=is_relative)
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
