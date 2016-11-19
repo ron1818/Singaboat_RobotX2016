@@ -11,24 +11,14 @@
 
 
     <!-- camera array joint -->
-    <xacro:macro name="spot_camera_array" params="position1">
-        <joint name="${position1}_camera_array_joint" type="fixed">
-            <origin xyz="0 0 0" rpy="0 0 0" />
+    <xacro:macro name="spot_camera" params="position1 x y z yaw">
+        <joint name="${position1}_camera_joint" type="fixed">
+            <origin xyz="${y} ${x} ${z}" rpy="0 0 ${yaw}" />
             <parent link="shelf_link"/>
-            <child link="${position1}_stereo/camera_link"/>
-        </joint>
-        <link name="${position1}_stereo/camera_link"/>
-    </xacro:macro>
-
-    <!-- Set up camera linkage and configuration -->
-    <xacro:macro name="spot_camera" params="position1 position2 x y z yaw">
-        <joint name="${position1}_${position2}_camera_joint" type="fixed">
-            <origin xyz="${x} ${y} ${z+shelf_thickness/2}" rpy="0 0 ${yaw}" />
-            <parent link="${position1}_stereo/camera_link"/>
-            <child link="${position1}_stereo/${position2}/camera_link" />
+            <child link="${position1}/camera_link"/>
         </joint>
 
-        <link name="${position1}_stereo/${position2}/camera_link">
+        <link name="${position1}/camera_link">
             <visual>
                 <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
@@ -44,15 +34,49 @@
         </link>
     </xacro:macro>
 
-    <xacro:macro name="imu" params="position1 position2 x y">
-        <joint name="${position1}_${position2}_imu_joint" type="fixed">
-            <origin xyz="0 0 ${shelf_thickness/2}" rpy="0 0 0" />
-            <parent link="imu_array_link"/>
-            <!--child link="${position1}_${position2}_imu_link"/-->
-            <child link="base_imu_link"/>
+    <xacro:macro name="underwater_camera" params="position1 x y z roll yaw">
+        <joint name="${position1}_camera_joint" type="fixed">
+            <origin xyz="${y} ${x} ${z}" rpy="0 ${roll} ${yaw}" />
+            <parent link="shelf_link"/>
+            <child link="${position1}/camera_link"/>
         </joint>
-        <!--link name="${position1}_${position2}_imu_link"/-->
-        <link name="base_imu_link"/>
+
+        <link name="${position1}/camera_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.stl"/>
+                </geometry>
+            </collision>
+        </link>
+    </xacro:macro>
+
+    <xacro:macro name="stereo_camera" params="position1 position2 x y z roll yaw">
+        <joint name="${position1}_${position2}_camera_joint" type="fixed">
+            <origin xyz="${y} ${x} ${z}" rpy="0 ${roll} ${yaw}" />
+            <parent link="shelf_link"/>
+            <child link="${position1}/${position2}/camera_link"/>
+        </joint>
+        <link name="${position1}/${position2}/camera_link">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.stl"/>
+                </geometry>
+            </collision>
+        </link>
     </xacro:macro>
 
     <joint name="gps_joint" type="fixed">
@@ -77,29 +101,12 @@
         </collision>
     </link>
 
-    <joint name="imu_array_joint" type="fixed">
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <parent link="shelf_link"/>
-        <child link="imu_array_link"/>
-    </joint>
-    <link name="imu_array_link" />
-
-    <xacro:imu position1="middle" position2="middle" x="0" y="0" />
-    <!--xacro:imu position1="front" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
-    <xacro:imu position1="front" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" />
-    <xacro:imu position1="rear" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" />
-    <xacro:imu position1="rear" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" /-->
-
-    <xacro:spot_camera_array position1="bow" />
-    <xacro:spot_camera_array position1="port" />
-    <xacro:spot_camera_array position1="starboard" />
-
-    <xacro:spot_camera position1="bow" position2="left" x="${shelf_length/2}" y="-${shelf_width/2}" z="${5*camera_height}" yaw="0"/>
-    <xacro:spot_camera position1="bow" position2="right" x="${shelf_length/2}" y="${shelf_width/2}" z="${5*camera_height}" yaw="0"/>
-    <xacro:spot_camera position1="port" position2="left" x="-${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="-${PI/2}"/>
-    <xacro:spot_camera position1="port" position2="right" x="${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="-${PI/2}"/>
-    <xacro:spot_camera position1="starboard" position2="left" x="${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="${PI/2}"/>
-    <xacro:spot_camera position1="starboard" position2="right" x="-${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="${PI/2}"/>
+    <xacro:stereo_camera position1="bow" position2="left" x="${shelf_length/2+0.2}" y="-${shelf_width/4}" z="${camera_height}" roll="0.157" yaw="${PI/2}"/>
+    <xacro:stereo_camera position1="bow" position2="right" x="${shelf_length/2+0.2}" y="${shelf_width/4}" z="${camera_height}" roll="0.157" yaw="${PI/2}"/>
+    <xacro:underwater_camera position1="underwater" x="${shelf_length/2}" y="${shelf_width/2}" z="-1" roll="${PI/2}" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="port" x="${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="-${PI}"/>
+    <xacro:spot_camera position1="starboard" x="${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="0"/>
+    <xacro:spot_camera position1="transom" x="-${1.8*shelf_width/2}" y="0" z="${camera_height}" yaw="-${PI/2}"/>
 
 
     <!--kinect camera >
@@ -196,7 +203,7 @@
     <!-- Hokuyo Laser -->
     <xacro:if value="$(arg lidar_enabled)">
         <joint name="hokuyo_joint" type="fixed">
-            <origin xyz="${shelf_length/2} 0.0 0.4" rpy="0 0 0"/>
+            <origin xyz="0 ${shelf_length/2} 0.4" rpy="0 0 ${PI/2}"/>
             <parent link="shelf_link"/>
             <child link="hokuyo_link"/>
         </joint>
