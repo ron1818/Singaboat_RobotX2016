@@ -1,13 +1,12 @@
 <launch>	
-    <param name="motor_param/forward" value="1500" type="int" />
-    <param name="motor_param/angular" value="400" type="int" />
 
-    <param name="motor_param/reverse" value="false" type="bool" />
-  
     <node pkg="rosserial_python" type="serial_node.py" name="serial_arduino_node">
-      <param name="port" value="/dev/USBSerial"/>
-      <param name="baud" value="57600"/>
+        <param name="motor_param/forward" value="1500" type="int" />
+        <param name="motor_param/angular" value="400" type="int" />
+        <param name="motor_param/reverse" value="false" type="bool" />
+        <param name="port" value="/dev/USBSerial"/>
+        <param name="baud" value="57600"/>
     </node>
 
-  <node pkg="robotx_control" type="robotx_control_node" name="motor_node" />
+    <node pkg="robotx_control" type="robotx_control_node" name="motor_node" />
 </launch>
