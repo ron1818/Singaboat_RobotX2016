@@ -34,7 +34,7 @@ cd catkin_ws
 mkdir src
 cd src
 catkin_init_workspace
-git clone https://github.com/xxx/Singaboat_RobotX2016
+git clone https://github.com/ron1818/Singaboat_RobotX2016
 ```
 
 #### script to install additional packages ####
@@ -65,6 +65,8 @@ cd ~/catkin_ws/src
 git clone https://github.com/bosch-ros-pkg/usb_cam.git
 git clone https://github.com/srv/viso2
 git clone https://github.com/KristofRobot/razor_imu_9dof
+git clone https://github.com/ron1818/nmea_navsat_driver
+git clone https://github.com/ron1818/ROS-OSM-map-integration
 cd ~/catkin_ws
 catkin_make
 rospack profile
