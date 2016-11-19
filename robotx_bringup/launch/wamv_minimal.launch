@@ -15,16 +15,17 @@
         <param name="imu_frame" value="imu_link"/>
     </node-->
 
-	<!-- rosserial to launch motor controller, motor listen to cmd_vel -->
-    <include file="$(find robotx_control)/launch/start_motor_no_teleop.launch" />
-	<!--cmd_vel is muxed and published in wamv_teleop.launch on base computer-->
-    <!-- include file="$(find robotx_bringup)/launch/wamv_teleop.launch" /-->
-    
-    <!-- gps launcher -->
-    <include file="$(find robotx_sensor)/launch/gps_serial.launch" />
-    <!-- imu launcher -->
-    <include file="$(find robotx_sensor)/launch/imu_razor_pub.launch" />
+        <!-- rosserial to launch motor controller, motor listen to cmd_vel -->
+        <include file="$(find robotx_control)/launch/start_motor_no_teleop.launch" />
+        <!--cmd_vel is muxed and published in wamv_teleop.launch on base computer-->
+        <!-- include file="$(find robotx_bringup)/launch/wamv_teleop.launch" /-->
 
-    <!-- robot localization -->
-    <include file="$(find robotx_control)/launch/wamv_r_l_control.launch" />
-</launch>
+        <!-- gps launcher -->
+        <include file="$(find robotx_sensor)/launch/gps_serial.launch" />
+        <!-- imu launcher -->
+        <include file="$(find robotx_sensor)/launch/imu_razor_pub.launch" />
+
+        <!-- robot localization -->
+        <include file="$(find robotx_control)/launch/wamv_vel_r_l_control.launch" />
+        <!--include file="$(find robotx_control)/launch/wamv_r_l_control.launch" /-->
+    </launch>

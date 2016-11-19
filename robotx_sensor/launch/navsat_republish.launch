@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="robotx_sensor" type="navsat_republish.py" name="navsat_republish" output="screen" >
+        <remap from="fix" to="navsat/fix"/>
+        <remap from="navsat/fix" to="navsat/fix/republish"/>
+        <param name="frame_id" value="gps_link" />
+    </node>
+</launch>

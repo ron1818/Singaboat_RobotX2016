@@ -2,9 +2,6 @@
   <param name="motor_param/forward" value="1500" type="int" />
   <param name="motor_param/angular" value="300" type="int" />
 
-  <param name="motor_param/right_calibration" value="1" type="double" />
-  <param name="motor_param/left_calibration" value="1.2" type="double" />
-
   <param name="motor_param/reverse" value="false" type="bool" />
  
   <node pkg="rosserial_python" type="serial_node.py" name="serial_arduino_node">
@@ -14,6 +11,5 @@
 
   <node pkg="robotx_control" type="robotx_control_node" name="motor_node">
   </node>
-
 
 </launch>

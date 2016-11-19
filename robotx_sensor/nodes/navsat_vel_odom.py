@@ -9,7 +9,6 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, TwistStamped
 from sensor_msgs.msg import Imu
 import tf
-import threading
 
 
 class Vel_Imu_Odom(object):
@@ -23,6 +22,7 @@ class Vel_Imu_Odom(object):
     imu_z = 0
     vel_x = 0
     vel_y = 0
+    sign = 1
 
     def __init__(self, nodename):
         self.nodename = nodename
@@ -31,7 +31,7 @@ class Vel_Imu_Odom(object):
         self.odom_topic = rospy.get_param("~odom_topic", "odometry/vel")
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.fixed_frame = rospy.get_param("~fixed_frame", "base_link")
-        self.is_pub_tf = rospy.get_param("~is_pub_tf", "false")
+        self.is_pub_tf = rospy.get_param("~is_pub_tf", False)
 
     def talker(self):
         rospy.Subscriber(self.vel_topic, TwistStamped, self.vel_callback)
@@ -90,26 +90,33 @@ class Vel_Imu_Odom(object):
             odom_msg.pose.pose.orientation.y = self.orientation.y
             odom_msg.pose.pose.orientation.z = self.orientation.z
             odom_msg.pose.pose.orientation.w = self.orientation.w
-            odom_msg.pose.covariance[0] = 0.00001
-            odom_msg.pose.covariance[7] = 0.00001
+            odom_msg.pose.covariance[0] = 0.25
+            odom_msg.pose.covariance[7] = 0.25
+            # odom_msg.pose.covariance[0] = 0.00001
+            # odom_msg.pose.covariance[7] = 0.00001
             odom_msg.pose.covariance[14] = 1000000000000.0
             odom_msg.pose.covariance[21] = 1000000000000.0
             odom_msg.pose.covariance[28] = 1000000000000.0
-            odom_msg.pose.covariance[35] = 0.001
+            # odom_msg.pose.covariance[35] = 0.001
+            odom_msg.pose.covariance[35] = 0.1
 
             odom_msg.child_frame_id = self.fixed_frame
-            odom_msg.twist.twist.linear.x = math.sqrt(self.vel_x ** 2 + self.vel_y ** 2)
+            odom_msg.twist.twist.linear.x = self.sign * \
+                math.sqrt(self.vel_x ** 2 + self.vel_y ** 2)
             odom_msg.twist.twist.linear.y = 0.0
             odom_msg.twist.twist.linear.z = 0.0
             odom_msg.twist.twist.angular.x = 0.0
             odom_msg.twist.twist.angular.y = 0.0
             odom_msg.twist.twist.angular.z = self.imu_z
-            odom_msg.twist.covariance[0] = 0.00001
-            odom_msg.twist.covariance[7] = 0.00001
+            # odom_msg.twist.covariance[0] = 0.00001
+            # odom_msg.twist.covariance[7] = 0.00001
+            odom_msg.twist.covariance[0] = 0.0025
+            odom_msg.twist.covariance[7] = 0.00025
             odom_msg.twist.covariance[14] = 1000000000000.0
             odom_msg.twist.covariance[21] = 1000000000000.0
             odom_msg.twist.covariance[28] = 1000000000000.0
-            odom_msg.twist.covariance[35] = 0.001
+            # odom_msg.twist.covariance[35] = 0.001
+            odom_msg.twist.covariance[35] = 0.1
 
             odom_pub.publish(odom_msg)
 
@@ -122,11 +129,17 @@ class Vel_Imu_Odom(object):
 
     def imu_callback(self, msg):
         self.orientation = msg.orientation
+        # listen to angular rotational speed
         if msg.angular_velocity.z > -0.05 and msg.angular_velocity.z < 0:
             self.imu_z = 0
         else:
             # reversed
             self.imu_z = -1 * msg.angular_velocity.z
+        # listen to linear x speed, only used for sign
+        if msg.linear_acceleration.x >= 0:
+            self.sign = 1
+        else:
+            self.sign = -1
 
     def vel_callback(self, msg):
             self.vel_x = msg.twist.linear.x
@@ -143,7 +156,7 @@ if __name__ == "__main__":
     # odom_frame = rospy.get_param('~odom_frame', "odom")
     # is_pub_tf = rospy.get_param("~is_pub_tf", "false")
 
-    nodename="navsat_vel_odom_node"
+    nodename = "navsat_vel_odom_node"
     try:
         odom_publisher = Vel_Imu_Odom(nodename)
         odom_publisher.talker()
