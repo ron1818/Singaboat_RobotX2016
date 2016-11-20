@@ -1,8 +1,9 @@
 <launch>	
 
     <node pkg="rosserial_python" type="serial_node.py" name="serial_arduino_node">
-        <param name="motor_param/forward" value="1500" type="int" />
-        <param name="motor_param/angular" value="400" type="int" />
+        <!-- max x:1.3m/s (5km/h), z: 1m/s convert to ratio: forward=384.6 angular=500 -->
+        <param name="motor_param/forward" value="384" type="int" />
+        <param name="motor_param/angular" value="500" type="int" />
         <param name="motor_param/reverse" value="false" type="bool" />
         <param name="port" value="/dev/USBSerial"/>
         <param name="baud" value="57600"/>
