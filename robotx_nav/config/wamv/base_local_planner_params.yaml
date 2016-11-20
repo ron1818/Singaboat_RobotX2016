@@ -1,6 +1,12 @@
 controller_frequency: 3.0
-recovery_behavior_enabled: true
+recovery_behavior_enabled: false
 clearing_rotation_allowed: false
+# conservative_reset_dist: 3.0
+planner_patience: 60
+controller_patience: 60
+oscillation_timeout: 60
+oscillation_distance: 1.0
+planner_frequency: 3.0
 
 TrajectoryPlannerROS:
    max_vel_x: 1.3 # 5km/h=1.3m/s
@@ -33,8 +39,8 @@ TrajectoryPlannerROS:
    publish_cost_grid_pc: false
    prune_plan: true
 
-   sim_time: 1.7
-   sim_granularity: 0.05
+   sim_time: 10
+   sim_granularity: 0.1
    angular_sim_granularity: 0.05
    vx_samples: 8
    vy_samples: 0  # zero for a differential drive robot

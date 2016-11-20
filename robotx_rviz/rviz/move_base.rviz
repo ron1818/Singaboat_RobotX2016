@@ -8,6 +8,7 @@ Panels:
         - /Status1
         - /Odometry Global1
         - /Odometry GPS1
+        - /Marker1
         - /Axes1
       Splitter Ratio: 0.5
     Tree Height: 390
@@ -61,86 +62,6 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        base_imu_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        bow/left/camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        bow/right/camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        front_left_bar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        front_right_bar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        gps_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        left_bouy_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        port/camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rear_left_bar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rear_right_bar_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        right_bouy_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        shelf_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        starboard/camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        transom/camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        underwater/camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -294,23 +215,20 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Class: rviz/Orbit
-      Distance: 10
+      Angle: 0
+      Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
-      Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.785398
+      Scale: 10.2667
       Target Frame: base_link
-      Value: Orbit (rviz)
-      Yaw: 0.785398
+      Value: TopDownOrtho (rviz)
+      X: 1.04274
+      Y: 0.0536726
     Saved: ~
 Window Geometry:
   Displays:
@@ -330,5 +248,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1535
-  X: 65
-  Y: 24
+  X: 88
+  Y: 14
