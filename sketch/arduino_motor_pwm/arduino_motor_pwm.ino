@@ -40,6 +40,8 @@ void setup() {
     pinMode(steering_input, INPUT);
 
     pinMode(modePin, OUTPUT);
+	
+    unicycleRun(0, 0);  // reset to neutral
 
     Serial.begin(57600); // Pour a bowl of Serial
 }
