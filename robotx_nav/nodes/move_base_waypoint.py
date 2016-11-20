@@ -32,8 +32,8 @@ class MoveTo(MoveBaseUtil):
         self.is_relative = rospy.get_param("~is_relative", is_relative)
 
         self.odom_received = False
-        rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
 
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -49,7 +49,9 @@ class MoveTo(MoveBaseUtil):
             rospy.sleep(1)
 
         if self.is_relative:
-            x, y = self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], self.target)
+            position, heading = self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0],
+                                                                  [self.target.x, self.target.y])
+            x, y, _ = position
         else:
             x, y = self.target.x, self.target.y
 
