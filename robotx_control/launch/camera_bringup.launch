@@ -1,9 +1,9 @@
 <launch> 
-    <arg name="use_bow" default="true" />
-    <arg name="use_port" default="true" />
-    <arg name="use_starboard" default="true" />
-    <arg name="use_transom" default="true" />
-    <arg name="use_underwater" default="true" />
+    <arg name="use_bow" default="false" />
+    <arg name="use_port" default="false" />
+    <arg name="use_starboard" default="false" />
+    <arg name="use_transom" default="false" />
+    <arg name="use_underwater" default="false" />
     <arg name="bow_left_camera_ip" default="192.168.0.100" />
     <arg name="underwater_camera_ip" default="192.168.0.101" />
     <arg name="starboard_camera_ip" default="192.168.0.102" />

@@ -2,7 +2,7 @@ frequency: 30
 delay: 3
 zero_altitude: true
 magnetic_declination_radians: 0.0043
-# yaw_offset: -1.5707963
+yaw_offset: 3.14
 broadcast_utm_transform: true
 publish_filtered_gps: false
 use_odometry_yaw: false

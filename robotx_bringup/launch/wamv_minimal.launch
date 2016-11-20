@@ -13,10 +13,12 @@
         <!-- gps launcher -->
         <include file="$(find robotx_sensor)/launch/gps_serial.launch" />
         <!-- imu launcher -->
-        <include file="$(find robotx_sensor)/launch/imu_razor_pub.launch" />
+        <include file="$(find robotx_sensor)/launch/imu_razor_pub.launch" >
+            <arg name="calibrate_magn" value="false" />
+        </include>
 
         <!-- robot localization -->
-        <include file="$(find robotx_control)/launch/wamv_r_l_control.launch" />
+        <!--include file="$(find robotx_control)/launch/wamv_r_l_control.launch" /-->
         <!-- or without navsat/vel => odometry/vel -->
-        <!--include file="$(find robotx_control)/launch/wamv_no_vel_r_l_control.launch" /-->
+        <include file="$(find robotx_control)/launch/wamv_no_vel_r_l_control.launch" />
     </launch>
