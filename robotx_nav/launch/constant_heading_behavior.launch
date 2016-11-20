@@ -10,7 +10,7 @@
     <arg name="iswamv" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
-    <node pkg="robotx_nav" type="move_base_forward.py" name="constant_heading_behavior" >
+    <node pkg="robotx_nav" type="move_base_forward.py" name="constant_heading_behavior" output="screen">
         <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
         <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
         <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />

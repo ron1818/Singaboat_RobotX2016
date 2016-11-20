@@ -54,9 +54,6 @@ class MoveToGeo(MoveBaseUtil):
         while not self.fix_received:
             rospy.sleep(1)
 
-        rospy.loginfo("org position: " + str(self.lat0) + ", " + str(self.lon0))
-        rospy.loginfo("tar position: " + str(self.target_lat) + ", " + str(self.target_lon))
-
 
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -92,29 +89,25 @@ class MoveToGeo(MoveBaseUtil):
 
     def create_waypoint(self):
         """ create waypoint from target lat/lon and current lat/lon """
-        rospy.loginfo("current position: " + str(self.lat0) + ", " + str(self.lon0))
-        rospy.loginfo("target position: " + str(self.target_lat) + ", " + str(self.target_lon))
+        # rospy.loginfo("current position: " + str(self.lat0) + ", " + str(self.lon0))
+        # rospy.loginfo("target position: " + str(self.target_lat) + ", " + str(self.target_lon))
 
         result = Geodesic.WGS84.Inverse(self.lat0, self.lon0,
                                         self.target_lat, self.target_lon)
         self.geo["goal_distance"] = result['s12']  # distance from boat position to target
 
         azi = result['azi1'] * pi / 180
-        print self.yaw0
-        theta =pi / 2 - self.yaw0 - azi
+        theta =pi - self.yaw0 - azi
 
-        rospy.loginfo(str(self.geo["goal_distance"]) + "," + str(theta))
 
         self.geo["translation"], self.geo["heading"] = \
-            self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], (self.geo["goal_distance"], theta))
-
+            self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], [self.geo["goal_distance"], theta])
 
         # create waypoint
         q_angle = quaternion_from_euler(0, 0, self.geo["goal_heading"])
         quaternion = Quaternion(*q_angle)
 
-        catersian_x = self.x0 + self.geo["translation"][0]
-        catersian_y = self.y0 + self.geo["translation"][1]
+        catersian_x, catersian_y = self.geo["translation"][0], self.geo["translation"][1]
 
         waypoint = Pose(Point(catersian_x, catersian_y, 0),
                         quaternion)

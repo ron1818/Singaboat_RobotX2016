@@ -36,7 +36,7 @@ class Loiter(MoveBaseUtil):
         MoveBaseUtil.__init__(self, nodename)
 
         self.loiter = {}
- 	self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("target_y", target[1]), 0)
+ 	self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
 	self.loiter["radius"] = rospy.get_param("~radius", radius) #double
         self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
 	self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
@@ -68,7 +68,8 @@ class Loiter(MoveBaseUtil):
             # print self.loiter["is_relative"]
             # 0 is starboard, pi/2 is bow, pi is port and -pi/2 is transom
             self.loiter["center"], self.loiter["heading"] = \
-                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], (self.target.x, self.target.y))
+                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0],
+                                                  [self.target.x, self.target.y])
         else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
@@ -125,7 +126,6 @@ class Loiter(MoveBaseUtil):
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
-            rospy.loginfo("end")
             pass
 
     def create_waypoints(self):

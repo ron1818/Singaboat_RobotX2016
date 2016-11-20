@@ -31,8 +31,8 @@ class Zigzag(MoveBaseUtil):
 	self.quadrant = rospy.get_param("~quadrant", quadrant)
         self.map_length = rospy.get_param("~map_length", map_length)
         self.map_width = rospy.get_param("~map_width", map_width)
-        self.half_period = rospy.get_param("~half_period", half_period)
-        self.half_amplitude = rospy.get_param("~half_amplitude", half_amplitude)
+        self.map_half_period = rospy.get_param("~half_period", half_period)
+        self.map_half_amplitude = rospy.get_param("~half_amplitude", half_amplitude)
         self.map_offset = rospy.get_param("~offset", offset)
 
         # get boat position, one time only
@@ -68,7 +68,7 @@ class Zigzag(MoveBaseUtil):
         elif self.quadrant == 4:
             # create waypoints for quadrant 4
                 waypoints = self.create_waypoints(self.map_half_period, self.map_half_amplitude, self.map_offset, self.map_length / 2, self.map_width / 2, self.map_length / 2, 0)
-        else:
+        else:  # e.g. 0
             # create waypoints for the whole map
                 waypoints = self.create_waypoints(self.map_half_period, self.map_half_amplitude, self.map_offset, self.map_length, self.map_width, 0, 0)
 

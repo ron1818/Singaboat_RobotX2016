@@ -58,6 +58,7 @@ class Forward(MoveBaseUtil):
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0],
                                                                                                      [self.target.x, self.target.y])
+            print self.forward["translation"], self.forward["heading"]
             self.forward["goal_distance"] = self.target.x
         else:
             # obtained from vision nodes, absolute catersian
