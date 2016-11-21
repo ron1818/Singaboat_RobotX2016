@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <launch>
+    <arg name="use_vel" default="false" />
     <!-- robot state publisher -->
     <include file="$(find robotx_description)/launch/description.launch" >
         <arg name="lidar_enabled" value="false" />
@@ -18,7 +19,7 @@
         </include>
 
         <!-- robot localization -->
-        <!--include file="$(find robotx_control)/launch/wamv_r_l_control.launch" /-->
+        <include file="$(find robotx_control)/launch/wamv_r_l_control.launch" if="$(arg use_vel)" />
         <!-- or without navsat/vel => odometry/vel -->
-        <include file="$(find robotx_control)/launch/wamv_no_vel_r_l_control.launch" />
+        <include file="$(find robotx_control)/launch/wamv_no_vel_r_l_control.launch" unless="$(arg use_vel)" />
     </launch>

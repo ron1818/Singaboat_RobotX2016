@@ -21,7 +21,7 @@ int forwardROS=1500;
 int turnROS=1500;
 
 double right_calib=1;
-double left_calib=1.1;
+double left_calib=1;
 
 
 
@@ -41,7 +41,7 @@ void setup() {
 
     pinMode(modePin, OUTPUT);
 	
-    unicycleRun(0, 0);  // reset to neutral
+    //unicycleRun(0, 0);  // reset to neutral
 
     Serial.begin(57600); // Pour a bowl of Serial
 }
@@ -51,24 +51,25 @@ void loop() {
     ch1 = pulseIn(RC1, HIGH, 25000); // Read the pulse width of 
     ch2 = pulseIn(RC2, HIGH, 25000); // each channel
     ch3 = pulseIn(RC3, HIGH, 25000); // ch3 unused at the moment
-    forwardROS=pulseIn(throttle_input, HIGH, 25000);
-    turnROS=pulseIn(steering_input, HIGH, 25000);
+    
+    forwardROS  = pulseIn(throttle_input, HIGH, 25000);
+    turnROS     = pulseIn(steering_input, HIGH, 25000);
 
 
     if((ch3>1000) && (ch3<1300)){
-        forward = map(ch1, 1100, 1900,-500, 500); //map values from RC
-        turn = map(ch2, 1100, 1900,-500, 500);
+        forward   = map(ch1, 1050, 1950, -500, 500); //map values from RC
+        turn      = map(ch2, 1050, 1950,-500, 500);
         digitalWrite(modePin, HIGH);
     }
     else{
-        forward=map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
-        turn=map(turnROS, 1100, 1900, -500, 500);
+        forward=-map(forwardROS, 1000, 2000, -500, 500); //value is -500 to 500
+        turn=map(turnROS, 1000, 2000, -500, 500);
         digitalWrite(modePin, LOW);
     }
 
     // constrain in case exceeds
-    forward = constrain(forward, -500, 500);
-    turn = constrain(turn, -500, 500);
+    //forward = constrain(forward, -500, 500);
+    //turn = constrain(turn, -500, 500);
 
 
     unicycleRun(forward, turn);
@@ -82,25 +83,27 @@ void unicycleRun(int forward, int turn){
     int Ul;
     int digitalStepRight;
     int digitalStepLeft;
+    int Ur_out;
+    int Ul_out;
 
-    Ur=right_calib*(forward-turn/2); //here turning in cw is positive
-    Ul=left_calib*(forward+turn/2);
+    Ur=right_calib*(forward-turn/2); //here turning in cw is positive250
+    Ul=left_calib*(forward+turn/2); //750
     //Ur & Ul ranges from -750 to 750 if right and left calibration factors = 1 
     Ur=-Ur;
     Ul=-Ul;
 
     //map Ur and Ul to digital potentiometer values 0-255, map back to 1000-2000
-    Ur=map(Ur, -750, 750, 1000, 2000);
-    Ul=map(Ul, -750, 750, 1000, 2000);
+    Ur_out=map(Ur, -750, 750, 1000, 2000);
+    Ul_out=map(Ul, -750, 750, 1000, 2000);
 
-    digitalStepRight=mapToResistance(Ur);
-    digitalStepLeft=mapToResistance(Ul);
+    digitalStepRight=mapToResistance(Ur_out);
+    digitalStepLeft=mapToResistance(Ul_out);
 
     Serial.print("\nright: ");
-    Serial.print(digitalStepRight);
+    Serial.print(Ur_out);
 
     Serial.print("\nleft:");
-    Serial.print(digitalStepLeft);
+    Serial.print(Ul_out);
     setMotor(digitalStepRight, digitalStepLeft);
 
 }
@@ -109,17 +112,17 @@ int mapToResistance(int input){
 
     int digitalStep;
 
-    if (input<=2000&&input>1550)
+    if (input<=2000 && input>1550)
     {
-        digitalStep = map(input,1551,2000,80,0); //right (80-50) left(80-0)
+        digitalStep = map(input,1551,2000, 80, 0); //right (80-50) left(80-0)
     }
-    else if (input<=1550&&input>1450)
+    else if (input<=1550 && input>1450)
     {
         digitalStep =120;
     }
-    else if (input<=1450&&input>=1000)
+    else if (input<=1450&&input>=900)
     {
-        digitalStep = map(input,1000,1450,255,175); 
+        digitalStep = map(input,900,1450,255,175); 
     }
 
     return digitalStep;
