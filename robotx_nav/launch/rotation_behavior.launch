@@ -4,12 +4,13 @@
     <arg name="isfake" default="false" />
     <arg name="iswamv" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
+    <arg name="cmd_vel_topic" default="cmd_vel" />
     <arg name="angle" default="-3" />
 
     <node pkg="robotx_nav" type="move_base_rotation.py" name="rotation_behavior" >
         <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
         <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
-        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
         <param name="theta" value="$(arg angle)" type="double"/>
     </node>
 
