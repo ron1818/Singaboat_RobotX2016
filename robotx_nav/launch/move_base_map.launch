@@ -14,13 +14,13 @@
         <arg name="iswamv" value="true" if="$(arg iswamv)" />
         <arg name="iswamv" value="true" if="$(arg isbag)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg iswamv)" />
-        <!--arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isgazebo)" />
         <arg name="odom_topic" value="/odometry/filtered/global/bag" if="$(arg isbag)" />
-        <arg name="odom_topic" value="/odom" if="$(arg isfake)" /-->
-        <!--arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
+        <arg name="odom_topic" value="/odom" if="$(arg isfake)" />
+        <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
         <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" if="$(arg isbag)" />
         <arg name="cmd_vel_topic" value="cmd_vel" if="$(arg isfake)" />
-        <arg name="cmd_vel_topic" value="cmd_vel" if="$(arg isgazebo)" /-->
+        <arg name="cmd_vel_topic" value="cmd_vel" if="$(arg isgazebo)" />
     </include>
 
     <!-- Run the map server with a blank map -->

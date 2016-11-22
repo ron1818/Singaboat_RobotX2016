@@ -30,7 +30,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: Image
 Visualization Manager:
   Class: ""
   Displays:
@@ -62,6 +62,91 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
+        base_imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bow/left/camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        bow/right/camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_left_bar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        front_right_bar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        gps_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        hokuyo_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_bouy_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        port/camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_left_bar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        rear_right_bar_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_bouy_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        shelf_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        starboard/camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        transom/camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        underwater/camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -112,7 +197,7 @@ Visualization Manager:
       Class: rviz/Odometry
       Color: 255; 25; 0
       Enabled: true
-      Keep: 1000000
+      Keep: 100
       Length: 1
       Name: Odometry Global
       Position Tolerance: 0.1
@@ -122,7 +207,7 @@ Visualization Manager:
       Class: rviz/Odometry
       Color: 0; 85; 255
       Enabled: true
-      Keep: 1000000
+      Keep: 100
       Length: 1
       Name: Odometry GPS
       Position Tolerance: 0.1
@@ -215,7 +300,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: 0
+      Angle: 3.145
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
@@ -224,11 +309,11 @@ Visualization Manager:
         Value: false
       Name: Current View
       Near Clip Distance: 0.01
-      Scale: 10.2667
+      Scale: 6.50675
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 1.04274
-      Y: 0.0536726
+      X: -0.25113
+      Y: -15.455
     Saved: ~
 Window Geometry:
   Displays:
@@ -248,5 +333,5 @@ Window Geometry:
   Views:
     collapsed: false
   Width: 1535
-  X: 88
-  Y: 14
+  X: 1963
+  Y: 93
