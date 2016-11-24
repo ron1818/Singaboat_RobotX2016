@@ -3,9 +3,10 @@
     <!-- call nmea_navsat to output gps /fix message-->
     <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="gps_serial">
         <!--param name="useRMC" value="True"/-->
-        <param name="port" value="/dev/ttyS5"/>
-        <param name="baud" value="9600"/>
-        <param name="frame_id" value="gps"/>
+        <param name="port" value="/dev/USBgps"/>
+        <!--param name="port" value="/dev/ttyS5"/-->
+        <param name="baud" value="57600"/>
+        <param name="frame_id" value="gps_link"/>
         <remap from="fix" to="/navsat/fix" />
         <remap from="vel" to="/navsat/vel" />
     </node>

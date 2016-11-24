@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 
   sensor_msgs::MagneticField mag;
   geometry_msgs::Quaternion quat;
-  
+
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("middle_middle_imu/imu/data_raw", 1000);
   ros::Publisher mag_pub = n.advertise<sensor_msgs::MagneticField> ("middle_middle_imu/imu/mag", 1000);
 
@@ -53,10 +53,10 @@ int main(int argc, char **argv)
   ser=new Serial("/dev/ttyUSB0", 57600, serial::Timeout::simpleTimeout(250));
 
   std::string frame_id="imu_link";
-  
+
 
   while (ros::ok())
-  { 
+  {
     i=0;
     pos=0;
     msg=ser->readline();
@@ -64,13 +64,13 @@ int main(int argc, char **argv)
     msg.erase(0,5);
     sensor_msgs::Imu imu_msg;
 
-    
+
     while((pos=msg.find(delimiter))!=std::string::npos){
-    
+
       	token=msg.substr(0,pos);
    	s[i]=::atof(token.c_str());
    	msg.erase(0,pos+delimiter.length());
-   	i++;  
+   	i++;
    }
    s[14]=::atof(msg.c_str());
 
@@ -87,17 +87,16 @@ int main(int argc, char **argv)
    mag.magnetic_field.x=s[12];
    mag.magnetic_field.y=s[13];
    mag.magnetic_field.z=s[14];
-   
 
-   
-   //geometry_msgs::Quaternion quat= tf::createQuaternionFromRPY(double rpy.x, double rpy.y, double rpy.z); 
-    
+
+   //geometry_msgs::Quaternion quat= tf::createQuaternionFromRPY(double rpy.x, double rpy.y, double rpy.z);
+
     quat= tf::createQuaternionMsgFromRollPitchYaw(rpy.x, rpy.y, rpy.z);
-    
-    
-    //static geometry_msgs::Quaternion quat=tf::createQuaternionFromRPY(rpy.x, rpy.y,rpy.z); 
 
-           
+
+    //static geometry_msgs::Quaternion quat=tf::createQuaternionFromRPY(rpy.x, rpy.y,rpy.z);
+
+
             imu_msg.header.stamp = ros::Time::now();
             imu_msg.header.frame_id = frame_id;
             imu_msg.orientation.x =quat.x;
@@ -113,12 +112,12 @@ int main(int argc, char **argv)
             imu_msg.orientation_covariance = covariance_ori;
             imu_msg.angular_velocity_covariance = covariance_an;
             imu_msg.linear_acceleration_covariance = covariance_acc;
-             
-            
-         
+
+
+
    imu_pub.publish(imu_msg);
    mag_pub.publish(mag);
-   
+
    ros::spinOnce();
    loop_rate.sleep();
   }

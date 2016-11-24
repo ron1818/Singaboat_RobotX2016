@@ -11,12 +11,14 @@ class Masking(object):
     K = 2
     # calibrated by palette
     lower_red1 = np.array([0, 90, 90])
-    upper_red1 = np.array([25, 255, 255])
-    lower_red2 = np.array([175, 90, 90])
+    upper_red1 = np.array([10, 255, 255])
+    # upper_red1 = np.array([25, 255, 255])
+    lower_red2 = np.array([190, 90, 90])
+    # lower_red2 = np.array([175, 90, 90])
     upper_red2 = np.array([255, 255, 255])
-    lower_blue = np.array([85, 90, 90])
-    upper_blue = np.array([130, 255, 255])
-    lower_green = np.array([25, 50, 75])
+    lower_blue = np.array([105, 90, 90])
+    upper_blue = np.array([135, 255, 255])
+    lower_green = np.array([45, 50, 75])
     upper_green = np.array([75, 255, 255])
 
 

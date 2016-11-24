@@ -44,7 +44,7 @@ for this release, the *tf* is taken care by `robot_state_publisher` and `ekf` fr
 
 ```bash
 # lauch gazebo in empty environment:
-roslaunch robotx_gazebo robotx_test.launch
+roslaunch robotx_gazebo robotx_test.launch use_vel:=false
 # if you want to lauch gazebo with pre-built test environment:
 roslaunch robotx_gazebo robotx_test.launch test1:=true
 # launch movebase, you can change the mapname by: hawaii or blank_map
@@ -52,7 +52,7 @@ roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
 # launch rviz
 rosrun rviz rviz -d `rospack find robotx_rviz`/rviz/move_base.rviz
 # launch individual behavior, you can check one by one
-roslaunch robotx_nav loiter_behavior.launch isgazebo:=true
+roslaunch robotx_nav loiter_behavior.launch isgazebo:=true is_relative:=true
 roslaunch robotx_nav constant_heading_behavior.launch isgazebo:=true
 roslaunch robotx_nav scout_behavior.launch isgazebo:=true
 roslaunch robotx_nav zigzag_behavior.launch isgazebo:=true
@@ -75,8 +75,10 @@ there is a `yocs` related mux-controller so that we can use joystick and keyboar
 ### nanyang lake test @ 2016-11-12 ###
 + make sure gps and imu are working:
  - gps should output `navsat/fix` (`sensor_msgs/NavSatFix`) and `navsat/vel`
- - imu should output `middle_middle_imu/imu/data_raw` (`sensor_msgs/Imu`) and `middle_middle_imu/imu/mag` (`sensor_msgs/MagneticField`)
+ - imu should output `middle_middle_imu/imu/data`
++ make sure `nmea_navsat_transform` is updated with my github's fork
 + make sure `navsat_transform` can convert `navsat/fix` to `odometry/gps`
++ make sure `odometry/gps` actually publishes with my updated github
 + make sure `imu_filter` can output `middle_middle_imu/imu/data`
 
 for the test, we mainly want to check `constant_heading_hebavior` and `gps_waypoint` can work or not.
@@ -90,13 +92,13 @@ roslaunch robotx_nav move_base_map.launch isgazebo:=true mapname:=pandan
 #### migrate from gazebo to real boat ####
 ```bash
 # bringup boat 
-roslaunch robotx_bringup wamv_minimal.launvh
+roslaunch robotx_bringup wamv_minimal.launch
 # bringuo movebase
 roslaunch robotx_bringup wamv_move_base.launch
 # launch rviz
 rosrun rviz rviz -d `rospack find robotx_rviz`/rviz/move_base.rviz
 # launch individual behavior, you can check one by one
-roslaunch robotx_nav loiter_behavior.launch iswamv:=true
+roslaunch robotx_nav loiter_behavior.launch iswamv:=true is_relative:=false
 roslaunch robotx_nav constant_heading_behavior.launch iswamv:=true
 roslaunch robotx_nav scout_behavior.launch iswamv:=true
 roslaunch robotx_nav zigzag_behavior.launch iswamv:=true

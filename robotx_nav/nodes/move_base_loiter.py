@@ -32,10 +32,17 @@ class Loiter(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target, radius, polygon, is_ccw):
+    def __init__(self, nodename, target=[10,1.57,0], radius=5, polygon=6, is_ccw=True, is_relative=True):
         MoveBaseUtil.__init__(self, nodename)
 
         self.loiter = {}
+ 	self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
+	self.loiter["radius"] = rospy.get_param("~radius", radius) #double
+        self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
+	self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
+	self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
+
+
 
         # get boat position, one time only
         self.odom_received = False
@@ -45,22 +52,24 @@ class Loiter(MoveBaseUtil):
         while not self.odom_received:
             rospy.sleep(1)
 
-        # check if it is relative (polar) or absolute (catersian) target
-        self.loiter["is_relative"] = rospy.get_param("~is_relative", False)
+        # # check if it is relative (polar) or absolute (catersian) target
+        # self.loiter["is_relative"] = is_relative
 
-        # How big is the loiter radius?
-        self.loiter["radius"] = radius# meters
-        # How many waypoints is the loiter? default 6 (hexagon)
-        self.loiter["polygon"] = polygon  # hexagon
-        # loiter clockwise or counter clockwise?
-        self.loiter["is_ccw"] = is_ccw  # 1 for ccw, 0 for cw
-        self.target = target
+        # # How big is the loiter radius?
+        # self.loiter["radius"] = radius# meters
+        # # How many waypoints is the loiter? default 6 (hexagon)
+        # self.loiter["polygon"] = polygon  # hexagon
+        # # loiter clockwise or counter clockwise?
+        # self.loiter["is_ccw"] = is_ccw  # 1 for ccw, 0 for cw
+        # self.target = target
 
         # find the target
         if self.loiter["is_relative"]:
-            print self.loiter["is_relative"]
+            # print self.loiter["is_relative"]
+            # 0 is starboard, pi/2 is bow, pi is port and -pi/2 is transom
             self.loiter["center"], self.loiter["heading"] = \
-                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], (self.target.x, self.target.y))
+                self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0],
+                                                  [self.target.x, self.target.y])
         else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
@@ -117,7 +126,6 @@ class Loiter(MoveBaseUtil):
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
-            rospy.loginfo("end")
             pass
 
     def create_waypoints(self):
@@ -186,13 +194,7 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
- 	center=Point(rospy.get_param("/loiter_behavior/center/x"),rospy.get_param("/loiter_behavior/center/y"),0)
-
-	r=rospy.get_param("/loiter_behavior/radius") #double
-	poly=rospy.get_param("/loiter_behavior/polygon") #int
-	ccw=rospy.get_param("/loiter_behavior/is_ccw") #bool
-
-        Loiter(nodename="loiter_test", target=center, radius=r, polygon=poly, is_ccw=ccw)
+        Loiter(nodename="loiter_test")
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

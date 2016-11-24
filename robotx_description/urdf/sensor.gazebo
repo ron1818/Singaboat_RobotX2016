@@ -10,26 +10,28 @@
             <plugin name="imu" filename="libhector_gazebo_ros_imu.so">
                 <robotNamespace>${position1}_${position2}_imu</robotNamespace>
                 <updateRate>20.0</updateRate>
-                <frameId>${position1}_${position2}_imu_link</frameId>
+                <!--frameId>${position1}_${position2}_imu_link</frameId-->
+                <frameId>base_imu_link</frameId>
                 <bodyName>shelf_link</bodyName>
                 <topicName>imu/data_raw</topicName>
                 <serviceName>imu</serviceName>
                 <xyzOffset>0 0 0</xyzOffset> 
                 <rpyOffset>0 0 -${M_PI/2}</rpyOffset> 
                 <gaussianNoise>0</gaussianNoise> 
-                <!--accelDrift>0.005 0.005 0.005</accelDrift>
+                <accelDrift>0.005 0.005 0.005</accelDrift>
                 <accelGaussianNoise>0.35 0.35 0.3</accelGaussianNoise>
                 <rateDrift>0.0001 0.0001 0.0001</rateDrift>
                 <rateGaussianNoise>0.05 0.05 0.015</rateGaussianNoise>
                 <headingDrift>0.0001</headingDrift>
-                <headingGaussianNoise>0.05</headingGaussianNoise-->
+                <headingGaussianNoise>0.05</headingGaussianNoise>
             </plugin>
         </gazebo>
         <gazebo>
             <plugin name="mag" filename="libhector_gazebo_ros_magnetic.so">
                 <robotNamespace>${position1}_${position2}_imu</robotNamespace>
                 <updateRate>20.0</updateRate>
-                <frameId>${position1}_${position2}_imu_link</frameId>
+                <!--frameId>${position1}_${position2}_imu_link</frameId-->
+                <frameId>base_imu_link</frameId>
                 <bodyName>shelf_link</bodyName>
                 <topicName>imu/mag</topicName>
                 <declination>0.0043</declination>
@@ -39,8 +41,8 @@
     </xacro:macro>
 
     <!-- Set up camera configuration -->
-    <xacro:macro name="camera_gazebo" params="position1 position2">
-        <gazebo reference="${position1}_stereo/${position2}/camera_link" >
+    <xacro:macro name="stereo_camera_gazebo" params="position1 position2">
+        <gazebo reference="${position1}/${position2}/camera_link" >
             <sensor type="camera" name="${position1}_${position2}_camera">
                 <update_rate>30.0</update_rate>
                 <camera name="stereo_camera">
@@ -61,13 +63,51 @@
                     </noise>
                 </camera>
                 <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
-                    <!--robotNamespace>${position1}_stereo/${position2}</robotNamespace-->
                     <alwaysOn>true</alwaysOn>
                     <updateRate>30.0</updateRate>
-                    <cameraName>${position1}_stereo/${position2}</cameraName>
+                    <cameraName>${position1}/${position2}</cameraName>
                     <imageTopicName>image_raw</imageTopicName>
                     <cameraInfoTopicName>camera_info</cameraInfoTopicName>
-                    <frameName>${position1}_stereo/${position2}/camera_link</frameName>
+                    <frameName>${position1}/${position2}/camera_link</frameName>
+                    <hackBaseline>0.07</hackBaseline>
+                    <distortionK1>0.0</distortionK1>
+                    <distortionK2>0.0</distortionK2>
+                    <distortionK3>0.0</distortionK3>
+                    <distortionT1>0.0</distortionT1>
+                    <distortionT2>0.0</distortionT2>
+                </plugin>
+            </sensor>
+        </gazebo>
+    </xacro:macro>
+
+    <xacro:macro name="spot_camera_gazebo" params="position1">
+        <gazebo reference="${position1}/camera_link" >
+            <sensor type="camera" name="${position1}_camera">
+                <update_rate>30.0</update_rate>
+                <camera name="spot_camera">
+                    <horizontal_fov>1.4137</horizontal_fov>
+                    <image>
+                        <width>640</width>
+                        <height>480</height>
+                        <format>R8G8B8</format>
+                    </image>
+                    <clip>
+                        <near>0.02</near>
+                        <far>300</far>
+                    </clip>
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.007</stddev>
+                    </noise>
+                </camera>
+                <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+                    <alwaysOn>true</alwaysOn>
+                    <updateRate>30.0</updateRate>
+                    <cameraName>${position1}</cameraName>
+                    <imageTopicName>image_raw</imageTopicName>
+                    <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                    <frameName>${position1}/camera_link</frameName>
                     <hackBaseline>0.07</hackBaseline>
                     <distortionK1>0.0</distortionK1>
                     <distortionK2>0.0</distortionK2>
@@ -80,16 +120,13 @@
     </xacro:macro>
 
     <xacro:imu_gazebo position1="middle" position2="middle" />
-    <!--xacro:imu_gazebo position1="front" position2="right" />
-    <xacro:imu_gazebo position1="rear" position2="left" />
-    <xacro:imu_gazebo position1="rear" position2="right" /-->
 
-    <xacro:camera_gazebo position1="bow" position2="left" />
-    <xacro:camera_gazebo position1="bow" position2="right" />
-    <xacro:camera_gazebo position1="port" position2="left" />
-    <xacro:camera_gazebo position1="port" position2="right" />
-    <xacro:camera_gazebo position1="starboard" position2="left" />
-    <xacro:camera_gazebo position1="starboard" position2="right" />
+    <xacro:stereo_camera_gazebo position1="bow" position2="left" />
+    <xacro:stereo_camera_gazebo position1="bow" position2="right" />
+    <xacro:spot_camera_gazebo position1="underwater" />
+    <xacro:spot_camera_gazebo position1="port" />
+    <xacro:spot_camera_gazebo position1="starboard" />
+    <xacro:spot_camera_gazebo position1="transom" />
 
         
         <!-- Set up gps configuration -->
@@ -106,8 +143,8 @@
             <!--referenceLatitude>1.35012856</referenceLatitude>
             <referenceLongitude>103.687695</referenceLongitude-->
             <!-- nanyang lake bottom left -->
-            <referenceLatitude>1.344452</referenceLatitude>
-            <referenceLongitude>103.684660</referenceLongitude>
+            <referenceLatitude>1.344446</referenceLatitude>
+            <referenceLongitude>103.684945</referenceLongitude>
             <referenceHeading>0</referenceHeading>
             <referenceAltitude>0</referenceAltitude>
             <drift>5.0 5.0 5.0</drift>

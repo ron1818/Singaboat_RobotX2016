@@ -4,9 +4,9 @@
    station keeping
     @Weiwei
     2016-10-25
-    
+
    corrected: reinaldo
-   
+
 
 """
 
@@ -26,8 +26,15 @@ class StationKeeping(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target, radius, duration):
+    def __init__(self, nodename, target=[10,1.57,0], radius=5, duration=10):
         MoveBaseUtil.__init__(self, nodename)
+
+	self.target = Twist(Point(rospy.get_param("~target_x", target[0]),
+                              rospy.get_param("~target_y"), target[1]),
+                        Point(0, 0, rospy.get_param("~angle", target[2])))
+	self.radius = rospy.get_param("~radius", radius)
+	self.duration = ospy.get_param("~duration", duration)
+
 
         #get boat pose one time only
         self.odom_received = False
@@ -38,7 +45,7 @@ class StationKeeping(MoveBaseUtil):
             rospy.sleep(1)
 
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
 
         # Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -51,10 +58,10 @@ class StationKeeping(MoveBaseUtil):
         rospy.loginfo("Connected to move base server")
         rospy.loginfo("Starting navigation test")
 
-        q_angle = quaternion_from_euler(0, 0, target.angular.z)
+        q_angle = quaternion_from_euler(0, 0, self.target.angular.z)
         angle = Quaternion(*q_angle)
-        station=Pose(target.linear, angle)
-	
+        station=Pose(self.target.linear, angle)
+
 	p = Point()
         p = station.position
         self.markers.points.append(p)
@@ -64,8 +71,8 @@ class StationKeeping(MoveBaseUtil):
         #get start time
         start_time= rospy.get_time()
 
-        while ((rospy.get_time()-start_time < duration) or not duration) and not rospy.is_shutdown():
-            if (sqrt((target.linear.x-self.x0)**2 + (target.linear.y-self.y0)**2)<radius):
+        while ((rospy.get_time()-start_time < self.duration) or not self.duration) and not rospy.is_shutdown():
+            if (sqrt((self.target.linear.x-self.x0)**2 + (self.target.linear.y-self.y0)**2) < self.radius):
                 self.cmd_vel_pub.publish(Twist())
 		rospy.loginfo("inside inner radius, no action")
             else:
@@ -107,11 +114,7 @@ class StationKeeping(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-	goal=Twist(Point(rospy.get_param("station_keep_behavior/target/x"),rospy.get_param("station_keep_behavior/target/y"),0.0), Point(0,0,rospy.get_param("station_keep_behavior/angle")))
-	r=rospy.get_param("station_keep_behavior/radius")
-	t=rospy.get_param("station_keep_behavior/duration")
-
-        StationKeeping("station_keeping_test", target=goal, radius=r, duration=t)
+        StationKeeping("station_keeping_test")
     except rospy.ROSInterruptException:
 	rospy.loginfo("Navigation test finished.")
         pass

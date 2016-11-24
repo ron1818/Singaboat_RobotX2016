@@ -7,6 +7,7 @@
     <arg name="gui" default="true"/>
     <arg name="headless" default="false"/>
     <arg name="debug" default="false"/>
+    <arg name="use_vel" default="false"/>
     <arg name="test1" default="false" />
     <arg name="test2" default="false" />
     <arg name="test3" default="false" />
@@ -27,13 +28,14 @@
 
     <!-- launch robot localization/-->
     <!--include file="$(find robotx_control)/launch/fake_control.launch"/-->
-    <include file="$(find robotx_control)/launch/gazebo_r_l_control.launch"/>
+    <include file="$(find robotx_control)/launch/gazebo_r_l_control.launch" if="$(arg use_vel)" />
+    <include file="$(find robotx_control)/launch/gazebo_no_vel_r_l_control.launch" unless="$(arg use_vel)" />
     <!-- imu filter by madgwick/-->
     <include file="$(find robotx_sensor)/launch/imu_filter.launch"/>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-        args="-urdf -model auv -param robot_description">
+        args="-urdf -model wamv -param robot_description">
     </node>
 
 	<!-- different test scenario -->
@@ -52,7 +54,9 @@
     <!--include file="$(find robotx_bringup)/launch/vo_stereo.launch"/-->
 
     <!-- robot description from auv_ros_description package -->
-    <include file="$(find robotx_description)/launch/description.launch"/>
+    <include file="$(find robotx_description)/launch/description.launch">
+        <arg name="lidar_enabled" value="true" />
+    </include>
     <!-- not in use -->
     <!-- bring stereo image -->
     <!--include file="$(find robotx_bringup)/launch/stereo_proc.launch"/-->

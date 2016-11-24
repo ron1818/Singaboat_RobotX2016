@@ -11,8 +11,9 @@
     <arg name="theta" default="0.5" />
 
     <node pkg="robotx_nav" type="move_base_stationkeeping.py" name="station_keep_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
 	<param name="target/x" value="$(arg target_x)" type="double"/>
 	<param name="target/y" value="$(arg target_y)" type="double"/>
 	<param name="radius" value="$(arg r)" type="double"/>
