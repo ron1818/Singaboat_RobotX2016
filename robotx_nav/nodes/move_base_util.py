@@ -10,6 +10,7 @@ import actionlib
 from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist, Vector3
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
+import tf
 from tf.transformations import quaternion_from_euler
 from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, sqrt
@@ -18,10 +19,14 @@ from math import radians, pi, sin, cos, sqrt
 class MoveBaseUtil():
     def __init__(self, nodename="nav_test"):
         rospy.init_node(nodename, anonymous=False)
-	
+
         # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
         self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
 
+        self.base_frame = rospy.get_param("~base_frame", "base_link")
+        self.fixed_frame = rospy.get_param("~fixed_frame", "map")
+        # tf_listener
+        self.tf_listener = tf.TransformListener()
 
         rospy.on_shutdown(self.shutdown)
 
@@ -43,30 +48,41 @@ class MoveBaseUtil():
         # * Set a visualization marker at each waypoint
 
         # * Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        # self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
 
         # * Subscribe to the move_base action server
-        # self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
         # * Wait 60 seconds for the action server to become available
-        # self.move_base.wait_for_server(rospy.Duration(60))
+        self.move_base.wait_for_server(rospy.Duration(60))
 
         # * Cycle through the four waypoints
 
-    def convert_relative_to_absolute(self, boat, target):
+    def convert_relative_to_absolute(self, target):
         """ boat is catersian (x0, y0),
         target is polar (r, theta)
         and absolute is catersian (x1, y1) """
-        r, theta = target
-        x, y, yaw = boat
-        heading = theta + (yaw - pi / 2)
-        center = [x + r * cos(heading),
-                  y + r * sin(heading),
-                  0]
 
-        return [center, heading]
+        r, theta = target
+
+        try:
+            (trans, rot) = self.tf_listener.lookupTransform(self.fixed_frame, self.map_frame, rospy.Time(0))
+        except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+            continue
+        if trans is not None:
+            x, y, _ = trans
+            _, _, yaw = rot
+
+            heading = theta + (yaw - pi / 2)
+            center = [x + r * cos(heading), y + r * sin(heading), 0]
+
+            return [center, heading]
 
     def move(self, goal, mode, mode_param):
+        """ mode1: continuous movement function, mode_param is the distance from goal that will set the next goal
+            mode2: stop and rotate mode, mode_param is rotational angle in rad
+            mode3: normal stop in each waypoint mode, mode_param is unused """
+
             # Send the goal pose to the MoveBaseAction server
             self.move_base.send_goal(goal)
 
@@ -116,6 +132,15 @@ class MoveBaseUtil():
                 break
             pub.publish(msg)
             rate.sleep()
+
+    def reverse_tf(self, distance):
+        """ reverse to certain distance """
+        pass
+
+    def reverse_time(self, duration):
+        """ full reverse with a duration """
+        pass
+
 
     def init_markers(self):
         # Set up our waypoint markers
