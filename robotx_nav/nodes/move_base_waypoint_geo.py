@@ -44,12 +44,12 @@ class MoveToGeo(MoveBaseUtil):
 
 
         waypoint = self.create_waypoint()
-        rospy.loginfo("Waiting for move_base action server...")
+        # rospy.loginfo("Waiting for move_base action server...")
         # Wait 60 seconds for the action server to become available
-        self.move_base.wait_for_server(rospy.Duration(60))
+        # self.move_base.wait_for_server(rospy.Duration(60))
 
-        rospy.loginfo("Connected to move base server")
-        rospy.loginfo("Starting navigation test")
+        # rospy.loginfo("Connected to move base server")
+        # rospy.loginfo("Starting navigation test")
 
         # Update the marker display
         self.marker_pub.publish(self.markers)
@@ -74,13 +74,13 @@ class MoveToGeo(MoveBaseUtil):
 
     def create_waypoint(self):
         """ create waypoint from target lat/lon and current lat/lon """
-        rospy.loginfo("current position: " + str(self.lat) + ", " + str(self.lon))
-        rospy.loginfo("target position: " + str(self.target_lat) + ", " + str(self.target_lon))
+        # rospy.loginfo("current position: " + str(self.lat) + ", " + str(self.lon))
+        # rospy.loginfo("target position: " + str(self.target_lat) + ", " + str(self.target_lon))
 
         self.geo["translation"], self.geo["heading"] = \
             self.convert_gps_to_absolute(self.target_lat, self.target_lon)
 
-        print self.geo["translation"]
+        print self.geo["translation"], self.geo["heading"]
 
         # create waypoint
         q_angle = quaternion_from_euler(0, 0, self.geo["goal_heading"])
