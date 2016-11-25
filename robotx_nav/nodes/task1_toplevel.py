@@ -24,6 +24,16 @@
     ### @ 2016-11-06 ###
     + create template
 
+    renye's approach:
+    1. drive to gps waypoint
+    2. slowly in place rotate # noneed
+    3. detect red and green totems by any camera
+    4. rotate to bow to red and green totems
+    5. roi of red in bow/left and roi of green in bow/right, calculate center
+    6. drive until roi vanishes from both bow cameras, detect totem from port and starboard
+    7. see new roi from bow
+    8. drive with 5 and 6
+
 
 """
 

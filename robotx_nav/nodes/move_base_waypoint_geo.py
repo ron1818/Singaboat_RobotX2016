@@ -26,7 +26,8 @@ from move_base_util import MoveBaseUtil
 
 class MoveToGeo(MoveBaseUtil):
     # initialize boat pose param
-    x0, y0, z0, roll0, pitch0, yaw0, lon0, lat0 = 0, 0, 0, 0, 0, 0, 0, 0
+    # x0, y0, z0, roll0, pitch0, yaw0, lon0, lat0 = 0, 0, 0, 0, 0, 0, 0, 0
+    lon0, lat0 = 0, 0, 0, 0, 0, 0, 0, 0
 
     def __init__(self, nodename, target):
         MoveBaseUtil.__init__(self, nodename)
@@ -40,23 +41,23 @@ class MoveToGeo(MoveBaseUtil):
 
         rate = rospy.Rate(10)
 
-        self.odom_received = False
-        rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
-        # rospy.wait_for_message("/odometry/filtered/global", Odometry)
-        # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
-        while not self.odom_received:
-            rospy.sleep(1)
+        # self.odom_received = False
+        # rospy.wait_for_message("/odom", Odometry)
+        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        # # rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        # # rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size = 50)
+        # while not self.odom_received:
+        #     rospy.sleep(1)
 
-            self.fix_received = False
-            rospy.wait_for_message("/navsat/fix", NavSatFix)
-            rospy.Subscriber("/navsat/fix", NavSatFix, self.navsat_fix_callback, queue_size = 50)
+        self.fix_received = False
+        rospy.wait_for_message("/navsat/fix", NavSatFix)
+        rospy.Subscriber("/navsat/fix", NavSatFix, self.navsat_fix_callback, queue_size = 50)
         while not self.fix_received:
             rospy.sleep(1)
 
 
-        # Subscribe to the move_base action server
-        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        # # Subscribe to the move_base action server
+        # self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
         waypoint = self.create_waypoint()
         rospy.loginfo("Waiting for move_base action server...")
@@ -101,7 +102,7 @@ class MoveToGeo(MoveBaseUtil):
 
 
         self.geo["translation"], self.geo["heading"] = \
-            self.convert_relative_to_absolute([self.x0, self.y0, self.yaw0], [self.geo["goal_distance"], theta])
+            self.convert_relative_to_absolute([self.geo["goal_distance"], theta])
 
         # create waypoint
         q_angle = quaternion_from_euler(0, 0, self.geo["goal_heading"])
