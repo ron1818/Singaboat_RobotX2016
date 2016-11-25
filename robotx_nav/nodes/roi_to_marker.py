@@ -4,6 +4,7 @@ from sensor_msgs.msg import RegionOfInterest
 from visualization_msgs.msg import Marker
 from geometry_msgs.msg import Point
 import numpy
+import tf
 from move_base_waypoint import MoveTo
 
 class ROI2Marker(object):
@@ -23,6 +24,7 @@ class ROI2Marker(object):
         self.is_pub_marker = False
         self.image_count = 0
         self.moveto = MoveTo(nodename)
+        self.tf_listener = tf.TransformListener()
 
         rospy.Subscriber("bow/left/roi", RegionOfInterest, self.roi_callback, queue_size=50)
 
@@ -67,6 +69,15 @@ class ROI2Marker(object):
         # act length = radius * arc radian
         r = self.totem_width / (self.width / self.image_width * self.rov)
         return [r, theta, 0]
+
+        # tf transform from camera link to base link
+        try:
+            (trans, rot) = self.tf_listener.lookupTransform('camera_link',
+                                                            'base_link',
+                                                            rospy.Time(0))
+        except (tf.LookupException, tf.ConnectivityException,
+                tf.ExtrapolationException):
+            continue
 
 
 if __name__ == "__main__":
