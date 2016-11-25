@@ -13,20 +13,20 @@
     <!-- camera array joint -->
     <xacro:macro name="spot_camera" params="position1 x y z yaw">
         <joint name="${position1}_camera_joint" type="fixed">
-				<origin xyz="${x} ${y} ${z}" rpy="-${PI/2} 0 ${-1*PI/2-yaw}" />
+            <origin xyz="${x} ${y} ${z}" rpy="0 0 ${yaw}" />
             <parent link="shelf_link"/>
             <child link="${position1}/camera_link"/>
         </joint>
 
         <link name="${position1}/camera_link">
             <visual>
-					<origin xyz="0 0 0" rpy="0 -${PI/2} 0" />
+                <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.dae"/>
                 </geometry>
             </visual>
             <collision>
-					<origin xyz="0 0 0" rpy="0 -${PI/2} 0" />
+                <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.stl"/>
                 </geometry>
@@ -34,21 +34,22 @@
         </link>
     </xacro:macro>
 
-    <xacro:macro name="underwater_camera" params="position1 x y z">
+    <xacro:macro name="underwater_camera" params="position1 x y z roll yaw">
         <joint name="${position1}_camera_joint" type="fixed">
-				<origin xyz="${x} ${y} ${z}" rpy="0 ${PI} ${PI/2} " />
+            <origin xyz="${x} ${y} ${z}" rpy="0 ${roll} ${yaw}" />
             <parent link="shelf_link"/>
             <child link="${position1}/camera_link"/>
         </joint>
+
         <link name="${position1}/camera_link">
             <visual>
-					<origin xyz="0 0 0" rpy="0 -${PI/2} 0" />
+                <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.dae"/>
                 </geometry>
             </visual>
             <collision>
-					<origin xyz="0 0 0" rpy="0 -${PI/2} 0" />
+                <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.stl"/>
                 </geometry>
@@ -56,21 +57,21 @@
         </link>
     </xacro:macro>
 
-    <xacro:macro name="stereo_camera" params="position1 position2 x y z pitch">
+    <xacro:macro name="stereo_camera" params="position1 position2 x y z roll yaw">
         <joint name="${position1}_${position2}_camera_joint" type="fixed">
-				<origin xyz="${x} ${y} ${z}" rpy="${-PI/2-pitch} 0 ${-PI/2}" />
+            <origin xyz="${x} ${y} ${z}" rpy="0 ${roll} ${yaw}" />
             <parent link="shelf_link"/>
             <child link="${position1}/${position2}/camera_link"/>
         </joint>
         <link name="${position1}/${position2}/camera_link">
             <visual>
-					<origin xyz="0 0 0" rpy="0 ${-1*PI/2} 0" />
+                <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.dae"/>
                 </geometry>
             </visual>
             <collision>
-					<origin xyz="0 0 0" rpy="0 ${-1*PI/2} 0" />
+                <origin xyz="0 0 0" rpy="0 0 0" />
                 <geometry>
                     <mesh filename="package://hector_sensors_description/meshes/thermaleye_camera/thermaleye_camera_hector_v2.stl"/>
                 </geometry>
@@ -100,12 +101,12 @@
         </collision>
     </link>
 
-    <xacro:stereo_camera position1="bow" position2="left" x="${shelf_length/2+0.2}" y="${shelf_width/4}" z="${camera_height}" pitch="0.157" />
-    <xacro:stereo_camera position1="bow" position2="right" x="${shelf_length/2+0.2}" y="-${shelf_width/4}" z="${camera_height}" pitch="0.157" />
-    <xacro:underwater_camera position1="underwater" x="${shelf_length/2}" y="${shelf_width/2}" z="-1" />
-    <xacro:spot_camera position1="port" x="${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="-${PI/2}"/>
-    <xacro:spot_camera position1="starboard" x="${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="${PI/2}"/>
-    <xacro:spot_camera position1="transom" x="-${1.8*shelf_width/2}" y="0" z="${camera_height}" yaw="-${PI}"/>
+    <xacro:stereo_camera position1="bow" position2="left" x="${shelf_length/2+0.2}" y="${shelf_width/4}" z="${camera_height}" roll="0.157" yaw="0"/>
+    <xacro:stereo_camera position1="bow" position2="right" x="${shelf_length/2+0.2}" y="-${shelf_width/4}" z="${camera_height}" roll="0.157" yaw="0"/>
+    <xacro:underwater_camera position1="underwater" x="${shelf_length/2}" y="${shelf_width/2}" z="-1" roll="${PI/2}" yaw="0"/>
+    <xacro:spot_camera position1="port" x="${shelf_length/2}" y="${shelf_width/2}" z="${camera_height}" yaw="${PI/2}"/>
+    <xacro:spot_camera position1="starboard" x="${shelf_length/2}" y="-${shelf_width/2}" z="${camera_height}" yaw="-${PI/2}"/>
+    <xacro:spot_camera position1="transom" x="-${1.8*shelf_width/2}" y="0" z="${camera_height}" yaw="${PI}"/>
 
 
     <!--kinect camera >
