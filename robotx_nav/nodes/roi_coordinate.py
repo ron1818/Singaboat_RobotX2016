@@ -9,7 +9,7 @@ from math import pi, cos, sin
 from move_base_util import MoveBaseUtil
 import time
 
-class Roi_Util(object):
+class RoiCoordinate(object):
     """ take roi and do calculations """
     x_offset, y_offset, height, width = 0, 0, 0, 0
     x_offset_list = list()
@@ -35,7 +35,7 @@ class Roi_Util(object):
         self.fixed_frame = rospy.get_param('~fixed_frame', fixed_frame)
 
         # append namespace and camera frame
-        # self.camera_frame = self.namespace + "/" + self.camera_frame
+        self.camera_frame = self.namespace + "/" + self.camera_frame
 
         self.rov = rospy.get_param('~rov', 1.41)
         self.totem_width = rospy.get_param('~totem_width', 0.25)
@@ -73,6 +73,7 @@ class Roi_Util(object):
         rospy.loginfo("ROI messages detected. Starting localization...")
         self.roi_subscriber = rospy.Subscriber(roi_node, RegionOfInterest, self.roi_callback, queue_size=10)
         while not rospy.is_shutdown():
+            print self.is_pub_coordinate
             if self.is_pub_coordinate:
                 coordinate = self.calculate_coordinate(self.x_offset, self.width,
                                                      self.image_width, self.rov,
@@ -81,8 +82,8 @@ class Roi_Util(object):
                 self.coordinate_msg.y = coordinate[1]
                 print self.coordinate_msg
                 self.coordinate_pub.publish(self.coordinate_msg)
-            else:
-                self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
+            # else:
+            #     self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
             r.sleep()
 
 

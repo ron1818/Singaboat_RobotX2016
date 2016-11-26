@@ -69,35 +69,35 @@
         <arg name="objectname" default="totem" />
         <arg name="color_under_detect" default="green" />
     </include-->
-    <node pkg="robotx_nav" name="red_pub" type="roi_util.py" output="screen">
+    <node pkg="robotx_nav" name="red_pub" type="roi_coordinate.py" output="screen">
         <param name="namespace" value="bow/left" />
         <param name="colorname" value="red" />
     </node>
-    <!--node pkg="robotx_nav" name="red_pub" type="roi_util.py" ns="bow/right" >
+    <!--node pkg="robotx_nav" name="red_pub" type="roi_coordinate.py" ns="bow/right" >
         <param name="colorname" value="red" />
     </node>
-    <node pkg="robotx_nav" name="red_pub" type="roi_util.py" ns="port" >
+    <node pkg="robotx_nav" name="red_pub" type="roi_coordinate.py" ns="port" >
         <param name="colorname" value="red" />
     </node>
-    <node pkg="robotx_nav" name="red_pub" type="roi_util.py" ns="starboard" >
+    <node pkg="robotx_nav" name="red_pub" type="roi_coordinate.py" ns="starboard" >
         <param name="colorname" value="red" />
     </node>
-    <node pkg="robotx_nav" name="red_pub" type="roi_util.py" ns="transom" >
+    <node pkg="robotx_nav" name="red_pub" type="roi_coordinate.py" ns="transom" >
         <param name="colorname" value="red" />
     </node>
-    <node pkg="robotx_nav" name="green_pub" type="roi_util.py" ns="bow/left" >
+    <node pkg="robotx_nav" name="green_pub" type="roi_coordinate.py" ns="bow/left" >
         <param name="colorname" value="green" />
     </node>
-    <node pkg="robotx_nav" name="green_pub" type="roi_util.py" ns="bow/right" >
+    <node pkg="robotx_nav" name="green_pub" type="roi_coordinate.py" ns="bow/right" >
         <param name="colorname" value="green" />
     </node>
-    <node pkg="robotx_nav" name="green_pub" type="roi_util.py" ns="port" >
+    <node pkg="robotx_nav" name="green_pub" type="roi_coordinate.py" ns="port" >
         <param name="colorname" value="green" />
     </node>
-    <node pkg="robotx_nav" name="green_pub" type="roi_util.py" ns="starboard" >
+    <node pkg="robotx_nav" name="green_pub" type="roi_coordinate.py" ns="starboard" >
         <param name="colorname" value="green" />
     </node>
-    <node pkg="robotx_nav" name="green_pub" type="roi_util.py" ns="transom" >
+    <node pkg="robotx_nav" name="green_pub" type="roi_coordinate.py" ns="transom" >
         <param name="colorname" value="green" />
     </node-->
 </launch>
