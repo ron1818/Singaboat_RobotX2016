@@ -19,8 +19,7 @@ class RoiCoordinate(object):
     coordinate = [float('Inf'), float('Inf')]
 
     def __init__(self, nodename, namespace="bow/left", objectname="totem", colorname="red",
-                 camera_frame="camera_link", base_frame="/base_link", fixed_frame="/map",
-                 rov=1.41):
+                 camera_frame="camera_link", base_frame=None, fixed_frame=None, rov=1.41):
         rospy.init_node(nodename)
         rospy.on_shutdown(self.shutdown)
 
@@ -54,11 +53,13 @@ class RoiCoordinate(object):
         rospy.loginfo("Waiting for camera_info topic...")
 
         # rospy.wait_for_message('bow/left/camera_info', CameraInfo)
-        rospy.wait_for_message(self.namespace+'/camera_info', CameraInfo)
+        # info_node = self.namespace + "/" + self.objectname + "/" + self.colorname + "/camera_info"
+        info_node = self.namespace + "/camera_info"
+        rospy.wait_for_message(info_node, CameraInfo)
 
         # Subscribe to the camera_info topic to get the image width and height
         # rospy.Subscriber('/bow/left/camera_info', CameraInfo, self.get_camera_info, queue_size=1)
-        rospy.Subscriber(self.namespace+'/camera_info', CameraInfo, self.get_camera_info, queue_size=10)
+        rospy.Subscriber(info_node, CameraInfo, self.get_camera_info, queue_size=10)
 
         # Wait until we actually have the camera data
         while self.image_width == 0 or self.image_height == 0:
@@ -73,14 +74,14 @@ class RoiCoordinate(object):
         rospy.loginfo("ROI messages detected. Starting localization...")
         self.roi_subscriber = rospy.Subscriber(roi_node, RegionOfInterest, self.roi_callback, queue_size=10)
         while not rospy.is_shutdown():
-            print self.is_pub_coordinate
+            # print self.is_pub_coordinate
             if self.is_pub_coordinate:
                 coordinate = self.calculate_coordinate(self.x_offset, self.width,
                                                      self.image_width, self.rov,
                                                      self.camera_frame, self.fixed_frame)
                 self.coordinate_msg.x = coordinate[0]
                 self.coordinate_msg.y = coordinate[1]
-                print self.coordinate_msg
+                # print self.coordinate_msg
                 self.coordinate_pub.publish(self.coordinate_msg)
             # else:
             #     self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
@@ -178,7 +179,7 @@ class RoiCoordinate(object):
 
 if __name__ == "__main__":
     try:
-        roi=Roi_Util("roi_util")
+        roi=RoiCoordinate("roi-coordinate")
     except rospy.ROSInterruptException:
         pass
 
