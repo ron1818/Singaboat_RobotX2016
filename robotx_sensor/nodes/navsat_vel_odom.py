@@ -27,7 +27,7 @@ class Vel_Imu_Odom(object):
     def __init__(self, nodename):
         self.nodename = nodename
         self.vel_topic = rospy.get_param("~vel_topic", "navsat/vel")
-        self.imu_topic = rospy.get_param("~imu_topic", "imu/data")
+        self.imu_topic = rospy.get_param("~imu_topic", "middle_middle_imu/imu/data")
         self.odom_topic = rospy.get_param("~odom_topic", "odometry/vel")
         self.odom_frame = rospy.get_param("~odom_frame", "odom")
         self.fixed_frame = rospy.get_param("~fixed_frame", "base_link")

@@ -22,21 +22,20 @@ int main(int argc, char **argv)
   //subscribe to cmd_vel command
   ros::Subscriber cmd_sub= nh.subscribe("/cmd_vel", 1000, cmdCallback);
 
-  int forward_ratio, angular_ratio;
-  double right_calib, left_calib;
-  bool isReverse="false";
+  double forward_ratio=375, angular_ratio=300;
+  bool isReverse=false;
   geometry_msgs::Twist motor_val;
 
   ros::Rate loop_rate(30);
 
   while(ros::ok())
   {
-    nh.getParam("/motor_param/forward", forward_ratio); //values 0-2500 if linear 0.2
-    nh.getParam("/motor_param/angular", angular_ratio); //values 0-500 if angular 1
-    nh.getParam("/motor_param/reverse", isReverse);
+    nh.getParam("serial_arduino_node/motor_param/forward", forward_ratio); //values if linear 0.2, 375
+    nh.getParam("serial_arduino_node/motor_param/angular", angular_ratio); //values if angular 1, 
+    nh.getParam("serial_arduino_node/motor_param/reverse", isReverse);
 
-    motor_val.linear.x=forward_ratio*linear;
-    motor_val.angular.z=-1*angular_ratio*angular;
+    motor_val.linear.x=linear*forward_ratio;
+    motor_val.angular.z=-1*angular*angular_ratio; 
 
 
     if (isReverse)

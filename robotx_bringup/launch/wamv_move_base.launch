@@ -2,6 +2,7 @@
 <launch>
     <include file="$(find robotx_nav)/launch/move_base_map.launch" >
         <arg name="iswamv" value="true" />
+
         <arg name="cmd_vel_topic" value="cmd_vel" />
         <!--arg name="cmd_vel_topic" value="move_base_cmd_vel" /-->
         <!--arg name="mapname" value="nanyanglake" /-->
