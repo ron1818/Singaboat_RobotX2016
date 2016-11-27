@@ -97,8 +97,10 @@ class Masking(object):
                 index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
                 search_params = dict(checks = 50)
                 self.matcher = cv2.FlannBasedMatcher(index_params, search_params)
+                self.matching_method = self.matcher.knnMatch
             elif self._matcher.lower() == "bruteforce":
                 self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+                self.matching_method = self.matcher.match
             else:
                 self.matcher = None
                 print "matcher not supported or no matcher"
@@ -106,15 +108,15 @@ class Masking(object):
             self.matcher = None
             print "matcher not required"
 
-        # read matching method
-        if self.matcher is not None and self._matching_method is not None:
-            if self._matching_method.lower() == "knn":
-                self.matching_method = self.matcher.knnMatch
-            else:  # default is one match
-                self.matching_method = self.matcher.match
-        else:
-            self.matching_method = None
-            print "matching method not required"
+        # # read matching method
+        # if self.matcher is not None and self._matching_method is not None:
+        #     if self._matching_method.lower() == "knn":
+        #         self.matching_method = self.matcher.knnMatch
+        #     else:  # default is one match
+        #         self.matching_method = self.matcher.match
+        # else:
+        #     self.matching_method = None
+        #     print "matching method not required"
 
     def connect_device(self):
         self.cap = cv2.VideoCapture(self.dev)
@@ -131,8 +133,8 @@ class Masking(object):
         """
         if self.detector is not None:
             kp_r, des_r = self.detector.detectAndCompute(self.target, None)
-            # target_kp = cv2.drawKeypoints(target, kp_r, color=(0,0,255))
-            # cv2.imshow("target", target_kp)
+            target_kp = cv2.drawKeypoints(self.target, kp_r, color=(0,0,255))
+            cv2.imshow("target", target_kp)
 
         # connect video
         try:
@@ -159,25 +161,34 @@ class Masking(object):
                 else:  # other kind of masking, use gray
                     mask = self.masker(gray, *args)
                 # find boundingboxes of the mask
-                boundingrect = self.find_contours(frame, mask, candidate_shape)
+                boundingrect = self.find_contours(mask)  # , candidate_shape)
             else:  # no mask then full frame as bounding
                 height, width, channels = frame.shape
-                boudingrect = [0, 0, width, height]
+                boundingrect = [0, 0, width, height]
 
             # draw boundingbox
             for br in boundingrect:
+                print "has br"
                 x, y, w, h = br
+                # problem: trimmed
                 obj = gray[y:y+h, x:x+w]
-                kp_o, des_o = self.detector.detectAndCompute(obj,None)
-                # frame_kp = cv2.drawKeypoints(frame, kp_o, color=(0,255,0))
-                # cv2.imshow("frame_kp", frame_kp)
+                kp_o, des_o = self.detector.detectAndCompute(obj, None)
+                obj_kp = cv2.drawKeypoints(obj, kp_o, color=(0,255,0))
+                cv2.imshow("frame_kp", obj_kp)
                 # no keypoints detected, go to next frame
-                if len(kp_o) == 0 or des_o == None: continue
+                if len(kp_o) == 0 or des_o == None:
+                    continue
 
                 # match descriptors
                 # matching on the boundingrect
-                if self._matching_method.lower() == "flann":  # need feature matching
-                    matches = self.matching_method(des_r, des_o, k=self.K)
+                if self._matcher.lower() == "flann":  # need feature matching
+                    # print len(kp_r), len(kp_o)
+                    try:
+                        if len(kp_r) > self.k and len(kp_o) > self.k:
+                            matches = self.matching_method(des_r, des_o, k=self.K)
+                    except:
+                        matches = list()
+                        pass
 
                     # store all the good matches as per Lowe's ratio test.
                     good = []
@@ -191,11 +202,14 @@ class Masking(object):
                     for mat in good:
                         frame_idx.append(mat.trainIdx)
 
-                    matched_kp2 = [kp2[i] for i in frame_idx]
-                    matched_kp2_array = np.float32([p.pt for p in matched_kp2]).reshape(-1, 1, 2)
+                    if frame_idx == []:  # empty
+                        # print "no match"
+                        matched_kp2 = []
+                        break
+                    else:
+                        matched_kp2 = [kp_o[i] for i in frame_idx]
+                        matched_kp2_array = np.float32([p.pt for p in matched_kp2]).reshape(-1, 1, 2)
 
-                    # img = cv2.drawKeypoints(frame, kp2, color=(0,255,0), flags=0)
-                    # cv2.imshow("kpts", img)
                     x, y, w, h = cv2.boundingRect(matched_kp2_array)
                     cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 3)
                 else:
@@ -208,7 +222,7 @@ class Masking(object):
 
                 # cv2.rectangle(frame, (x-5, y-5), (x+w+5, y+h+5), (0, 255, 0), 3)
 
-            # cv2.imshow('mask', frame)
+            cv2.imshow('frame', frame)
             k = cv2.waitKey(1) & 0xFF
             if k == 27:
                 break
@@ -324,8 +338,8 @@ class Masking(object):
 if __name__ == "__main__":
     # cd = ColorDetection(dev=0, col_under_det="red")
     # cd = ColorDetection(dev=0, col_under_det="green")
-    cd = Masking()
+    cd = Masking(color="red", shape="circle", masker="color", detector="surf", matcher="flann", matching_method="knn")
     # cd.hsv_calibartion()
     # cd.streaming("binary_mask", True)
-    cd.streaming(0, "color_mask", "cross", "red")
+    cd.streaming(0, "red")
     # cd.streaming("canny_edge_mask")
