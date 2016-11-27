@@ -48,14 +48,20 @@
     <include file="$(find robotx_gazebo)/launch/test7.launch" if="$(arg test7)" />
     <include file="$(find robotx_gazebo)/launch/test8.launch" if="$(arg test8)" />
 
-    <!-- bring stereo image -->
-    <!--include file="$(find robotx_bringup)/launch/stereo_proc.launch"/-->
+    <!-- bringup camera -->
+    <include file="$(find robotx_sensor)/launch/image_rect.launch" >
+        <arg name="use_bow" value="true" />
+        <arg name="use_port" value="true" />
+        <arg name="use_starboard" value="true" />
+        <arg name="use_transom" value="true" />
+    </include>
+
     <!-- bring visual odometry -->
     <!--include file="$(find robotx_bringup)/launch/vo_stereo.launch"/-->
 
     <!-- robot description from auv_ros_description package -->
     <include file="$(find robotx_description)/launch/description.launch">
-        <arg name="lidar_enabled" value="true" />
+        <arg name="lidar_enabled" value="false" />
     </include>
     <!-- not in use -->
     <!-- bring stereo image -->

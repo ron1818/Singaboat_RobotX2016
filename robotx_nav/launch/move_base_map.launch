@@ -28,6 +28,6 @@
     <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/$(arg mapname).yaml" />
 
     <!-- Run a static transform between /odom and /map -->
-    <!--node pkg="tf" type="static_transform_publisher" name="baselink_odom_broadcaster" args="0 0 0 0 0 0 /odom /base_link 100" /-->
+    <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 /map /odom 100" if="$(arg isfake)" />
 
 </launch>
