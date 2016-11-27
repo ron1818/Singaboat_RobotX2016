@@ -51,26 +51,28 @@ void loop() {
     ch1 = pulseIn(RC1, HIGH, 25000); // Read the pulse width of 
     ch2 = pulseIn(RC2, HIGH, 25000); // each channel
     ch3 = pulseIn(RC3, HIGH, 25000); // ch3 unused at the moment
+
+    ch2=constrain(ch2, 1100, 1900);
+    ch3=constrain(ch3, 1100, 1900);
     
     forwardROS  = pulseIn(throttle_input, HIGH, 25000);
     turnROS     = pulseIn(steering_input, HIGH, 25000);
 
 
     if((ch3>1000) && (ch3<1300)){
-        forward   = map(ch1, 1050, 1950, -500, 500); //map values from RC
-        turn      = map(ch2, 1050, 1950,-500, 500);
+        forward   = map(ch1, 1100, 1900, -500, 500); //map values from RC
+        turn      = map(ch2, 1100, 1900,-500, 500);
         digitalWrite(modePin, HIGH);
     }
     else{
-        forward=-map(forwardROS, 1000, 2000, -500, 500); //value is -500 to 500
-        turn=map(turnROS, 1000, 2000, -500, 500);
+        forward=map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
+        turn=map(turnROS, 1100, 1900, -500, 500);
         digitalWrite(modePin, LOW);
     }
 
     // constrain in case exceeds
     //forward = constrain(forward, -500, 500);
     //turn = constrain(turn, -500, 500);
-
 
     unicycleRun(forward, turn);
     printValue();
@@ -100,10 +102,10 @@ void unicycleRun(int forward, int turn){
     digitalStepLeft=mapToResistance(Ul_out);
 
     Serial.print("\nright: ");
-    Serial.print(Ur_out);
+    Serial.print(digitalStepRight);
 
     Serial.print("\nleft:");
-    Serial.print(Ul_out);
+    Serial.print(digitalStepLeft);
     setMotor(digitalStepRight, digitalStepLeft);
 
 }
@@ -114,13 +116,13 @@ int mapToResistance(int input){
 
     if (input<=2000 && input>1550)
     {
-        digitalStep = map(input,1551,2000, 80, 0); //right (80-50) left(80-0)
+        digitalStep = map(input,1551,2000, 80, 0); 
     }
     else if (input<=1550 && input>1450)
     {
         digitalStep =120;
     }
-    else if (input<=1450&&input>=900)
+    else if (input<=1450&&input>=1000)
     {
         digitalStep = map(input,900,1450,255,175); 
     }
