@@ -34,11 +34,13 @@ class Forward(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target=[20,1.57,0], waypoint_separation=5, is_relative=False):
+    def __init__(self, nodename, target=[20,0,0], waypoint_separation=5, is_relative=True):
         MoveBaseUtil.__init__(self, nodename)
 
         self.forward = {}
         self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0.0)
+        self.mode = rospy.get_param("~mode", 0)
+        self.mode_param = rospy.get_param("~mode_param", 1)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 
@@ -69,7 +71,6 @@ class Forward(MoveBaseUtil):
 
         # create waypoints
         waypoints = self.create_waypoints()
-        print waypoints
 
         # Initialize the visualization markers for RViz
         # self.init_markers()
@@ -95,7 +96,7 @@ class Forward(MoveBaseUtil):
         # rospy.loginfo("Starting navigation test")
 
         # Initialize a counter to track waypoints
-        i = 0
+        i = 1  # remove the first point
 
         # Cycle through the four waypoints
         while i < len(waypoints) and not rospy.is_shutdown():
@@ -115,11 +116,11 @@ class Forward(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal, 0, 2)
+            self.move(goal, self.mode, self.mode_param)
             i += 1
 
         else:  # escape constant forward and continue to the next waypoint
-            pass
+            print "task finished"
 
     def create_waypoints(self):
 
@@ -131,7 +132,6 @@ class Forward(MoveBaseUtil):
         # need polar to catersian transform
 
         # stores number of waypoints
-        print self.forward["goal_distance"]
         N = ceil(self.forward["goal_distance"] / self.forward["waypoint_separation"])
         N = int(N)
 

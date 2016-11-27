@@ -3,8 +3,8 @@
 
     <arg name="waypoint_separation" default="5.0" />
     <arg name="is_relative" default="true" />
-    <arg name="target_x" default="10" />
-    <arg name="target_y" default="1.57" />
+    <arg name="target_x" default="20" />
+    <arg name="target_y" default="0" />
     <arg name="isfake" default="false" />
     <arg name="isgazebo" default="false" />
     <arg name="iswamv" default="false" />

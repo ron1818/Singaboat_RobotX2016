@@ -1,0 +1,94 @@
+<launch> 
+    <arg name="use_bow" default="true" />
+    <arg name="use_port" default="true" />
+    <arg name="use_starboard" default="true" />
+    <arg name="use_transom" default="true" />
+    <arg name="use_underwater" default="false" />
+    <arg name="debug" value="false"/> 
+
+    <master auto="start" />
+    <group ns="bow/left" if="$(arg use_bow)">
+        <node pkg="image_view" type="image_view" name="image_view" 
+            if="$(arg debug)"> 
+            <param name="image_transport" value="compressed" />
+            <remap from="image" to="image_rect_color" />
+        </node>
+
+        <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+            <remap from="image_raw" to="image_raw"/>
+            <remap from="camera_info" to="camera_info"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+    <group ns="bow/right" if="$(arg use_bow)">
+        <node pkg="image_view" type="image_view" name="image_view" 
+            if="$(arg debug)"> 
+            <param name="image_transport" value="compressed" />
+            <remap from="image" to="image_rect_color" />
+        </node>
+
+        <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+            <remap from="image_raw" to="image_raw"/>
+            <remap from="camera_info" to="camera_info"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+    <group ns="port" if="$(arg use_port)">
+        <node pkg="image_view" type="image_view" name="image_view" 
+            if="$(arg debug)"> 
+            <param name="image_transport" value="compressed" />
+            <remap from="image" to="image_rect_color" />
+        </node>
+
+        <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+            <remap from="image_raw" to="image_raw"/>
+            <remap from="camera_info" to="camera_info"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+    <group ns="starboard" if="$(arg use_starboard)">
+        <node pkg="image_view" type="image_view" name="image_view" 
+            if="$(arg debug)"> 
+            <param name="image_transport" value="compressed" />
+            <remap from="image" to="image_rect_color" />
+        </node>
+
+        <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+            <remap from="image_raw" to="image_raw"/>
+            <remap from="camera_info" to="camera_info"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+    <group ns="transom" if="$(arg use_transom)">
+        <node pkg="image_view" type="image_view" name="image_view" 
+            if="$(arg debug)"> 
+            <param name="image_transport" value="compressed" />
+            <remap from="image" to="image_rect_color" />
+        </node>
+
+        <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+            <remap from="image_raw" to="image_raw"/>
+            <remap from="camera_info" to="camera_info"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+    <group ns="underwater" if="$(arg use_underwater)">
+        <node pkg="image_view" type="image_view" name="image_view" 
+            if="$(arg debug)"> 
+            <param name="image_transport" value="compressed" />
+            <remap from="image" to="image_rect_color" />
+        </node>
+
+        <node name="image_proc" pkg="image_proc" type="image_proc" output="screen">
+            <remap from="image_raw" to="image_raw"/>
+            <remap from="camera_info" to="camera_info"/>
+            <param name="queue_size" value="20"/>
+        </node>
+    </group>
+
+</launch>
