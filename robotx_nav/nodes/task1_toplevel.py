@@ -44,7 +44,7 @@ from move_base_util import MoveBaseUtil
 from move_base_waypoint_geo import MoveToGeo
 from move_base_waypoint import MoveTo
 from move_base_forward import Forward
-from roi_util import Roi_Util
+from roi_coordinate import RoiCoordinate
 
 class Task1(object):
     bow_left_red_x = float("Inf")
@@ -61,6 +61,10 @@ class Task1(object):
     red_y_list = list()
     green_x_list = list()
     green_y_list = list()
+
+    def subscribe_coordinate(self, topic_name, colorname):
+        rospy.Subscriber(topic_name, Point, self.roi_coordinate_callback, colorname, queue_size=10)
+
     def __init__(self):
         # 0. parameters
         self.tart_lat = rospy.get_param("~lat", 1.34)
@@ -68,41 +72,21 @@ class Task1(object):
         self.tart_heading = rospy.get_param("~heading", 1.57)  # north
 
         # 1. drive to gps waypoint
-        # move_to_geo = MoveToGeo("step1", self.start_lat, self.start_lon, self.start_heading)
+        # move_to_geo = MoveToGeo("gps_waypoint", self.start_lat, self.start_lon, self.start_heading)
 
         # 2. roi detect color totem, assume already have in launch
-        # roslaunch robotx_vision detect_red_totem.launch namespace:=bow/left objectname:=totem color_under_detect:=red
-        # roslaunch robotx_vision detect_red_totem.launch namespace:=port objectname:=totem color_under_detect:=red
-        # roslaunch robotx_vision detect_green_totem.launch namespace:=bow/right objectname:=totem color_under_detect:=red
-        # roslaunch robotx_vision detect_green_totem.launch namespace:=starboard objectname:=totem color_under_detect:=red
-        # roslaunch robotx_vision detect_green_totem.launch namespace:=transom objectname:=totem color_under_detect:=red
-        # red_bow_left_coordinate = Roi_Util("bow_left_red", namespace="bow/left", objectname="totem", colorname="red")
-        # green_bow_left_coordinate = Roi_Util("bow_left_green", namespace="bow/left", objectname="totem", colorname="green")
-        # red_bow_right_coordinate = Roi_Util("bow_right_red", namespace="bow/right", objectname="totem", colorname="red")
-        # green_bow_right_coordinate = Roi_Util("bow_right_green", namespace="bow/right", objectname="totem", colorname="green")
-        # red_port_coordinate = Roi_Util("port_red", namespace="port", objectname="totem", colorname="red")
-        # green_port_coordinate = Roi_Util("port_green", namespace="port", objectname="totem", colorname="green")
-        # red_starboard_coordinate = Roi_Util("starboard_red", namespace="starboard", objectname="totem", colorname="red")
-        # green_starboard_coordinate = Roi_Util("starboard_green", namespace="starboard", objectname="totem", colorname="green")
-        # red_transom_coordinate = Roi_Util("transom_red", namespace="transom", objectname="totem", colorname="red")
-        # green_transom_coordinate = Roi_Util("transom_green", namespace="transom", objectname="totem", colorname="green")
-
-        # then listen to namespace/objectname/colorname/coordinates
+        #    then listen to namespace/objectname/colorname/coordinates
         rospy.init_node("roi_coordinate")
-        rospy.Subscriber("bow_left_red", Point, self.bow_left_red_callback, queue_size=10)
-        rospy.Subscriber("bow_right_red", Point, self.bow_right_red_callback, queue_size=10)
-        rospy.Subscriber("port_red", Point, self.port_red_callback, queue_size=10)
-        rospy.Subscriber("starboard_red", Point, self.starboard_red_callback, queue_size=10)
-        rospy.Subscriber("transom_red", Point, self.transom_red_callback, queue_size=10)
-        rospy.Subscriber("bow_left_green", Point, self.bow_left_green_callback, queue_size=10)
-        rospy.Subscriber("bow_right_green", Point, self.bow_right_green_callback, queue_size=10)
-        rospy.Subscriber("port_green", Point, self.port_green_callback, queue_size=10)
-        rospy.Subscriber("starboard_green", Point, self.starboard_green_callback, queue_size=10)
-        rospy.Subscriber("transom_green", Point, self.transom_green_callback, queue_size=10)
-
-
-
-
+        self.subscribe_coordinate("bow/left/totem/red")
+        self.subscribe_coordinate("bow/right/totem/red")
+        self.subscribe_coordinate("port/totem/red")
+        self.subscribe_coordinate("starboard/totem/red")
+        self.subscribe_coordinate("transom/totem/red")
+        self.subscribe_coordinate("bow/left/totem/green")
+        self.subscribe_coordinate("bow/right/totem/green")
+        self.subscribe_coordinate("port/totem/green")
+        self.subscribe_coordinate("starboard/totem/green")
+        self.subscribe_coordinate("transom/totem/green")
 
         # 3. calculate the center point bewtween red and green totem
         # the simplest way: median for (x_red, y_red) and median for (x_green, y_green)
@@ -123,6 +107,7 @@ class Task1(object):
                                    self.port_green_x, self.starboard_green_x, self.transom_green_x])
             self.green_y_list.extend([self.bow_left_green_x, self.bow_right_green_x,
                                    self.port_green_x, self.starboard_green_x, self.transom_green_x])
+            rospy.spinOnce()
 
         else:
             red_x_center, red_y_center = numpy.median(self.red_x_list), numpy.median(self.red_y_list)
@@ -133,9 +118,17 @@ class Task1(object):
         target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
         # constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
 
+    def roi_coordinate_callback(self, msg):
+        if colorname == "red":
+            self.red_x_list.extend(msg.x)
+            self.red_y_list.extend(msg.y)
+        elif colorname == "green":
+            self.green_x_list.extend(msg.x)
+            self.green_y_list.extend(msg.y)
+
     def bow_left_red_callback(self, msg):
-        self.bow_left_red_x = msg.x
-        self.bow_left_red_y = msg.y
+        self.x = msg.x
+        self.y = msg.y
 
     def bow_right_red_callback(self, msg):
         self.bow_right_red_x = msg.x
