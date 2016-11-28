@@ -83,8 +83,8 @@ class RoiCoordinate(object):
                 self.coordinate_msg.y = coordinate[1]
                 # print self.coordinate_msg
                 self.coordinate_pub.publish(self.coordinate_msg)
-            # else:
-            #     self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
+            else:
+                self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
             r.sleep()
 
 

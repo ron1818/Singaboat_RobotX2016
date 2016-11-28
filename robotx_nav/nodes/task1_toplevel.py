@@ -45,6 +45,7 @@ from move_base_waypoint_geo import MoveToGeo
 from move_base_waypoint import MoveTo
 from move_base_forward import Forward
 from roi_coordinate import RoiCoordinate
+import thread
 
 class Task1(object):
     bow_left_red_x = float("Inf")
@@ -67,9 +68,9 @@ class Task1(object):
 
     def __init__(self):
         # 0. parameters
-        self.tart_lat = rospy.get_param("~lat", 1.34)
-        self.tart_lon = rospy.get_param("~lon", 103.56)
-        self.tart_heading = rospy.get_param("~heading", 1.57)  # north
+        self.target_lat = rospy.get_param("~lat", 1.34)
+        self.target_lon = rospy.get_param("~lon", 103.56)
+        self.target_heading = rospy.get_param("~heading", 1.57)  # north
 
         # 1. drive to gps waypoint
         # move_to_geo = MoveToGeo("gps_waypoint", self.start_lat, self.start_lon, self.start_heading)
@@ -77,95 +78,68 @@ class Task1(object):
         # 2. roi detect color totem, assume already have in launch
         #    then listen to namespace/objectname/colorname/coordinates
         rospy.init_node("roi_coordinate")
-        self.subscribe_coordinate("bow/left/totem/red")
-        self.subscribe_coordinate("bow/right/totem/red")
-        self.subscribe_coordinate("port/totem/red")
-        self.subscribe_coordinate("starboard/totem/red")
-        self.subscribe_coordinate("transom/totem/red")
-        self.subscribe_coordinate("bow/left/totem/green")
-        self.subscribe_coordinate("bow/right/totem/green")
-        self.subscribe_coordinate("port/totem/green")
-        self.subscribe_coordinate("starboard/totem/green")
-        self.subscribe_coordinate("transom/totem/green")
+        rospy.on_shutdown(self.shutdown)
+        rate = rospy.Rate(10)
+
+        self.lock = thread.allocate_lock()
+
+        self.subscribe_coordinate("bow/left/totem/red/coordinate", "red")
+        # self.subscribe_coordinate("bow/right/totem/redcoordinate", "red")
+        # self.subscribe_coordinate("port/totem/redcoordinate", "red")
+        # self.subscribe_coordinate("starboard/totem/redcoordinate", "red")
+        # self.subscribe_coordinate("transom/totem/redcoordinate", "red")
+        self.subscribe_coordinate("bow/left/totem/green/coordinate", "green")
+        # self.subscribe_coordinate("bow/right/totem/greencoordinate", "green")
+        # self.subscribe_coordinate("port/totem/greencoordinate", "green")
+        # self.subscribe_coordinate("starboard/totem/greencoordinate", "green")
+        # self.subscribe_coordinate("transom/totem/greencoordinate", "green")
+        rospy.wait_for_message("bow/left/totem/red/coordinate", Point)
 
         # 3. calculate the center point bewtween red and green totem
         # the simplest way: median for (x_red, y_red) and median for (x_green, y_green)
         # then take the centerpoint for constant heading
         # the hard way: collect red and green points and use svm to get the separation plane
         # use the plane for constant heading
-        rate = rospy.Rate(10)
-        duration = 10
-        rate.sleep()
-        start_time = rospy.get_time()
-        current_time = start_time
-        while current_time - start_time < duration:
-            self.red_x_list.extend([self.bow_left_red_x, self.bow_right_red_x,
-                                   self.port_red_x, self.starboard_red_x, self.transom_red_x])
-            self.red_y_list.extend([self.bow_left_red_x, self.bow_right_red_x,
-                                   self.port_red_x, self.starboard_red_x, self.transom_red_x])
-            self.green_x_list.extend([self.bow_left_green_x, self.bow_right_green_x,
-                                   self.port_green_x, self.starboard_green_x, self.transom_green_x])
-            self.green_y_list.extend([self.bow_left_green_x, self.bow_right_green_x,
-                                   self.port_green_x, self.starboard_green_x, self.transom_green_x])
-            rospy.spinOnce()
+        self.is_ready = False
+        self.duration = 2
+        self.start_time = rospy.get_time()
+        red_x_center, red_y_center = 0, 0
+        green_x_center, green_y_center = 0, 0
+        while not rospy.is_shutdown():
+            # print "in loop"
+            if self.is_ready:
+                red_x_center, red_y_center = numpy.median(self.red_x_list), numpy.median(self.red_y_list)
+                green_x_center, green_y_center = numpy.median(self.green_x_list), numpy.median(self.green_y_list)
+                target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
+                print target
+                rate.sleep()
 
-        else:
-            red_x_center, red_y_center = numpy.median(self.red_x_list), numpy.median(self.red_y_list)
-            green_x_center, green_y_center = numpy.median(self.green_x_list), numpy.median(self.green_y_list)
-            print red_x_center, red_y_center, green_x_center, green_y_center
 
         # 4. constant heading based on roi, all coordinates are map. not relative
-        target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
+        # target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
         # constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
 
-    def roi_coordinate_callback(self, msg):
-        if colorname == "red":
-            self.red_x_list.extend(msg.x)
-            self.red_y_list.extend(msg.y)
-        elif colorname == "green":
-            self.green_x_list.extend(msg.x)
-            self.green_y_list.extend(msg.y)
+    def roi_coordinate_callback(self, msg, colorname):
+        # self.lock.acquire()
+        if rospy.get_time() - self.start_time < self.duration:
+            if colorname == "red":
+                if msg.x is not None and msg.y is not None and msg.x < 10000 and msg.y < 10000:
+                    self.red_x_list.extend([msg.x])
+                    self.red_y_list.extend([msg.y])
+            elif colorname == "green":
+                if msg.x is not None and msg.y is not None and msg.x < 10000 and msg.y < 10000:
+                    self.green_x_list.extend([msg.x])
+                    self.green_y_list.extend([msg.y])
+            # print self.red_x_list
+            self.is_ready = False
+        else:
+            self.is_ready = True
+            self.start_time = rospy.get_time()
+        # self.lock.release()
 
-    def bow_left_red_callback(self, msg):
-        self.x = msg.x
-        self.y = msg.y
 
-    def bow_right_red_callback(self, msg):
-        self.bow_right_red_x = msg.x
-        self.bow_right_red_y = msg.y
-
-    def port_red_callback(self, msg):
-        self.port_red_x = msg.x
-        self.port_red_y = msg.y
-
-    def starboard_red_callback(self, msg):
-        self.starboard_red_x = msg.x
-        self.starboard_red_y = msg.y
-
-    def transom_red_callback(self, msg):
-        self.transom_red_x = msg.x
-        self.transom_red_y = msg.y
-
-    def bow_left_green_callback(self, msg):
-        self.bow_left_green_x = msg.x
-        self.bow_left_green_y = msg.y
-
-    def bow_right_green_callback(self, msg):
-        self.bow_right_green_x = msg.x
-        self.bow_right_green_y = msg.y
-
-    def port_green_callback(self, msg):
-        self.port_green_x = msg.x
-        self.port_green_y = msg.y
-
-    def starboard_green_callback(self, msg):
-        self.starboard_green_x = msg.x
-        self.starboard_green_y = msg.y
-
-    def transom_green_callback(self, msg):
-        self.transom_green_x = msg.x
-        self.transom_green_y = msg.y
-
+    def shutdown(self):
+        pass
 
 
 if __name__ == '__main__':
