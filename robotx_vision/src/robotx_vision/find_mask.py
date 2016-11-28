@@ -281,44 +281,45 @@ class Masking(object):
         candidate_shape = list()
         isconvex = list()
         for i, cnt in enumerate(contours):
-            # area.append(cv2.contourArea(cnt))
+            area.append(cv2.contourArea(cnt))
             # approx for each contour
             approx = cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True)
-            # print len(approx)
+            print len(approx)
             boundingrect.append(cv2.boundingRect(approx))
 
-            # try:
-            #     # find convex hull
-            #     hull = cv2.convexHull(cnt, returnPoints=False)
-            #     defects = cv2.convexityDefects(cnt, hull)
+            try:
+                # find convex hull
+                hull = cv2.convexHull(cnt, returnPoints=False)
+                defects = cv2.convexityDefects(cnt, hull)
 
-            #     #customized isconvex based on empirical
-            #     defect_distance=list()
-            #     for j in range(defects.shape[0]):
-            #         s,e,f,d = defects[j,0]
-            #         defect_distance.append(d)
+                #customized isconvex based on empirical
+                defect_distance=list()
+                for j in range(defects.shape[0]):
+                    s,e,f,d = defects[j,0]
+                    defect_distance.append(d)
 
-            #     if np.amax(defect_distance) < 1000:  # 1000 is empirical
-            #         isconvex.append(True)
-            #     else:
-            #         isconvex.append(False)
+                if np.amax(defect_distance) < 1000:  # 1000 is empirical
+                    isconvex.append(True)
+                else:
+                    isconvex.append(False)
 
-            #     # shape determine
-            #     if len(approx) > 10 and isconvex is True:
-            #         candidate_shape = "circle"
-            #     elif 7 >= len(approx) >=3:
-            #         candidate_shape.append("triangle")
-            #     elif len(approx) > 8 and isconvex is False:
-            #         candidate_shape.append("cross")
-            #     else:
-            #         candidate_shape.append("unkown")
+                candiate_shape.append(len(approx))
+                # # shape determine
+                # if len(approx) > 10 and isconvex is True:
+                #     candidate_shape = "circle"
+                # elif 7 >= len(approx) >= 3:
+                #     candidate_shape.append("triangle")
+                # elif len(approx) > 8 and isconvex is False:
+                #     candidate_shape.append("cross")
+                # else:
+                #     candidate_shape.append("unkown")
 
-            #     # if candidate_shape == candidate_shape.lower():  # shape name matches
-            #     #     boundingrect.append(cv2.boundingRect(approx))
-            # except:
-            #     break
+                # if candidate_shape == candidate_shape.lower():  # shape name matches
+                #     boundingrect.append(cv2.boundingRect(approx))
+            except:
+                break
 
-        return boundingrect
+        return [boundingrect, candidate_shape]
 
 
 if __name__ == "__main__":
