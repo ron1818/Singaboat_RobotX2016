@@ -21,102 +21,113 @@ int forwardROS=1500;
 int turnROS=1500;
 
 double right_calib=1;
-double left_calib=1.1;
+double left_calib=1;
 
 
 
 void setup() {
- 
-  SPI.begin(); //initialize SPI
-  pinMode(pwr5volt,OUTPUT);
-  pinMode(slaveSelectPin,OUTPUT);
-  digitalWrite(pwr5volt,HIGH);
 
-  pinMode(RC1, INPUT); // Set our input pins as such
-  pinMode(RC2, INPUT);
-  pinMode(RC3, INPUT);
-  
-  pinMode(throttle_input, INPUT);
-  pinMode(steering_input, INPUT);
-  
-  pinMode(modePin, OUTPUT);
+    SPI.begin(); //initialize SPI
+    pinMode(pwr5volt,OUTPUT);
+    pinMode(slaveSelectPin,OUTPUT);
+    digitalWrite(pwr5volt,HIGH);
 
-  Serial.begin(57600); // Pour a bowl of Serial
+    pinMode(RC1, INPUT); // Set our input pins as such
+    pinMode(RC2, INPUT);
+    pinMode(RC3, INPUT);
+
+    pinMode(throttle_input, INPUT);
+    pinMode(steering_input, INPUT);
+
+    pinMode(modePin, OUTPUT);
+	
+    //unicycleRun(0, 0);  // reset to neutral
+
+    Serial.begin(57600); // Pour a bowl of Serial
 }
 
 void loop() {
-  
-  ch1 = pulseIn(RC1, HIGH, 25000); // Read the pulse width of 
-  ch2 = pulseIn(RC2, HIGH, 25000); // each channel
-  ch3 = pulseIn(RC3, HIGH, 25000); // ch3 unused at the moment
-  forwardROS=pulseIn(throttle_input, HIGH, 25000);
-  turnROS=pulseIn(steering_input, HIGH, 25000);
 
-  
-  if((ch3>1000) && (ch3<1300)){
-    forward = map(ch1, 1100, 1900,-500, 500); //map values from RC
-    turn = map(ch2, 1100, 1900,-500, 500);
-    digitalWrite(modePin, HIGH);
-  }
-  else{
-    forward=map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
-    turn=map(turnROS, 1100, 1900, -500, 500);
-    digitalWrite(modePin, LOW);
-  }
+    ch1 = pulseIn(RC1, HIGH, 25000); // Read the pulse width of 
+    ch2 = pulseIn(RC2, HIGH, 25000); // each channel
+    ch3 = pulseIn(RC3, HIGH, 25000); // ch3 unused at the moment
+
+    ch2=constrain(ch2, 1100, 1900);
+    ch3=constrain(ch3, 1100, 1900);
+    
+    forwardROS  = pulseIn(throttle_input, HIGH, 25000);
+    turnROS     = pulseIn(steering_input, HIGH, 25000);
 
 
-  unicycleRun(forward, turn);
-  printValue();
-  delay(100);
-  
+    if((ch3>1000) && (ch3<1300)){
+        forward   = map(ch1, 1100, 1900, -500, 500); //map values from RC
+        turn      = map(ch2, 1100, 1900,-500, 500);
+        digitalWrite(modePin, HIGH);
+    }
+    else{
+        forward=map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
+        turn=map(turnROS, 1100, 1900, -500, 500);
+        digitalWrite(modePin, LOW);
+    }
+
+    // constrain in case exceeds
+    //forward = constrain(forward, -500, 500);
+    //turn = constrain(turn, -500, 500);
+
+    unicycleRun(forward, turn);
+    printValue();
+    delay(100);
+
 }
 
 void unicycleRun(int forward, int turn){
-  int Ur;
-  int Ul;
-  int digitalStepRight;
-  int digitalStepLeft;
-  
-  Ur=right_calib*(forward-turn/2); //here turning in cw is positive
-  Ul=left_calib*(forward+turn/2);
-  //Ur & Ul ranges from -750 to 750 if right and left calibration factors = 1 
-  Ur=-Ur;
-  Ul=-Ul;
-  
-  //map Ur and Ul to digital potentiometer values 0-255, map back to 1000-2000
-  Ur=map(Ur, -750, 750, 1000, 2000);
-  Ul=map(Ul, -750, 750, 1000, 2000);
+    int Ur;
+    int Ul;
+    int digitalStepRight;
+    int digitalStepLeft;
+    int Ur_out;
+    int Ul_out;
 
-  digitalStepRight=mapToResistance(Ur);
-  digitalStepLeft=mapToResistance(Ul);
-  
-  Serial.print("\nright: ");
-  Serial.print(digitalStepRight);
+    Ur=right_calib*(forward-turn/2); //here turning in cw is positive250
+    Ul=left_calib*(forward+turn/2); //750
+    //Ur & Ul ranges from -750 to 750 if right and left calibration factors = 1 
+    Ur=-Ur;
+    Ul=-Ul;
 
-  Serial.print("\nleft:");
-  Serial.print(digitalStepLeft);
-  setMotor(digitalStepRight, digitalStepLeft);
-  
+    //map Ur and Ul to digital potentiometer values 0-255, map back to 1000-2000
+    Ur_out=map(Ur, -750, 750, 1000, 2000);
+    Ul_out=map(Ul, -750, 750, 1000, 2000);
+
+    digitalStepRight=mapToResistance(Ur_out);
+    digitalStepLeft=mapToResistance(Ul_out);
+
+    Serial.print("\nright: ");
+    Serial.print(digitalStepRight);
+
+    Serial.print("\nleft:");
+    Serial.print(digitalStepLeft);
+    setMotor(digitalStepRight, digitalStepLeft);
+
 }
 
 int mapToResistance(int input){
-  
-  int digitalStep;
-  
-  if (input<=2000&&input>1550)
-  {
-    digitalStep = map(input,1551,2000,80,0); //right (80-50) left(80-0)
-  }
-  else if (input<=1550&&input>1450)
-  {
-    digitalStep =120;
-  }
-  else if (input<=1450&&input>=1000)
-  {
-    digitalStep = map(input,1000,1450,255,175); 
-  }
-  
-  return digitalStep;
+
+    int digitalStep;
+
+    if (input<=2000 && input>1550)
+    {
+        digitalStep = map(input,1551,2000, 80, 0); 
+    }
+    else if (input<=1550 && input>1450)
+    {
+        digitalStep =120;
+    }
+    else if (input<=1450&&input>=1000)
+    {
+        digitalStep = map(input,900,1450,255,175); 
+    }
+
+    return digitalStep;
 }
 
 void setMotor(int Right, int Left)
@@ -127,7 +138,7 @@ void setMotor(int Right, int Left)
     digitalWrite(slaveSelectPin,HIGH);//take SS pin high to deselect chip
 
     delay(50);//wait
-    
+
     digitalWrite(slaveSelectPin,LOW);
     SPI.transfer(1); //adress of second potentiometer 01
     SPI.transfer(Left);
@@ -137,24 +148,24 @@ void setMotor(int Right, int Left)
 void printValue()
 { 
 
-  //information to serial monitor
-  Serial.print("\nCh1:"); // Print the value of 
-  Serial.print(ch1);    // each channel
+    //information to serial monitor
+    Serial.print("\nCh1:"); // Print the value of 
+    Serial.print(ch1);    // each channel
 
-  Serial.print("\nCh2:");
-  Serial.print(ch2);
+    Serial.print("\nCh2:");
+    Serial.print(ch2);
 
-  Serial.print("\nCh3:");
-  Serial.print(ch3);
+    Serial.print("\nCh3:");
+    Serial.print(ch3);
 
-  Serial.print("\nforwardRos:");
-  Serial.print(forwardROS);
+    Serial.print("\nforwardRos:");
+    Serial.print(forwardROS);
 
-  Serial.print("\nturnROS:");
-  Serial.print(turnROS);
+    Serial.print("\nturnROS:");
+    Serial.print(turnROS);
 
 
-  Serial.print("\n\n");
+    Serial.print("\n\n");
 
-  delay(100); // I put this here just to make the terminal window happier  
+    delay(100); // I put this here just to make the terminal window happier  
 }

@@ -1,29 +1,29 @@
-#map_frame: map
+map_frame: map
 odom_frame: odom
 base_link_frame: base_link
-world_frame: map
+world_frame: odom
 sensor_timeout: 0.5
 two_d_mode: true
 
 frequency: 10
 
-odom0: odometry/vel
-odom0_config: [false, false, false,
+# odom0: odometry/gazebo
+# odom0_config: [true, true, false,
+#                false, false, true,
+#                true, false, false,
+#                false, false, true,
+#                false, false, false]
+# odom0_differential: false # with GPS, must be false
+# odom0_queue_size: 10
+
+odom0: odometry/gps
+odom0_config: [true, true, false,
                false, false, false,
-               true, false, false,
-               false, false, true,
+               false, false, false,
+               false, false, false,
                false, false, false]
 odom0_differential: false # with GPS, must be false
 odom0_queue_size: 10
-
-odom1: odometry/filtered/local
-odom1_config: [true, true, false,
-               false, false, true,
-               false, false, false,
-               false, false, true,
-               false, false, false]
-odom1_differential: false # with GPS, must be false
-odom1_queue_size: 10
 
 # odom1: bow_stereo_odometer/odometry 
 # odom1_config: [true, true, false,
@@ -48,9 +48,8 @@ imu0_config: [false, false, false,
               false, false, true,
               false, false, false,
               false, false, true,
-              false, false, false]
               # true, true, true]
-              # false, false, false]
+              false, false, false]
 imu0_differential: false # with GPS, must be false
 imu0_queue_size: 10
 imu0_nodelay: true

@@ -24,7 +24,7 @@ class CamShiftColor(ROS2OpenCV2):
         self.node_name = node_name
         self.color_under_detect = rospy.get_param("~color_under_detect", "red")
         # call masking alglorthm to get the color mask
-        self.mymask = Masking(color=self.color_under_detect, shape=None,
+        self.mymask = Masking(color=self.color_under_detect, shape="triangle",
                               masker=None, detector=None, matcher=None, matching_method=None)
 
         # The minimum saturation of the tracked color in HSV space,
@@ -42,9 +42,9 @@ class CamShiftColor(ROS2OpenCV2):
         cv.NamedWindow("Parameters", 0)
         cv.MoveWindow("Parameters", 700, 325)
         cv.NamedWindow("Backproject", 0)
-        cv.MoveWindow("Backproject", 700, 900)
+        cv.MoveWindow("Backproject", 700, 600)
         cv.NamedWindow("Tracked_obj", 0)
-        cv.MoveWindow("Tracked_obj", 700, 900)
+        cv.MoveWindow("Tracked_obj", 1000, 50)
 
         # Create the slider controls for saturation, value and threshold
         cv.CreateTrackbar("Saturation", "Parameters", self.smin, 255, self.set_smin)
@@ -77,6 +77,19 @@ class CamShiftColor(ROS2OpenCV2):
             # First blur the image
             frame = cv2.blur(cv_image, (5, 5))
 
+            frame_yuv = cv2.cvtColor(frame, cv2.COLOR_BGR2YUV)
+
+            # equalize the histogram of the Y channel
+            frame_yuv[:,:,0] = cv2.adaptiveThreshold(frame_yuv[:,:,0],255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
+            # frame_yuv[:,:,0] = cv2.equalizeHist(frame_yuv[:,:,0])
+            # cv2.imshow('Histogram equalized', frame_yuv[:,:,0])
+
+            # convert the YUV image back to RGB format
+            frame_output = cv2.cvtColor(frame_yuv, cv2.COLOR_YUV2BGR)
+            # cv2.imshow('Histogram equalized', frame_output)
+
+
+
             # Convert from RGB to HSV space
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -87,13 +100,14 @@ class CamShiftColor(ROS2OpenCV2):
             if self.selection is None:
                 # obtain the color mask
                 color_mask = self.mymask.color_mask(frame, self.color_under_detect)
+                # cv2.imshow("color_mask", color_mask)
                 # create bounding box from the maximum mask
                 self.selection = self.mymask.find_max_contour(color_mask)
                 self.detect_box = self.selection
                 self.track_box = None
 
-            # If the user is making a selection with the mouse,
-            # calculate a new histogram to track
+            # If the user is making a selection with the mouse, or a selection
+            # is done by color mask, calculate a new histogram to track
             if self.selection is not None:
                 x0, y0, w, h = self.selection
                 x1 = x0 + w
@@ -106,6 +120,7 @@ class CamShiftColor(ROS2OpenCV2):
                 self.hist = self.hist.reshape(-1)
                 self.show_hist()
 
+            # no more detect box, cancel the selection
             if self.detect_box is not None:
                 self.selection = None
 
@@ -132,6 +147,11 @@ class CamShiftColor(ROS2OpenCV2):
 
                 # Display the resulting backprojection
                 cv2.imshow("Backproject", backproject)
+
+                # do object contour from the backproject (mask)
+                [boundingrect, candidate_shape] = self.mymask.find_contours(backproject)
+                print candidate_shape
+
 
         except:
             pass
@@ -173,7 +193,7 @@ class CamShiftColor(ROS2OpenCV2):
 
 if __name__ == '__main__':
     try:
-        node_name = "camshift"
+        node_name = "camshift_color"
         CamShiftColor(node_name)
         try:
             rospy.init_node(node_name)

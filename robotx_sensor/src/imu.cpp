@@ -13,7 +13,6 @@
 #define Gravity 25.28
 #define Gyro_gain 0.0012043
 
-
 using std::string;
 using serial::Serial;
 
@@ -49,8 +48,9 @@ int main(int argc, char **argv)
 
   ros::Publisher imu_pub = n.advertise<sensor_msgs::Imu> ("middle_middle_imu/imu/data_raw", 1000);
   ros::Publisher mag_pub = n.advertise<sensor_msgs::MagneticField> ("middle_middle_imu/imu/mag", 1000);
+
   ros::Rate loop_rate(50);
-  ser=new Serial("/dev/USBimu", 57600, serial::Timeout::simpleTimeout(250));
+  ser=new Serial("/dev/ttyUSB0", 57600, serial::Timeout::simpleTimeout(250));
 
   std::string frame_id="imu_link";
 
@@ -87,7 +87,6 @@ int main(int argc, char **argv)
    mag.magnetic_field.x=s[12];
    mag.magnetic_field.y=s[13];
    mag.magnetic_field.z=s[14];
-
 
 
    //geometry_msgs::Quaternion quat= tf::createQuaternionFromRPY(double rpy.x, double rpy.y, double rpy.z);

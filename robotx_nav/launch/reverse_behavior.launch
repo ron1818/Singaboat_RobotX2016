@@ -3,14 +3,22 @@
     <arg name="isgazebo" default="false" />
     <arg name="isfake" default="false" />
     <arg name="iswamv" default="false" />
+    <arg name="cmd_vel_topic" default="cmd_vel" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
-    <arg name="distance" default="6" />
+    <arg name="is_timed" default="false" />
+    <arg name="distance" default="5" />
+    <arg name="duration" default="3" />
+    <arg name="speed" default="-0.3" />
 
     <node pkg="robotx_nav" type="move_base_reverse.py" name="reverse_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
-	<param name="dis" value="$(arg distance)" type="double"/>
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
+	<param name="is_timed" value="$(arg is_timed)" />
+	<param name="duration" value="$(arg duration)" type="double"/>
+	<param name="distance" value="$(arg distance)" type="double"/>
+	<param name="speed" value="$(arg speed)" type="double"/>
     </node>
 
 </launch>

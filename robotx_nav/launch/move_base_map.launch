@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-    <arg name="mapname" default="blank_map" />
+    <arg name="mapname" default="nanyanglake" />
     <arg name="cmd_vel_topic" default="move_base_cmd_vel" />
     <arg name="isgazebo" default="false" />
     <arg name="isfake" default="false" />
@@ -15,15 +15,19 @@
         <arg name="iswamv" value="true" if="$(arg isbag)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg iswamv)" />
         <arg name="odom_topic" value="/odometry/filtered/global" if="$(arg isgazebo)" />
+
         <arg name="odom_topic" value="/odometry/filtered/global/bag" if="$(arg isbag)" />
         <arg name="odom_topic" value="/odom" if="$(arg isfake)" />
-        <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" />
+        <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
+        <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)" if="$(arg isbag)" />
+        <arg name="cmd_vel_topic" value="cmd_vel" if="$(arg isfake)" />
+        <arg name="cmd_vel_topic" value="cmd_vel" if="$(arg isgazebo)" />
     </include>
 
     <!-- Run the map server with a blank map -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(find robotx_nav)/maps/$(arg mapname).yaml" />
 
     <!-- Run a static transform between /odom and /map -->
-    <!--node pkg="tf" type="static_transform_publisher" name="baselink_odom_broadcaster" args="0 0 0 0 0 0 /odom /base_link 100" /-->
+    <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 /map /odom 100" if="$(arg isfake)" />
 
 </launch>

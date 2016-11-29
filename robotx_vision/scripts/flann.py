@@ -24,9 +24,9 @@ class Flag_match(object):
 
         # read scene
         self.img2 = cv2.imread(scene, 0)
-        # cv2.imshow("template", self.img1)
-        # cv2.imshow("scene", self.img2)
-        # cv2.waitKey(0)
+        cv2.imshow("template", self.img1)
+        cv2.imshow("scene", self.img2)
+        cv2.waitKey(0)
 
         # load detector
         if detector.lower() == "sift":
@@ -75,7 +75,7 @@ class Flag_match(object):
         # store all the good matches as per Lowe's ratio test.
         good = []
         for m,n in matches:
-            if m.distance < 0.85*n.distance:
+            if m.distance < 0.75*n.distance:
                 good.append(m)
 
         print len(good) > self.MIN_MATCH_COUNT
@@ -101,7 +101,7 @@ class Flag_match(object):
 
 if __name__ == "__main__":
     try:
-        circle = Flag_match(shape="circle", scene="image/template-2.jpg", detector="SIFT", matcher="FLANN")
+        circle = Flag_match(shape="circle", scene="image/docking_side.jpg", detector="SIFT", matcher="FLANN")
         # triangle = Flag_match(shape="triangle", scene="image/template-4.jpg", detector="SURF", matcher="FLANN")
         # cross = Flag_match(shape="cross", scene="image/template-3.jpg", detector="ORB", matcher="FLANN")
     except:

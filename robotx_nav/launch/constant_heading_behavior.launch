@@ -2,17 +2,23 @@
 <launch>
 
     <arg name="waypoint_separation" default="5.0" />
-    <arg name="is_relative" default="false" />
+    <arg name="is_relative" default="true" />
+    <arg name="target_x" default="20" />
+    <arg name="target_y" default="0" />
     <arg name="isfake" default="false" />
     <arg name="isgazebo" default="false" />
     <arg name="iswamv" default="false" />
+    <arg name="cmd_vel_topic" default="cmd_vel" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
 
-    <node pkg="robotx_nav" type="move_base_forward.py" name="constant_heading_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg iswamv)" />
+    <node pkg="robotx_nav" type="move_base_forward.py" name="constant_heading_behavior" output="screen">
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
         <param name="waypoint_separation" value="$(arg waypoint_separation)" />
         <param name="is_relative" value="$(arg is_relative)" />
+        <param name="target_x" value="$(arg target_x)" />
+        <param name="target_y" value="$(arg target_y)" />
     </node>
 
 </launch>

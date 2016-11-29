@@ -1,12 +1,13 @@
 <launch>
-    <arg name="input_rgb_image" default="camera/rgb/image_raw" />
+    <arg name="input_rgb_image" default="image_rect_color" />
     <arg name="roi" default="roi" />
-    <arg name="namespace" default="/" />
+    <arg name="namespace" default="c170" />
+    <arg name="objectname" default="totem" />
     <arg name="color_under_detect" default="red" />
-  <node pkg="robotx_vision" name="camshift_color" type="camshift_color.py" output="screen" ns="$(arg namespace)" >
+  <node pkg="robotx_vision" name="camshift_$(arg color_under_detect)" type="camshift_color.py" output="screen" ns="$(arg namespace)" >
       <param name="color_under_detect" value="$(arg color_under_detect)" />
       <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
-      <remap from="/roi" to="$(arg roi)" />
+      <remap from="/roi" to="$(arg objectname)/$(arg color_under_detect)/$(arg roi)" />
     <rosparam>
        smin: 85
        vmin: 50

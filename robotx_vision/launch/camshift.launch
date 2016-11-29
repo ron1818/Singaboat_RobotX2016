@@ -1,5 +1,5 @@
 <launch>
-    <arg name="input_rgb_image" default="camera/rgb/image_raw" />
+    <arg name="input_rgb_image" default="c170/image_raw" />
     <arg name="roi" default="roi" />
     <arg name="namespace" default="/" />
   <node pkg="robotx_vision" name="camshift" type="camshift.py" output="screen" ns="$(arg namespace)" >
