@@ -35,7 +35,7 @@ This program contains the launch file for viewing an empty ground plane in Gazeb
   <arg name="gui" default="$(optenv GAZEBO_GUI true)"/>
   <arg name="headless" default="$(optenv GAZEBO_HEADLESS false)"/>
   <arg name="debug" default="$(optenv GAZEBO_DEBUG false)"/>
-  <arg name="world_name" default="$(find auv_ros_gazebo)/worlds/pond.world"/> 
+  <arg name="world_name" default="$(find robotx_gazebo)/worlds/pond.world"/> 
 
   <!-- set use_sim_time flag -->
   <group if="$(arg use_sim_time)">
