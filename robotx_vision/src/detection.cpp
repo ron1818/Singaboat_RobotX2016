@@ -10,6 +10,8 @@
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
+#include <dynamic_reconfigure/server.h>
+#include <robotx_vision/detectionConfig.h>
 
 //OpenCV libs
 #include <opencv2/opencv.hpp>
@@ -47,7 +49,7 @@ vector<sensor_msgs::RegionOfInterest> object;
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
-std::vector<cv::Point> approx;
+//std::vector<cv::Point> approx;
 cv::Mat src, hsv, hls;
 cv::Scalar up_lim, low_lim, up_lim_wrap, low_lim_wrap;
 cv::Mat lower_hue_range;
@@ -62,11 +64,10 @@ double area, r_area, m_area;
 const double eps = 0.15;
 
 //Functions
-void reduce_noise(cv::Mat* bgr)
+void reduce_noise(cv::Mat* dst)
 {
-  cv::morphologyEx(*bgr, *bgr, cv::MORPH_CLOSE, str_el);
-  cv::morphologyEx(*bgr, *bgr, cv::MORPH_OPEN, str_el);
-  cv::blur(*bgr,*bgr,Size(2,2));
+  cv::morphologyEx(*dst, *dst, cv::MORPH_CLOSE, str_el);
+  cv::morphologyEx(*dst, *dst, cv::MORPH_OPEN, str_el);
 }
 
 sensor_msgs::RegionOfInterest object_return()
@@ -109,7 +110,7 @@ void detect_marker()
   for (int i = 0; i < contours.size(); i++)
   {
     // Approximate contour with accuracy proportional to the contour perimeter
-    cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
+   // cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
 
@@ -147,14 +148,19 @@ void detect_obstacle()
   for (int i = 0; i < contours.size(); i++)
   {
     // Approximate contour with accura cy proportional to the contour perimeter
-    cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
     // Skip small or non-convex objects 
     if ((std::fabs(cv::contourArea(contours[i])) < min_area) /*|| (!cv::isContourConvex(approx))*/) continue;
     //Find black buoys
     rect = cv::boundingRect(contours[i]);
-    if(rect.height > rect.width) continue; //Skip false objects
+    vector<Point> hull;
+    convexHull(contours[i], hull, 0, 1);
+
     area = cv::contourArea(contours[i]);
     r_area = rect.height*rect.width;
+    double hull_area = contourArea(hull);
+
+    if((rect.height > rect.width) || (fabs(area/hull_area - 1) < eps)) continue; //Skip false objects
     if((std::abs(area/r_area - 3.141593/4) <= 0.1) && (std::abs((double)rect.height/rect.width - 0.833) < 0.2))
       object_found();
   }
@@ -178,7 +184,7 @@ void detect_symbol()
   for (int i = 0; i < contours.size(); i++)
   {
     // Approximate contour with accuracy proportional to the contour perimeter
-    cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
 
@@ -187,26 +193,28 @@ void detect_symbol()
 
     area = cv::contourArea(contours[i]);
     m_area = (mr.size).height*(mr.size).width;
-    cout << i << " =>> " << area << "/" << m_area << "==> " << fabs(area/m_area - 0.5) << " " << cv::isContourConvex(approx) << endl;
+
+    vector<Point> hull;
+    convexHull(contours[i], hull, 0, 1);
+    double hull_area = contourArea(hull);
+
+    //cout << i << " =>> " << area << "/" << m_area << "==> " << fabs(area/m_area - 0.5) << " " << cv::isContourConvex(approx) << endl;
     if(object_shape == "circle") 
     {
-      if((std::abs(area/m_area - 3.141593/4) < 0.1) && cv::isContourConvex(approx))
+      if((std::fabs(area/m_area - 3.141593/4) < 0.1) && (std::fabs(area/hull_area - 1) < 0.05))
         object_found();
     }
     else if(object_shape == "triangle") 
     {
-      if((fabs(area/m_area - 0.5) < 0.07) && cv::isContourConvex(approx))
+      if((fabs(area/m_area - 0.5) < 0.07 && (std::fabs(area/hull_area - 1) < 0.05)) /*&& cv::isContourConvex(approx)*/)
         object_found();
     }
     else if(object_shape == "cruciform")
     {
-      vector<Point> hull;
       Point2f center(contours[i].size());
       float radius(contours[i].size());
-      convexHull(contours[i], hull, 0, 1);
       Point2f hull_center(hull.size());
       float hull_radius(hull.size());
-      double hull_area = contourArea(hull);
       minEnclosingCircle(contours[i], center, radius);
       minEnclosingCircle(hull, hull_center, hull_radius);
       double cir_area = 3.1416*radius*radius;
@@ -234,8 +242,8 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   //newImage = true;
   //Start the shape detection code
   if (src.empty()) return;
+  cv::blur(src,src,Size(2,2));
   cv::cvtColor(src,hsv,COLOR_BGR2HSV);
-  cv::cvtColor(src,hls,COLOR_BGR2HLS);
   width = src.cols;
   height = src.rows;
   //Detect stuffs
@@ -250,10 +258,50 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   }
 }
 
+void dynamic_configCb(robotx_vision::detectionConfig &config, uint32_t level) 
+{
+  min_area = config.min_area;
+  //Process appropriate parameter for object shape/color
+  if(object_color == "blue") 
+  {
+    low_lim = cv::Scalar(config.blue_H_low,config.blue_S_low,config.blue_V_low);
+    up_lim = cv::Scalar(config.blue_H_high,config.blue_S_high,config.blue_V_high);
+  }
+  else if(object_color == "green")
+  {
+    low_lim = cv::Scalar(config.green_H_low,config.green_S_low,config.green_V_low);
+    up_lim = cv::Scalar(config.green_H_high,config.green_S_high,config.green_V_high);
+  }
+  else if(object_color == "yellow")
+  {
+    low_lim = cv::Scalar(config.yellow_H_low,config.yellow_S_low,config.yellow_V_low);
+    up_lim = cv::Scalar(config.yellow_H_high,config.yellow_S_high,config.yellow_V_high);
+  }
+  else if(object_color == "red")
+  {
+    low_lim = cv::Scalar(config.red_H_low1, config.red_S_low, config.red_V_low);
+    up_lim = cv::Scalar(config.red_H_high1, config.red_S_high, config.red_V_high);
+    low_lim_wrap = cv::Scalar(config.red_H_low2, config.red_S_low, config.red_V_low);
+    up_lim_wrap = cv::Scalar(config.red_H_high2, config.red_S_high, config.red_V_high);
+  }
+  else if(object_color == "white")
+  {
+    low_lim = cv::Scalar(config.white_H_low,config.white_S_low,config.white_V_low);
+    up_lim = cv::Scalar(config.white_H_high,config.white_S_high,config.white_V_high);
+  }
+  else if(object_shape == "obstacle") //obstacles
+  {
+    low_lim = cv::Scalar(config.black_H_low,config.black_S_low,config.black_V_low);
+    up_lim = cv::Scalar(config.black_H_high,config.black_S_high,config.black_V_high);
+  }
+  
+  ROS_INFO("Reconfigure Requested.");
+}
+
 int main(int argc, char** argv)
 {
   //Initiate node
-  ros::init(argc, argv, "vision");
+  ros::init(argc, argv, "detection");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
@@ -261,62 +309,11 @@ int main(int argc, char** argv)
   pnh.getParam("object_color", object_color);
   pnh.getParam("debug", debug);
   pnh.getParam("published_topic", published_topic);
-  //Process appropriate parameter for object shape/color
-  if(object_shape == "marker" || object_shape == "totem") //markers
-  {
-    if(object_color == "blue") 
-    {
-      low_lim = cv::Scalar(105,100,100);
-      up_lim = cv::Scalar(130,255,255);
-    }
-    else if(object_color == "green")
-    {
-      low_lim = cv::Scalar(50,130,70);
-      up_lim = cv::Scalar(96,150,150);
-    }
-    else if(object_color == "red")
-    {
-      low_lim = cv::Scalar(0,80,100);
-      up_lim = cv::Scalar(5,255,255);
-      low_lim_wrap = cv::Scalar(165,80,100);
-      up_lim_wrap = cv::Scalar(179,255,255);
-    }
-    else if(object_color == "yellow")
-    {
-      low_lim = cv::Scalar(20, 100, 100);
-      up_lim = cv::Scalar(30, 255, 255);
-    }
-    else if(object_color == "white")
-    {
-      low_lim = cv::Scalar(5, 225, 2);
-      up_lim = cv::Scalar(255, 255, 255);
-    }
-  }
-  else if(object_shape == "obstacle") //obstacles
-  {
-    low_lim = cv::Scalar(117, 40, 4);
-    up_lim = cv::Scalar(140, 255, 150);
-  }
-  else //symbols
-  {
-    if(object_color == "blue") 
-    {
-      low_lim = cv::Scalar(105,100,100);
-      up_lim = cv::Scalar(130,255,255);
-    }
-    else if(object_color == "green")
-    {
-      low_lim = cv::Scalar(50,55,55);
-      up_lim = cv::Scalar(98,245,245);
-    }
-    else if(object_color == "red")
-    {
-      low_lim = cv::Scalar(0,80,100);
-      up_lim = cv::Scalar(5,255,255);
-      low_lim_wrap = cv::Scalar(165,80,100);
-      up_lim_wrap = cv::Scalar(179,255,255);
-    }
-  }
+  dynamic_reconfigure::Server<robotx_vision::detectionConfig> server;
+  dynamic_reconfigure::Server<robotx_vision::detectionConfig>::CallbackType f;
+  f = boost::bind(&dynamic_configCb, _1, _2);
+  server.setCallback(f);
+  
   //Initiate windows
   if(debug)
   { 
