@@ -62,6 +62,7 @@
     <!-- robot description from auv_ros_description package -->
     <include file="$(find robotx_description)/launch/description.launch">
         <arg name="lidar_enabled" value="false" />
+        <arg name="zed_enabled" value="false" />
     </include>
     <!-- not in use -->
     <!-- bring stereo image -->
