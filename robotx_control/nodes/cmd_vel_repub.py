@@ -11,7 +11,7 @@
 import rospy
 import math
 from geometry_msgs.msg import Twist
-from sensor_msg.msg import Imu
+from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 # from actionlib_msgs.msg import GoalID
 from move_base_msgs.msg import MoveBaseActionGoal  # , MoveBaseGoal
@@ -23,10 +23,15 @@ from robotx_control.cfg import CmdVelPID
 class Cmd_Vel_Repub(object):
     linear_kp, linear_ki, linear_kd,\
         angular_kp, angular_ki, angular_kd = 1, 1, 1, 1, 1, 1
-    anglar_z, linear_x = 0, 0
+    angular_z, linear_x = 0, 0
     linear_acceleration_x, linear_acceleration_y, angular_acceleration_z = 0, 0, 0
     odom_x, odom_y, odom_yaw = 0, 0, 0
     goal_x, goal_y, goal_yaw = 0, 0, 0
+    linear_threshold=5.0
+    angular_threshold=1.0
+
+    linear_velocity_threshold=3
+    angular_velocity_threshold=1.5
 
     def __init__(self):
         rospy.init_node('cmd_vel_repub', anonymous=True)
@@ -39,15 +44,103 @@ class Cmd_Vel_Repub(object):
         # rospy.spin()
         cmd_vel_repub = rospy.Publisher("cmd_vel_filtered", Twist, queue_size=10)
         pid_cmd_vel_msg = Twist()
+
+
+        #initialise pid variables
+        #linear
+        self.Integrator_max_linear=500
+        self.Integrator_min_linear=-500
+
+        self.set_point_linear=0.0 #desired value, 
+        self.error_linear=0.0
+        self.Derivator_linear=0.0
+        self.Integrator_linear=0.0
+        #angular
+        self.Integrator_max_angular=500
+        self.Integrator_min_angular=-500
+
+        self.set_point_angular=0.0
+        self.error_angular=0.0
+        self.Derivator_angular=0.0
+        self.Integrator_angular=0.0
+
+
+
         while not rospy.is_shutdown():
-            pid_cmd_vel_msg.linear.x, pid_cmd_vel_msg.angular_z = self.pid()
+
+            pid_cmd_vel_msg.linear.x = self.pid_linear()
+            pid_cmd_vel_msg.angular_z= self.pid_angular()
+
             cmd_vel_repub.publish(pid_cmd_vel_msg)
             r.sleep()
 
-    def pid(self):
+    def pid_linear(self):
         """ do pid control here """
-        # blahblahblah
-        return (pid_linear_x, pid_angular_z)
+
+        # linear PID
+        self.error_linear= sqrt((self.goal_x-self.odom_x)**2-(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
+        self.P_value_linear=self.linear_kp*self.error_linear 
+        self.D_value_linear=self.linear_kd*(self.error_linear - self.Derivator_linear) #always negative before overshoot
+        self.Derivator_linear=self.error_linear
+        self.Integrator_linear=self.Integrator_linear +self.error_linear
+
+        if self.Integrator_linear > self.Integrator_max_linear:
+        	self.Integrator_linear=self.Integrator_max_linear
+        elif self.Integrator_linear < self.Integrator_min_linear:
+        	self.Integrator_linear=self.Integrator_min_linear
+
+        self.I_value_linear=self.Integrator_linear*self.linear_ki
+
+        #only do compensation if inside circular region
+        if self.error_linear<self.linear_threshold:
+        	pid_linear_x= self.P_value_linear + self.I_value_linear + self.D_value_linear
+        
+        else:
+        	pid_linear_x=0.0        
+
+
+        
+        new_linear_x=self.linear_x+pid_linear_x
+        
+        if new_linear_x>self.linear_velocity_threshold:
+        	new_linear_x=self.linear_velocity_threshold
+        elif new_linear_x<-self.linear_velocity_threshold:
+        	new_linear_x=-self.linear_velocity_threshold
+
+
+        return (new_linear_x)
+
+
+    def pid_angular(self):
+    	#angular PID
+        self.error_angular= self.goal_yaw-self.odom_yaw#desired angle - current angle
+        self.P_value_angular=self.angular_kp*self.error_angular
+        self.D_value_angular=self.angular_kd*(self.error_angular - self.Derivator_angular)
+        self.Derivator_angular=self.error_angular
+        self.Integrator_angular=self.Integrator_angular +self.error_angular
+
+        if self.Integrator_angular > self.Integrator_max_angular:
+        	self.Integrator_angular=self.Integrator_max_angular
+        elif self.Integrator_angular < self.Integrator_min_angular:
+        	self.Integrator_angular=self.Integrator_min_angular
+
+        self.I_value_angular=self.Integrator_angular*self.angular_ki
+
+        #only do compensation if position is achieved
+        if self.error_linear<self.angular_threshold:  
+        	pid_angular_z= self.P_value_angular + self.I_value_angular + self.D_value_angular
+        else:
+        	pid_angular_z=0.0
+
+        new_angular_z=self.angular_z+pid_angular_z
+
+        if new_angular_z>self.angular_velocity_threshold:
+        	new_angular_z=self.angular_velocity_threshold
+        elif new_angular_z<-self.angular_velocity_threshold:
+        	new_angular_z=-self.angular_velocity_threshold
+
+        return (new_angular_z)
+
 
     def dynamic_callback(self, config, level):
         rospy.loginfo("""Reconfigure Request: \
@@ -64,7 +157,7 @@ class Cmd_Vel_Repub(object):
 
     def cmd_vel_callback(self, msg):
         """ callback the subscribe, get Twist data """
-        self.anglar_z = msg.angular.z  # rotation
+        self.angular_z = msg.angular.z  # rotation
         self.linear_x = msg.linear.x  # linear
 
     def imu_callback(self, msg):
