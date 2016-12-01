@@ -2,9 +2,10 @@
 <launch>
     <!-- arguments for sensors -->
     <arg name="lidar_enabled" default="false"/>
+    <arg name="zed_enabled" default="true"/>
 
     <!-- Send the auv Robot URDF/XACRO to param server -->
-    <param name="robot_description" command="$(find xacro)/xacro '$(find robotx_description)/urdf/robotx_standard.urdf.xacro' lidar_enabled:=$(arg lidar_enabled)" />
+    <param name="robot_description" command="$(find xacro)/xacro '$(find robotx_description)/urdf/robotx_standard.urdf.xacro' lidar_enabled:=$(arg lidar_enabled) zed_enabled:=$(arg zed_enabled)" />
 
     <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
         <param name="publish_frequency" type="double" value="20.0"/>

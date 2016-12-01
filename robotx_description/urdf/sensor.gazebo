@@ -121,8 +121,10 @@
 
     <xacro:imu_gazebo position1="middle" position2="middle" />
 
+	<xacro:unless value="$(arg zed_enabled)" >
     <xacro:stereo_camera_gazebo position1="bow" position2="left" />
     <xacro:stereo_camera_gazebo position1="bow" position2="right" />
+	</xacro:unless>
     <xacro:spot_camera_gazebo position1="underwater" />
     <xacro:spot_camera_gazebo position1="port" />
     <xacro:spot_camera_gazebo position1="starboard" />
@@ -154,10 +156,10 @@
         </plugin>
     </gazebo>
 
-    <!-- Set up kinect configuration >
-    <xacro:if value="$(arg kinect_enabled)">
-        <gazebo reference="kinect_camera_depth_frame">
-            <sensor type="depth" name="kinect_camera">
+    <!-- Set up kinect configuration-->
+    <xacro:if value="$(arg zed_enabled)">
+        <gazebo reference="zed_camera_depth_frame">
+            <sensor type="depth" name="zed_camera">
                 <update_rate>20</update_rate>
                 <camera>
                     <horizontal_fov>${60 * M_PI/180.0}</horizontal_fov>
@@ -171,8 +173,8 @@
                         <far>3</far>
                     </clip>
                 </camera>
-                <plugin name="kinect_camera_controller" filename="libgazebo_ros_openni_kinect.so">
-                <cameraName>kinect_camera</cameraName>
+                <plugin name="zed_camera_controller" filename="libgazebo_ros_openni_zed.so">
+                <cameraName>zed_camera</cameraName>
                 <imageTopicName>rgb/image_raw</imageTopicName>
                 <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
                 <depthImageTopicName>depth/image_raw</depthImageTopicName>
@@ -180,11 +182,11 @@
                 <pointCloudTopicName>depth/points</pointCloudTopicName>
                 <pointCloudCutoff>0.05</pointCloudCutoff>
                 <pointCloudCutoffMax>5</pointCloudCutoffMax>
-                <frameName>kinect_camera_depth_optical_frame</frameName>
+                <frameName>zed_camera_depth_optical_frame</frameName>
             </plugin>
         </sensor>
     </gazebo>
-</xacro:if-->
+</xacro:if>
 
 
 <!-- Set up sonar configuration >
