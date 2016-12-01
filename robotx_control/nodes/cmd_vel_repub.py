@@ -51,7 +51,7 @@ class Cmd_Vel_Repub(object):
         self.Integrator_max_linear=500
         self.Integrator_min_linear=-500
 
-        self.set_point_linear=0.0 #desired value, 
+        self.set_point_linear=0.0 #desired value,
         self.error_linear=0.0
         self.Derivator_linear=0.0
         self.Integrator_linear=0.0
@@ -69,7 +69,7 @@ class Cmd_Vel_Repub(object):
         while not rospy.is_shutdown():
 
             pid_cmd_vel_msg.linear.x = self.pid_linear()
-            pid_cmd_vel_msg.angular_z= self.pid_angular()
+            pid_cmd_vel_msg.angular.z= self.pid_angular()
 
             cmd_vel_repub.publish(pid_cmd_vel_msg)
             r.sleep()
@@ -79,7 +79,7 @@ class Cmd_Vel_Repub(object):
 
         # linear PID
         self.error_linear= sqrt((self.goal_x-self.odom_x)**2-(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
-        self.P_value_linear=self.linear_kp*self.error_linear 
+        self.P_value_linear=self.linear_kp*self.error_linear
         self.D_value_linear=self.linear_kd*(self.error_linear - self.Derivator_linear) #always negative before overshoot
         self.Derivator_linear=self.error_linear
         self.Integrator_linear=self.Integrator_linear +self.error_linear
@@ -94,14 +94,14 @@ class Cmd_Vel_Repub(object):
         #only do compensation if inside circular region
         if self.error_linear<self.linear_threshold:
         	pid_linear_x= self.P_value_linear + self.I_value_linear + self.D_value_linear
-        
+
         else:
-        	pid_linear_x=0.0        
+        	pid_linear_x=0.0
 
 
-        
+
         new_linear_x=self.linear_x+pid_linear_x
-        
+
         if new_linear_x>self.linear_velocity_threshold:
         	new_linear_x=self.linear_velocity_threshold
         elif new_linear_x<-self.linear_velocity_threshold:
@@ -127,7 +127,7 @@ class Cmd_Vel_Repub(object):
         self.I_value_angular=self.Integrator_angular*self.angular_ki
 
         #only do compensation if position is achieved
-        if self.error_linear<self.angular_threshold:  
+        if self.error_linear<self.angular_threshold:
         	pid_angular_z= self.P_value_angular + self.I_value_angular + self.D_value_angular
         else:
         	pid_angular_z=0.0
