@@ -54,30 +54,9 @@ follow opencv website for more info
 
 OBJECT DETECTION
 --------
-### 13/11/2016 ###
-1. Add `underwater` node for Coral Survey task.
-2. Scan the code sequence will be updated through parameter server `/gui/color1`, `/gui/color2`, `/gui/color3`.
-3. Add function to detect white totem marker.
-4. Tweak update.
-
-### 03/11/2016 ###
-1. Update algoritm of `object_detector` & `symbol_identifier`
-2. Add node `sequence_scanner` and launch file
-
-### 30/10/2016 ###
-object detected will be published as a custom message type (msg/object_detection.msg)
-#### naming convetion of custom message ####
-1. `frame_id`  camera, using convetional naming
-2. `type`      object's type: `marker_totem`, `tiki_totem`, `obstacle`, `triangle`, `circle`, `cruciform`
-3. `color`     object's color: `red`, `green`, `blue`, `black`, `white`
-4. `angle_t`   top angle of detected object on image
-5. `angle_b`   bottom angle of detected object on image
-6. `angle_l`   left angle of detected object on image
-7. `angle_r`   right angle of detected object on image
-
 # launch node
-paramater need to be adjusted depends on the subscribed camera's topic
 ```bash
+chmod a+x [path name]/robotx_vision/cfg/detection.cfg
 catkin_make
 roslaunch robotx_vision [node_of_interest].launch
 ``` 
