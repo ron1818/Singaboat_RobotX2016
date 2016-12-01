@@ -50,7 +50,7 @@
 
     <!-- bringup camera -->
     <include file="$(find robotx_sensor)/launch/image_rect.launch" >
-        <arg name="use_bow" value="true" />
+        <arg name="use_bow" value="false" />
         <arg name="use_port" value="true" />
         <arg name="use_starboard" value="true" />
         <arg name="use_transom" value="true" />
