@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
-    <arg name="video_device" default="/dev/video0" />
+    <arg name="video_device" default="/dev/video1" />
     <arg name="camera_frame_id" default="camera_link" />
     <arg name="namespace" default="c170" />
     <arg name="camera_info" default="camera_info" />

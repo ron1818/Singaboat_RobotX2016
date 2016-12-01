@@ -19,7 +19,7 @@ class RoiCoordinate(object):
     coordinate = [float('Inf'), float('Inf')]
 
     def __init__(self, nodename, namespace="bow/left", objectname="totem", colorname="red",
-                 camera_frame="camera_link", base_frame=None, fixed_frame=None, rov=1.41):
+            camera_frame="camera_link", base_frame="base_link", fixed_frame="map", rov=1.41):
         rospy.init_node(nodename)
         rospy.on_shutdown(self.shutdown)
 
@@ -83,8 +83,8 @@ class RoiCoordinate(object):
                 self.coordinate_msg.y = coordinate[1]
                 # print self.coordinate_msg
                 self.coordinate_pub.publish(self.coordinate_msg)
-            # else:
-            #     self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
+            else:
+                self.coordinate_pub.publish(Point(float("Inf"), float("Inf"), 0))
             r.sleep()
 
 

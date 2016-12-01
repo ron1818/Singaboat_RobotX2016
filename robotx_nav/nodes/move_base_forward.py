@@ -22,7 +22,6 @@ import actionlib
 from actionlib_msgs.msg import *
 from geometry_msgs.msg import Pose, Point, Quaternion, Twist
 from sensor_msgs.msg import RegionOfInterest, CameraInfo
-from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
@@ -43,19 +42,6 @@ class Forward(MoveBaseUtil):
         self.mode_param = rospy.get_param("~mode_param", 1)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
-
-        # # get boat position, one time only
-        # self.odom_received = False
-        # rospy.wait_for_message("/odom", Odometry)
-        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
-
-        # while not self.odom_received:
-        #     rospy.sleep(1)
-
-        # # set the distance between waypoints
-        # self.forward["waypoint_separation"] = waypoint_separation
-        # # check whether absolute or relative target
-        # self.forward["is_relative"] = is_relative
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.target.x, self.target.y])
@@ -80,20 +66,6 @@ class Forward(MoveBaseUtil):
             p = Point()
             p = waypoint.position
             self.markers.points.append(p)
-
-        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        # self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
-
-        # Subscribe to the move_base action server
-        # self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
-
-        # rospy.loginfo("Waiting for move_base action server...")
-
-        # Wait 60 seconds for the action server to become available
-        # self.move_base.wait_for_server(rospy.Duration(60))
-
-        # rospy.loginfo("Connected to move base server")
-        # rospy.loginfo("Starting navigation test")
 
         # Initialize a counter to track waypoints
         i = 1  # remove the first point
@@ -143,7 +115,7 @@ class Forward(MoveBaseUtil):
 
         # Create a list to hold the waypoint poses
         waypoints = list()
-        (trans, rot) = self.get_odom()
+        (trans, rot) = self.get_tf()
         catersian_x = [(N - i) * trans.x / N + i * self.forward["translation"][0] / N
                        for i in range(N)]
         catersian_y = [(N - i) * trans.y / N + i * self.forward["translation"][1] / N
