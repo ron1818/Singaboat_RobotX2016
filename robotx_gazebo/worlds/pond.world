@@ -58,7 +58,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         <collision name="collision">
           <geometry>
             <heightmap>
-              <uri>file://media/materials/textures/pondmap.png</uri>
+                <uri>package://robotx_gazebo/worlds/pondmap.png</uri>
               <size>25 25 3</size>
               <pos>0 0 -3</pos>
             </heightmap>
@@ -91,7 +91,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
                 <min_height>4</min_height>
                 <fade_dist>5</fade_dist>
               </blend>
-              <uri>file://media/materials/textures/pondmap.png</uri>
+                  <uri>file://media/materials/textures/pondmap.png</uri>
               <size>25 25 3</size>
               <pos>0 0 -3</pos>
             </heightmap>

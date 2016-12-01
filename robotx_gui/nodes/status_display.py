@@ -27,7 +27,7 @@ class StatusDisplay(object):
         self.root.canvas = self.canvas.canvas = self.canvas
         # Set up canvas data and call init
         
-        rospy.Subscriber("/odom",Odometry, self.odom_callback, queue_size = 50)
+        rospy.Subscriber("/odometry/filtered/global",Odometry, self.odom_callback, queue_size = 50)
 	rospy.Subscriber("/chatter", Vector3, self.chatter_callback, queue_size = 50)
     	rospy.Subscriber("/navsat/fix", NavSatFix, self.navsat_callback, queue_size = 50)
 	self.canvas.data = { }
