@@ -2,12 +2,13 @@
 
     <node pkg="rosserial_python" type="serial_node.py" name="serial_arduino_node">
         <!-- max x:1.3m/s (5km/h), z: 1m/s convert to ratio: forward=384.6 angular=500 -->
-        <param name="motor_param/forward" value="375" type="double" />
-        <param name="motor_param/angular" value="200" type="double" />
         <param name="motor_param/reverse" value="false" type="bool" />
         <param name="port" value="/dev/USBSerial"/>
         <param name="baud" value="57600"/>
     </node>
 
     <node pkg="robotx_control" type="robotx_control_node" name="motor_node" />
+    
+    <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="dynamic_reconfigure"/>
+
 </launch>
