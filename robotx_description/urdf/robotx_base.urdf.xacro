@@ -84,6 +84,8 @@
             <geometry>
                 <box size="${bouy_length} ${bouy_sep+2*bouy_radius} 0.01"/>
             </geometry>
+            <contact_coefficients mu1="0.001" kp="1000" kd="1"/>
+
         </collision>
     </link>
 

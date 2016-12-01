@@ -22,11 +22,10 @@ from math import radians, pi, sin, cos, sqrt
 class MoveBaseUtil():
     x0, y0, yaw0 = 0, 0, 0
     lat, lon = 0, 0
+    cancel_id = "cancel"
+
     def __init__(self, nodename="nav_test"):
         rospy.init_node(nodename, anonymous=False)
-
-        # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
 
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         self.fixed_frame = rospy.get_param("~fixed_frame", "map")
@@ -36,14 +35,10 @@ class MoveBaseUtil():
         rospy.on_shutdown(self.shutdown)
 
         # * get parameters
-
         # * Create a list to hold the target quaternions (orientations)
-
         # * Create a list to hold the waypoint poses
-
         # * create angles
         # * convert the angles to quaternions
-
         # * Append each of the four waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
 
@@ -56,6 +51,7 @@ class MoveBaseUtil():
         while not self.odom_received:
             rospy.sleep(1)
 
+        rospy.Subscriber("move_base/cancel", GoalID, self.cancel_callback, queue_size=5)
         # * Set a visualization marker at each waypoint
 
         # * Publisher to manually control the robot (e.g. to stop it, queue_size=5)
@@ -72,7 +68,7 @@ class MoveBaseUtil():
 
         # * Cycle through the four waypoints
 
-    def get_odom(self):
+    def get_tf(self):
         # transform from base_link to map
         trans_received = False
         while not trans_received:
@@ -102,7 +98,7 @@ class MoveBaseUtil():
         # print "r and theta", r, theta
 
         # transformation from map to baselink
-        # (trans, rot) = self.get_odom()
+        # (trans, rot) = self.get_tf()
         # x_base, y_base = trans.x, trans.y
 
         center = [self.x0 + r * cos(theta), self.y0 + r * sin(theta), 0]
@@ -129,6 +125,10 @@ class MoveBaseUtil():
         self.odom_received = True
         # rospy.loginfo([self.x0, self.y0, self.yaw0])
 
+    def cancel_callback(self, msg):
+        self.cancel_id = msg.id
+        rospy.loginfo(self.cancel_id)
+
     def convert_relative_to_absolute(self, target):
         """ boat's tf is base_link
         target is polar (r, theta) wrt base_link
@@ -152,26 +152,6 @@ class MoveBaseUtil():
         center = [self.x0 + x_target_rot, self.y0 + y_target_rot, 0]
         return [center, heading]
 
-        # print x_target_base, y_target_base
-        # (trans, rot) = self.get_odom()
-
-        # if trans is not None and rot is not None:
-        #     # first rotate to map frame
-        #     x_base, y_base = trans.x, trans.y
-
-        #     _, _, yaw = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
-
-        #     x_target_rot, y_target_rot = \
-        #         cos(yaw) * x_target_base - sin(yaw) * y_target_base, \
-        #             sin(yaw) * x_target_base + cos(yaw) * y_target_base
-
-
-        #     heading = theta + yaw
-        #     center = [x_base + x_target_rot, y_base + y_target_rot, 0]
-            # print center, heading
-
-        #     return [center, heading]
-
     def move(self, goal, mode, mode_param):
         """ mode1: continuous movement function, mode_param is the distance from goal that will set the next goal
             mode2: stop and rotate mode, mode_param is rotational angle in rad
@@ -183,11 +163,16 @@ class MoveBaseUtil():
         go_to_next = False
 
         if mode == 1:  # continuous movement function, mode_param is the distance from goal that will set the next goal
-            # (trans, _) = self.get_odom()
+            # (trans, _) = self.get_tf()
             while sqrt((self.x0 - goal.target_pose.pose.position.x) ** 2 +
                        (self.y0 - goal.target_pose.pose.position.y) ** 2) > mode_param:
-                rospy.sleep(rospy.Duration(1))
-                # (trans, _) = self.get_odom()
+
+                if self.cancel_id != "":
+                    rospy.sleep(rospy.Duration(1))
+                else:
+                    self.move_base.cancel_all_goals()
+                    break
+                # (trans, _) = self.get_tf()
             go_to_next = True
 
         elif mode == 2:  # stop and rotate mode, mode_param is rotational angle in rad
@@ -197,7 +182,10 @@ class MoveBaseUtil():
             self.rotation(mode_param)
 
         else:  # normal stop in each waypoint mode, mode_param is unused
-            finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
+            if self.cancel_id != "":
+                finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
+            else:
+                self.move_base.cancel_all_goals()
 
         # If we don't get there in time, abort the goal
         if not finished_within_time or go_to_next:
@@ -240,7 +228,7 @@ class MoveBaseUtil():
         # Set the movement command to forward motion
         move_cmd.linear.x = linear_speed
         # Get the starting position values
-        # (position, rotation) = self.get_odom()
+        # (position, rotation) = self.get_tf()
 
         # x_start = position.x
         # y_start = position.y
@@ -259,7 +247,7 @@ class MoveBaseUtil():
             r.sleep()
 
             # Get the current position
-            # (position, rotation) = self.get_odom()
+            # (position, rotation) = self.get_tf()
 
             # Compute the Euclidean distance from the start
             d = sqrt(pow((self.x0 - x_start), 2) +
@@ -337,5 +325,5 @@ class MoveBaseUtil():
 
 if __name__ == "__main__":
     util = MoveBaseUtil()
-    # util.get_odom()
+    # util.get_tf()
     util.convert_relative_to_absolute(target=[10,0])

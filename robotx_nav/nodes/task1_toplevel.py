@@ -38,14 +38,14 @@
 """
 
 import rospy
-import numpy
+import numpy as np
 from geometry_msgs.msg import Point
 from move_base_util import MoveBaseUtil
 from move_base_waypoint_geo import MoveToGeo
 from move_base_waypoint import MoveTo
 from move_base_forward import Forward
 from roi_coordinate import RoiCoordinate
-import thread
+import matplotlib.pyplot as plt
 
 class Task1(object):
     bow_left_red_x = float("Inf")
@@ -81,15 +81,18 @@ class Task1(object):
         rospy.on_shutdown(self.shutdown)
         rate = rospy.Rate(10)
 
-        self.lock = thread.allocate_lock()
+        self.start_time = rospy.get_time()
+        self.duration = 2
+
+        # must launch first:
 
         self.subscribe_coordinate("bow/left/totem/red/coordinate", "red")
-        # self.subscribe_coordinate("bow/right/totem/redcoordinate", "red")
+        self.subscribe_coordinate("bow/right/totem/red/coordinate", "red")
         # self.subscribe_coordinate("port/totem/redcoordinate", "red")
         # self.subscribe_coordinate("starboard/totem/redcoordinate", "red")
         # self.subscribe_coordinate("transom/totem/redcoordinate", "red")
         self.subscribe_coordinate("bow/left/totem/green/coordinate", "green")
-        # self.subscribe_coordinate("bow/right/totem/greencoordinate", "green")
+        self.subscribe_coordinate("bow/right/totem/green/coordinate", "green")
         # self.subscribe_coordinate("port/totem/greencoordinate", "green")
         # self.subscribe_coordinate("starboard/totem/greencoordinate", "green")
         # self.subscribe_coordinate("transom/totem/greencoordinate", "green")
@@ -101,18 +104,32 @@ class Task1(object):
         # the hard way: collect red and green points and use svm to get the separation plane
         # use the plane for constant heading
         self.is_ready = False
-        self.duration = 2
-        self.start_time = rospy.get_time()
         red_x_center, red_y_center = 0, 0
         green_x_center, green_y_center = 0, 0
+        plt.ion()
+        fig, ax = plt.subplots()
+        plot = ax.scatter([], [])
+        ax.set_xlim(-30, 30)
+        ax.set_ylim(0, 70)
         while not rospy.is_shutdown():
-            # print "in loop"
+            try:
+                print len(self.red_x_list), len(self.red_y_list)
+                print len(self.green_x_list), len(self.green_y_list)
+                ax.scatter(self.red_x_list, self.red_y_list, color="r")
+                ax.scatter(self.green_x_list, self.green_y_list, color="g")
+            except:
+                pass
+
             if self.is_ready:
-                red_x_center, red_y_center = numpy.median(self.red_x_list), numpy.median(self.red_y_list)
-                green_x_center, green_y_center = numpy.median(self.green_x_list), numpy.median(self.green_y_list)
+                print "ready"
+                red_x_center, red_y_center = np.median(self.red_x_list), np.median(self.red_y_list)
+                green_x_center, green_y_center = np.median(self.green_x_list), np.median(self.green_y_list)
                 target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
                 print target
                 rate.sleep()
+                print "wakeup"
+
+            fig.canvas.draw()
 
 
         # 4. constant heading based on roi, all coordinates are map. not relative
