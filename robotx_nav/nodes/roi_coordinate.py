@@ -38,6 +38,8 @@ class RoiCoordinate(object):
 
         self.rov = rospy.get_param('~rov', 1.41)
         self.totem_width = rospy.get_param('~totem_width', 0.25)
+        self.totem_height = rospy.get_param('~totem_height', 1.00)
+        self.totem_hw_ratio = self.totem_height / self.totem_width  # get the height vs width ratio
         self.accumulate = rospy.get_param('~accumulate', 10)  # 30 images
         self.image_width = 0
         self.image_height = 0
@@ -90,13 +92,16 @@ class RoiCoordinate(object):
 
     def roi_callback(self, msg):
         """ calculate average over accumulate """
+        delta = 0.7
+        # less than accumulate and within reasonable range
         if self.image_count <= self.accumulate:
-            self.x_offset_list.append(msg.x_offset)
-            self.y_offset_list.append(msg.y_offset)
-            self.height_list.append(msg.height)
-            self.width_list.append(msg.width)
-            self.is_pub_coordinate = False
-            self.image_count += 1
+            if (self.totem_hw_ratio * delta) < (msg.height / msg.width) < (self.totem_hw_ratio * (1 + (1-delta))):
+                self.x_offset_list.append(msg.x_offset)
+                self.y_offset_list.append(msg.y_offset)
+                self.height_list.append(msg.height)
+                self.width_list.append(msg.width)
+                self.is_pub_coordinate = False
+                self.image_count += 1
         else:
             self.x_offset = numpy.median(self.x_offset_list)
             self.y_offset = numpy.median(self.y_offset_list)

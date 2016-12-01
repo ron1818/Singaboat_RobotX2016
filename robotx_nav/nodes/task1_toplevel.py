@@ -73,7 +73,10 @@ class Task1(object):
         self.target_heading = rospy.get_param("~heading", 1.57)  # north
 
         # 1. drive to gps waypoint
-        # move_to_geo = MoveToGeo("gps_waypoint", self.start_lat, self.start_lon, self.start_heading)
+        move_to_geo = MoveToGeo("gps_waypoint", self.start_lat, self.start_lon, self.start_heading)
+        while move_to_geo.status() is not "success": # success
+            # keep waiting or kill
+            pass
 
         # 2. roi detect color totem, assume already have in launch
         #    then listen to namespace/objectname/colorname/coordinates
@@ -111,30 +114,37 @@ class Task1(object):
         plot = ax.scatter([], [])
         ax.set_xlim(-30, 30)
         ax.set_ylim(0, 70)
-        while not rospy.is_shutdown():
+        target = None
+        while not rospy.is_shutdown() or target is not None:
             try:
                 print len(self.red_x_list), len(self.red_y_list)
                 print len(self.green_x_list), len(self.green_y_list)
                 ax.scatter(self.red_x_list, self.red_y_list, color="r")
                 ax.scatter(self.green_x_list, self.green_y_list, color="g")
+                plt.show()
             except:
                 pass
 
             if self.is_ready:
-                print "ready"
                 red_x_center, red_y_center = np.median(self.red_x_list), np.median(self.red_y_list)
                 green_x_center, green_y_center = np.median(self.green_x_list), np.median(self.green_y_list)
                 target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
                 print target
                 rate.sleep()
-                print "wakeup"
-
             fig.canvas.draw()
 
 
         # 4. constant heading based on roi, all coordinates are map. not relative
-        # target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
-        # constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
+        constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
+        while constant_heading.status is not "success":
+            if self.distance(new_target, old_target) > distance_threshold:
+                constant_heading.cancel_goal()
+                rospy.sleep(1)
+        # redo the constant heading
+        constant_heading = Forward("constant_heading", target=new_target, waypoint_separation=5, is_relative=False)
+
+
+        # need to update the heading
 
     def roi_coordinate_callback(self, msg, colorname):
         # self.lock.acquire()
@@ -147,7 +157,6 @@ class Task1(object):
                 if msg.x is not None and msg.y is not None and msg.x < 10000 and msg.y < 10000:
                     self.green_x_list.extend([msg.x])
                     self.green_y_list.extend([msg.y])
-            # print self.red_x_list
             self.is_ready = False
         else:
             self.is_ready = True
