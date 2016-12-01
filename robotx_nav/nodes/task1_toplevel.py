@@ -39,10 +39,12 @@
 
 import rospy
 import numpy as np
+import multiprocessing as mp
+import sys
 from geometry_msgs.msg import Point
 from move_base_util import MoveBaseUtil
 from move_base_waypoint_geo import MoveToGeo
-from move_base_waypoint import MoveTo
+from move_base_force_cancel import ForceCancel
 from move_base_forward import Forward
 from roi_coordinate import RoiCoordinate
 import matplotlib.pyplot as plt
@@ -62,6 +64,7 @@ class Task1(object):
     red_y_list = list()
     green_x_list = list()
     green_y_list = list()
+    roi_target = None
 
     def subscribe_coordinate(self, topic_name, colorname):
         rospy.Subscriber(topic_name, Point, self.roi_coordinate_callback, colorname, queue_size=10)
@@ -72,20 +75,32 @@ class Task1(object):
         self.target_lon = rospy.get_param("~lon", 103.56)
         self.target_heading = rospy.get_param("~heading", 1.57)  # north
 
-        # 1. drive to gps waypoint
-        move_to_geo = MoveToGeo("gps_waypoint", self.start_lat, self.start_lon, self.start_heading)
-        while move_to_geo.status() is not "success": # success
-            # keep waiting or kill
-            pass
-
-        # 2. roi detect color totem, assume already have in launch
-        #    then listen to namespace/objectname/colorname/coordinates
-        rospy.init_node("roi_coordinate")
+        # rospy.init_node("roi_coordinate")
         rospy.on_shutdown(self.shutdown)
-        rate = rospy.Rate(10)
+        # rate = rospy.Rate(10)
 
-        self.start_time = rospy.get_time()
-        self.duration = 2
+        # three nodes into worker
+        # 1. drive to gps waypoint
+        gps_target = [self.target_lat, self.target_lon, self.target_heading]
+        gps_target = [(1.34, 103.56, 1.57)]
+        gps_move_to = mp.Process(name="gps", target=self.gps_worker,
+                                 args=("gps_test", gps_target))
+        # 2. roi to get target point, daemon
+        roi_get_target = mp.Process(name="roi_target", target=self.roi_worker,
+                                args=("roi_target",))
+        roi_get_target.daemon = True
+
+        # 3. constant heading, must get updated target
+        constant_heading = mp.Process(name="constant_heading", target=self.constant_heading_worker,
+                                      args=("constant_heading", self.roi_target))
+
+        # 4. cancel goal worker
+        cancel_goal = mp.Process(name="cancel_goal", target=self.cancel_goal_worker,
+                                 args=("cancel_goal", 10))
+
+
+        # roi detect color totem, assume already have in launch
+        # then listen to namespace/objectname/colorname/coordinates
 
         # must launch first:
 
@@ -99,55 +114,16 @@ class Task1(object):
         # self.subscribe_coordinate("port/totem/greencoordinate", "green")
         # self.subscribe_coordinate("starboard/totem/greencoordinate", "green")
         # self.subscribe_coordinate("transom/totem/greencoordinate", "green")
-        rospy.wait_for_message("bow/left/totem/red/coordinate", Point)
+        # rospy.wait_for_message("bow/left/totem/red/coordinate", Point)
 
-        # 3. calculate the center point bewtween red and green totem
-        # the simplest way: median for (x_red, y_red) and median for (x_green, y_green)
-        # then take the centerpoint for constant heading
-        # the hard way: collect red and green points and use svm to get the separation plane
-        # use the plane for constant heading
-        self.is_ready = False
-        red_x_center, red_y_center = 0, 0
-        green_x_center, green_y_center = 0, 0
-        plt.ion()
-        fig, ax = plt.subplots()
-        plot = ax.scatter([], [])
-        ax.set_xlim(-30, 30)
-        ax.set_ylim(0, 70)
-        target = None
-        while not rospy.is_shutdown() or target is not None:
-            try:
-                print len(self.red_x_list), len(self.red_y_list)
-                print len(self.green_x_list), len(self.green_y_list)
-                ax.scatter(self.red_x_list, self.red_y_list, color="r")
-                ax.scatter(self.green_x_list, self.green_y_list, color="g")
-                plt.show()
-            except:
-                pass
-
-            if self.is_ready:
-                red_x_center, red_y_center = np.median(self.red_x_list), np.median(self.red_y_list)
-                green_x_center, green_y_center = np.median(self.green_x_list), np.median(self.green_y_list)
-                target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
-                print target
-                rate.sleep()
-            fig.canvas.draw()
-
-
-        # 4. constant heading based on roi, all coordinates are map. not relative
-        constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
-        while constant_heading.status is not "success":
-            if self.distance(new_target, old_target) > distance_threshold:
-                constant_heading.cancel_goal()
-                rospy.sleep(1)
-        # redo the constant heading
-        constant_heading = Forward("constant_heading", target=new_target, waypoint_separation=5, is_relative=False)
-
-
-        # need to update the heading
+        gps_move_to.start()
+        roi_get_target.start()
+        gps_move_to.join()
+        # wait for self.roi_target to be valid
+        # use queue?
+        constant_heading.start()
 
     def roi_coordinate_callback(self, msg, colorname):
-        # self.lock.acquire()
         if rospy.get_time() - self.start_time < self.duration:
             if colorname == "red":
                 if msg.x is not None and msg.y is not None and msg.x < 10000 and msg.y < 10000:
@@ -161,16 +137,79 @@ class Task1(object):
         else:
             self.is_ready = True
             self.start_time = rospy.get_time()
-        # self.lock.release()
-
 
     def shutdown(self):
         pass
+
+    def gps_worker(self, nodename, target_geos):
+        p = mp.current_process()
+        print p.name, p.pid, 'Starting'
+        gps_waypoint = MoveToGeo(nodename=nodename, target=target_geos[0])
+        for target_geo in target_geos:
+            gps_waypoint.respawn(target_geo)
+        print p.name, p.pid, 'Exiting'
+
+    def roi_worker(self, nodename):
+        p = mp.current_process()
+        print p.name, p.pid, 'Starting'
+        # calculate the center point bewtween red and green totem
+        # the simplest way: median for (x_red, y_red) and median for (x_green, y_green)
+        # then take the centerpoint for constant heading
+        # the hard way: collect red and green points and use svm to get the separation plane
+        # use the plane for constant heading
+        self.is_ready = False
+        red_x_center, red_y_center = 0, 0
+        green_x_center, green_y_center = 0, 0
+        plt.ion()
+        fig, ax = plt.subplots()
+        plot = ax.scatter([], [])
+        ax.set_xlim(-30, 30)
+        ax.set_ylim(0, 70)
+        while not rospy.is_shutdown() or self.roi_target is None:
+            try:
+                # print len(self.red_x_list), len(self.red_y_list)
+                # print len(self.green_x_list), len(self.green_y_list)
+                ax.scatter(self.red_x_list, self.red_y_list, color="r")
+                ax.scatter(self.green_x_list, self.green_y_list, color="g")
+                # plt.show()
+            except:
+                pass
+
+            if self.is_ready:
+                red_x_center, red_y_center = np.median(self.red_x_list), np.median(self.red_y_list)
+                green_x_center, green_y_center = np.median(self.green_x_list), np.median(self.green_y_list)
+                self.roi_target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
+                print self.roi_target
+                rate.sleep()
+            fig.canvas.draw()
+        else:
+            pass
+        print p.name, p.pid, 'Exiting'
+
+
+    def constant_heading_worker(self, nodename, target):
+        p = mp.current_process()
+        print p.name, p.pid, 'Starting'
+        constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
+        ####
+        print p.name, p.pid, 'Exiting'
+
+    def cancel_goal_worker(self, nodename, repetition):
+        p = mp.current_process()
+        print p.name, p.pid, 'Starting'
+        counter = 0
+        while counter <= 20:
+            counter += 1
+            time.sleep(1)
+        else:
+            force_cancel = ForceCancel(nodename=nodename, repetition=10)
+        print p.name, p.pid, 'Exiting'
+
 
 
 if __name__ == '__main__':
     try:
         Task1()
-
+        # stage 1: gps
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

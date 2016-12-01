@@ -6,6 +6,7 @@
     3-11-2016
     # changelog:
     @2016-10-20: class inheriate from movebase util
+    @2016-12-01: split respawn function, assign new gps points
 
 """
 
@@ -25,15 +26,15 @@ from move_base_util import MoveBaseUtil
 
 class MoveToGeo(MoveBaseUtil):
 
-    def __init__(self, nodename): #, target):
+    def __init__(self, nodename, target):
         MoveBaseUtil.__init__(self, nodename)
 
-        # # set the distance between waypoints
-        # self.geo = {}
-        # self.target_lat = rospy.get_param("~latitude", target[0])
-        # self.target_lon = rospy.get_param("~longitude", target[1])
-        # self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
-        # #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
+        # set the distance between waypoints
+        self.geo = {}
+        self.target_lat = rospy.get_param("~latitude", target[0])
+        self.target_lon = rospy.get_param("~longitude", target[1])
+        self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
+        #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
 
         rate = rospy.Rate(10)
 
@@ -44,17 +45,17 @@ class MoveToGeo(MoveBaseUtil):
             rospy.sleep(1)
 
         ##### preparation stage finished #####
-    def respawn(self, target):
+    def respawn(self, target=None):
         """ get a target and spawn a waypoint marker """
-        # first cancel existing goals
-        # self.move_base.cancel_goal()
-        rospy.sleep(2)
-        # set the distance between waypoints
-        self.geo = {}
-        self.target_lat = rospy.get_param("~latitude", target[0])
-        self.target_lon = rospy.get_param("~longitude", target[1])
-        self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
-        print self.target_lat, self.target_lon
+        # overwrite previous target
+        if target is not None:
+            # self.move_base.cancel_goal()
+            # set the distance between waypoints
+            self.geo = {}
+            self.target_lat = target[0]
+            self.target_lon = target[1]
+            self.geo["goal_heading"] = target[2]
+            print self.target_lat, self.target_lon
 
         # create waypoint
         waypoint = self.create_waypoint()
@@ -108,12 +109,17 @@ if __name__ == '__main__':
 
         # MoveToGeo(nodename="movetogeo_test", target_geo=(1.345124, 103.684729, 1.57))
         # target_geo = (1.345124, 103.684729, 1.57)
-        target_geo = (1.3451079, 103.6847139, 0)
-        gps_waypoint = MoveToGeo(nodename="movetogeo_test") # , target=target_geo)
+        # target_geo = (1.3451079, 103.6847139, 0)
+        target_geo = (1.344423, 103.684952, 0)
+        gps_waypoint = MoveToGeo(nodename="movetogeo_test", target=target_geo)
         gps_waypoint.respawn(target_geo)
         time.sleep(2)
         print "next point"
-        target_geo = (1.3489079, 103.6867139, 1.57)
+        target_geo = (1.344469, 103.684666, 0)
+        gps_waypoint.respawn(target_geo)
+        time.sleep(2)
+        print "next point"
+        target_geo = (1.344716, 103.684909, 0)
         gps_waypoint.respawn(target_geo)
     except rospy.ROSInterruptException:
         pass
