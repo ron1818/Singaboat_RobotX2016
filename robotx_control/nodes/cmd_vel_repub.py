@@ -17,7 +17,7 @@ from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseActionGoal  # , MoveBaseGoal
 from tf.transformations import euler_from_quaternion
 from dynamic_reconfigure.server import Server
-from robotx_control.cfg import CmdVelPID
+from robotx_control.cfg import CmdVelPIDConfig
 
 
 class Cmd_Vel_Repub(object):
@@ -40,7 +40,7 @@ class Cmd_Vel_Repub(object):
         rospy.Subscriber("imu/data", Imu, callback=self.imu_callback, queue_size=10)
         rospy.Subscriber("odom", Odometry, callback=self.odom_callback, queue_size=10)
         rospy.Subscriber("move_base/goal", MoveBaseActionGoal, callback=self.goal_callback, queue_size=10)
-        self.srv = Server(CmdVelPID, self.dynamic_callback)
+        self.srv = Server(CmdVelPIDConfig, self.dynamic_callback)
         # rospy.spin()
         cmd_vel_repub = rospy.Publisher("cmd_vel_filtered", Twist, queue_size=10)
         pid_cmd_vel_msg = Twist()
@@ -69,7 +69,7 @@ class Cmd_Vel_Repub(object):
         while not rospy.is_shutdown():
 
             pid_cmd_vel_msg.linear.x = self.pid_linear()
-            pid_cmd_vel_msg.angular_z= self.pid_angular()
+            pid_cmd_vel_msg.angular.z= self.pid_angular()
 
             cmd_vel_repub.publish(pid_cmd_vel_msg)
             r.sleep()
@@ -78,7 +78,7 @@ class Cmd_Vel_Repub(object):
         """ do pid control here """
 
         # linear PID
-        self.error_linear= sqrt((self.goal_x-self.odom_x)**2-(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
+        self.error_linear= math.sqrt((self.goal_x-self.odom_x)**2-(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
         self.P_value_linear=self.linear_kp*self.error_linear 
         self.D_value_linear=self.linear_kd*(self.error_linear - self.Derivator_linear) #always negative before overshoot
         self.Derivator_linear=self.error_linear
