@@ -6,9 +6,11 @@
     3-11-2016
     # changelog:
     @2016-10-20: class inheriate from movebase util
+    @2016-12-01: split respawn function, assign new gps points
 
 """
 
+import time
 import rospy
 import actionlib
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
@@ -24,17 +26,19 @@ from move_base_util import MoveBaseUtil
 
 class MoveToGeo(MoveBaseUtil):
 
-    def __init__(self, nodename, target):
-        MoveBaseUtil.__init__(self, nodename)
+    def __init__(self, nodename, is_newnode=True, target=None):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         # set the distance between waypoints
         self.geo = {}
-        self.target_lat = rospy.get_param("~latitude", target[0])
-        self.target_lon = rospy.get_param("~longitude", target[1])
-        self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
-        #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
-
-        rate = rospy.Rate(10)
+        if target is not None:
+            self.target_lat = rospy.get_param("~latitude", target[0])
+            self.target_lon = rospy.get_param("~longitude", target[1])
+            self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
+        else:  # must be updated in the self.respawn
+            self.target_lat = 0
+            self.target_lon = 0
+            self.geo["goal_heading"] = 0
 
         self.fix_received = False
         rospy.wait_for_message("/navsat/fix", NavSatFix)
@@ -42,14 +46,21 @@ class MoveToGeo(MoveBaseUtil):
         while not self.fix_received:
             rospy.sleep(1)
 
+        ##### preparation stage finished #####
+    def respawn(self, target=None):
+        """ get a target and spawn a waypoint marker """
+        # overwrite previous target
+        if target is not None:
+            # self.move_base.cancel_goal()
+            # set the distance between waypoints
+            self.geo = {}
+            self.target_lat = target[0]
+            self.target_lon = target[1]
+            self.geo["goal_heading"] = target[2]
+            print self.target_lat, self.target_lon
 
+        # create waypoint
         waypoint = self.create_waypoint()
-        # rospy.loginfo("Waiting for move_base action server...")
-        # Wait 60 seconds for the action server to become available
-        # self.move_base.wait_for_server(rospy.Duration(60))
-
-        # rospy.loginfo("Connected to move base server")
-        # rospy.loginfo("Starting navigation test")
 
         # Update the marker display
         self.marker_pub.publish(self.markers)
@@ -68,9 +79,6 @@ class MoveToGeo(MoveBaseUtil):
 
         # Start the robot moving toward the goal
         self.move(goal, mode=0, mode_param=3)
-        # rospy.sleep(1.)
-        # rospy.spin()
-
 
     def create_waypoint(self):
         """ create waypoint from target lat/lon and current lat/lon """
@@ -96,13 +104,24 @@ class MoveToGeo(MoveBaseUtil):
         return waypoint
 
 
+
 if __name__ == '__main__':
     try:
         # MoveToGeo(nodename="movetogeo_test", target_lat=1.3489079, target_lon=103.6867139)
 
         # MoveToGeo(nodename="movetogeo_test", target_geo=(1.345124, 103.684729, 1.57))
         # target_geo = (1.345124, 103.684729, 1.57)
-        target_geo = (1.3451079, 103.6847139, 0)
-        MoveToGeo(nodename="movetogeo_test", target=target_geo)
+        # target_geo = (1.3451079, 103.6847139, 0)
+        target_geo = (1.344423, 103.684952, 0)
+        gps_waypoint = MoveToGeo(nodename="movetogeo_test", target=target_geo)
+        gps_waypoint.respawn(target_geo)
+        time.sleep(2)
+        print "next point"
+        target_geo = (1.344469, 103.684666, 0)
+        gps_waypoint.respawn(target_geo)
+        time.sleep(2)
+        print "next point"
+        target_geo = (1.344716, 103.684909, 0)
+        gps_waypoint.respawn(target_geo)
     except rospy.ROSInterruptException:
         pass

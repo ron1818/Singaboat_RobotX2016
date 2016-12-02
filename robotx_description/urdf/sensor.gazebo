@@ -10,7 +10,6 @@
             <plugin name="imu" filename="libhector_gazebo_ros_imu.so">
                 <robotNamespace>${position1}_${position2}_imu</robotNamespace>
                 <updateRate>20.0</updateRate>
-                <!--frameId>${position1}_${position2}_imu_link</frameId-->
                 <frameId>base_imu_link</frameId>
                 <bodyName>shelf_link</bodyName>
                 <topicName>imu/data_raw</topicName>
@@ -31,16 +30,16 @@
                 <robotNamespace>${position1}_${position2}_imu</robotNamespace>
                 <updateRate>20.0</updateRate>
                 <!--frameId>${position1}_${position2}_imu_link</frameId-->
-                <frameId>base_imu_link</frameId>
-                <bodyName>shelf_link</bodyName>
-                <topicName>imu/mag</topicName>
-                <declination>0.0043</declination>
-                <inclination>0.0</inclination>
-            </plugin>
-        </gazebo>
-    </xacro:macro>
+            <frameId>base_imu_link</frameId>
+            <bodyName>shelf_link</bodyName>
+            <topicName>imu/mag</topicName>
+            <declination>0.0043</declination>
+            <inclination>0.0</inclination>
+        </plugin>
+    </gazebo>
+</xacro:macro>
 
-    <!-- Set up camera configuration -->
+<!-- Set up camera configuration -->
     <xacro:macro name="stereo_camera_gazebo" params="position1 position2">
         <gazebo reference="${position1}/${position2}/camera_link" >
             <sensor type="camera" name="${position1}_${position2}_camera">
@@ -121,26 +120,26 @@
 
     <xacro:imu_gazebo position1="middle" position2="middle" />
 
-	<xacro:unless value="$(arg zed_enabled)" >
-    <xacro:stereo_camera_gazebo position1="bow" position2="left" />
-    <xacro:stereo_camera_gazebo position1="bow" position2="right" />
-	</xacro:unless>
+    <xacro:unless value="$(arg zed_enabled)" >
+        <xacro:stereo_camera_gazebo position1="bow" position2="left" />
+        <xacro:stereo_camera_gazebo position1="bow" position2="right" />
+    </xacro:unless>
     <xacro:spot_camera_gazebo position1="underwater" />
     <xacro:spot_camera_gazebo position1="port" />
     <xacro:spot_camera_gazebo position1="starboard" />
     <xacro:spot_camera_gazebo position1="transom" />
 
-        
-        <!-- Set up gps configuration -->
-        <gazebo>
-            <plugin name="gps" filename="libhector_gazebo_ros_gps.so">
-                <alwaysOn>true</alwaysOn>
-                <updateRate>10.0</updateRate>
-                <frameId>gps_link</frameId>
-                <bodyName>shelf_link</bodyName>
-                <topicName>navsat/fix</topicName>
-                <velocityTopicName>navsat/vel</velocityTopicName>
-                <!--referenceLatitude>0</referenceLatitude>
+
+    <!-- Set up gps configuration -->
+    <gazebo>
+        <plugin name="gps" filename="libhector_gazebo_ros_gps.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>10.0</updateRate>
+            <frameId>gps_link</frameId>
+            <bodyName>shelf_link</bodyName>
+            <topicName>navsat/fix</topicName>
+            <velocityTopicName>navsat/vel</velocityTopicName>
+            <!--referenceLatitude>0</referenceLatitude>
             <referenceLongitude>0</referenceLongitude-->
             <!--referenceLatitude>1.35012856</referenceLatitude>
             <referenceLongitude>103.687695</referenceLongitude-->
@@ -158,35 +157,35 @@
 
     <!-- Set up kinect configuration-->
     <xacro:if value="$(arg zed_enabled)">
-        <gazebo reference="zed_camera_depth_frame">
-            <sensor type="depth" name="zed_camera">
-                <update_rate>20</update_rate>
+        <gazebo reference="bow/camera_depth_frame">
+            <sensor type="depth" name="kinect_camera">
+                <update_rate>30</update_rate>
                 <camera>
                     <horizontal_fov>${60 * M_PI/180.0}</horizontal_fov>
                     <image>
                         <format>R8G8B8</format>
-                        <width>640</width>
-                        <height>480</height>
+                        <width>1080</width>
+                        <height>720</height>
                     </image>
                     <clip>
                         <near>0.05</near>
-                        <far>3</far>
+                        <far>10</far>
                     </clip>
                 </camera>
-                <plugin name="zed_camera_controller" filename="libgazebo_ros_openni_zed.so">
-                <cameraName>zed_camera</cameraName>
-                <imageTopicName>rgb/image_raw</imageTopicName>
-                <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
-                <depthImageTopicName>depth/image_raw</depthImageTopicName>
-                <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
-                <pointCloudTopicName>depth/points</pointCloudTopicName>
-                <pointCloudCutoff>0.05</pointCloudCutoff>
-                <pointCloudCutoffMax>5</pointCloudCutoffMax>
-                <frameName>zed_camera_depth_optical_frame</frameName>
-            </plugin>
-        </sensor>
-    </gazebo>
-</xacro:if>
+                <plugin name="kinect_camera_controller" filename="libgazebo_ros_openni_kinect.so">
+                    <cameraName>bow</cameraName>
+                    <imageTopicName>rgb/image_raw</imageTopicName>
+                    <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+                    <depthImageTopicName>depth/image_raw</depthImageTopicName>
+                    <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+                    <pointCloudTopicName>depth/points</pointCloudTopicName>
+                    <pointCloudCutoff>0.05</pointCloudCutoff>
+                    <pointCloudCutoffMax>5</pointCloudCutoffMax>
+                    <frameName>bow/camera_depth_optical_frame</frameName>
+                </plugin>
+            </sensor>
+        </gazebo>
+    </xacro:if>
 
 
 <!-- Set up sonar configuration >
@@ -261,11 +260,11 @@
                 </ray>
 
                 <plugin name="gazebo_ros_hokuyo_utm30lx_model_controller" filename="libgazebo_ros_laser.so">
-                <bodyName>base_link</bodyName>
-                <topicName>laser/scan</topicName>
-                <frameName>hokuyo_link</frameName>
-            </plugin>
-        </sensor>
-    </gazebo>
-</xacro:if>
+                    <bodyName>base_link</bodyName>
+                    <topicName>laser/scan</topicName>
+                    <frameName>hokuyo_link</frameName>
+                </plugin>
+            </sensor>
+        </gazebo>
+    </xacro:if>
 </robot>

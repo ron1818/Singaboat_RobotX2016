@@ -33,11 +33,15 @@ class Forward(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target=[20,0,0], waypoint_separation=5, is_relative=True):
-        MoveBaseUtil.__init__(self, nodename)
+    def __init__(self, nodename, is_newnode=True, target=[20,0,0], waypoint_separation=5, is_relative=True):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         self.forward = {}
-        self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0.0)
+        if target is not None:
+            self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0.0)
+        else:  # must be updatged in the self.respawn
+            self.target = Point(0, 0, 0)
+
         self.mode = rospy.get_param("~mode", 0)
         self.mode_param = rospy.get_param("~mode_param", 1)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
@@ -55,11 +59,25 @@ class Forward(MoveBaseUtil):
             # heading from boat to center
             self.forward["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
 
+    def respawn(self, target=None):
+        if target is not None:
+            self.target = Point(target[0], target[1], target[2])
+            print self.target
+
+        if self.forward["is_relative"]:
+            self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.target.x, self.target.y])
+            # print self.forward["translation"], self.forward["heading"]
+            self.forward["goal_distance"] = self.target.x
+        else:
+            # obtained from vision nodes, absolute catersian
+            # but may be updated later, so need to callback
+            self.forward["translation"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
+            self.forward["goal_distance"] = sqrt((self.target.x - self.x0) ** 2 + (self.target.y - self.y0) ** 2)
+            # heading from boat to center
+            self.forward["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
+
         # create waypoints
         waypoints = self.create_waypoints()
-
-        # Initialize the visualization markers for RViz
-        # self.init_markers()
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -132,7 +150,8 @@ class Forward(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Forward(nodename="constantheading_test", is_relative=True)
+        constant_heading = Forward(nodename="constantheading_test", is_relative=True)
+        constant_heading.respawn(None)
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

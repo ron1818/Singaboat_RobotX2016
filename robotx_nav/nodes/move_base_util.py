@@ -24,8 +24,12 @@ class MoveBaseUtil():
     lat, lon = 0, 0
     cancel_id = "cancel"
 
-    def __init__(self, nodename="nav_test"):
-        rospy.init_node(nodename, anonymous=False)
+    def __init__(self, nodename="nav_test", is_newnode=True):
+        if is_newnode:
+            rospy.init_node(nodename, anonymous=False)
+            rate = rospy.Rate(10)
+        else:
+            rate = None
 
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         self.fixed_frame = rospy.get_param("~fixed_frame", "map")
@@ -46,8 +50,10 @@ class MoveBaseUtil():
         self.init_markers()
 
         self.odom_received = False
-        rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
+        # rospy.wait_for_message("/odom", Odometry)
+        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
+        rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
         while not self.odom_received:
             rospy.sleep(1)
 
@@ -69,7 +75,7 @@ class MoveBaseUtil():
         # * Cycle through the four waypoints
 
     def get_tf(self):
-        # transform from base_link to map
+        """ transform from base_link to map """
         trans_received = False
         while not trans_received:
             try:
@@ -87,8 +93,6 @@ class MoveBaseUtil():
         """ get current gps point of the boat,
             calculate the distance and heading to the target point
             remap to map frame """
-        # rospy.Subscriber("navsat/fix", NavSatFix,
-        #                  self.navsat_fix_callback, queue_size=10)
 
         # calculate distance and azimuth (angle between distance and north)
         result = Geodesic.WGS84.Inverse(self.lat, self.lon, lat, lon)
@@ -96,10 +100,6 @@ class MoveBaseUtil():
         azi = result['azi1'] * pi / 180.0
         theta = pi / 2 - azi  # wrt map's x axis
         # print "r and theta", r, theta
-
-        # transformation from map to baselink
-        # (trans, rot) = self.get_tf()
-        # x_base, y_base = trans.x, trans.y
 
         center = [self.x0 + r * cos(theta), self.y0 + r * sin(theta), 0]
         heading = theta
@@ -127,9 +127,10 @@ class MoveBaseUtil():
 
     def cancel_callback(self, msg):
         self.cancel_id = msg.id
-        rospy.loginfo(self.cancel_id)
+        print self.cancel_id
+        # rospy.loginfo(self.cancel_id)
 
-    def convert_relative_to_absolute(self, target):
+    def convert_relative_to_absolute(self, coordinate):
         """ boat's tf is base_link
         target is polar (r, theta) wrt base_link
         need to spawn waypoint (x1, y1) at map
@@ -142,7 +143,7 @@ class MoveBaseUtil():
 
         # wrt base_link
         # theta is the angle between base_link's x axis and r
-        r, theta = target
+        r, theta = coordinate
         x_target_base, y_target_base = r * cos(theta), r * sin(theta)
 
         x_target_rot, y_target_rot = \
@@ -326,4 +327,4 @@ class MoveBaseUtil():
 if __name__ == "__main__":
     util = MoveBaseUtil()
     # util.get_tf()
-    util.convert_relative_to_absolute(target=[10,0])
+    util.convert_relative_to_absolute(coordinate=[10,0])
