@@ -35,13 +35,13 @@ class Cmd_Vel_Repub(object):
     def __init__(self):
         rospy.init_node('cmd_vel_repub', anonymous=True)
         r = rospy.Rate(10)
-        rospy.Subscriber("cmd_vel", Twist, callback=self.cmd_vel_callback, queue_size=10)
+        rospy.Subscriber("cmd_vel_raw", Twist, callback=self.cmd_vel_callback, queue_size=10)
         rospy.Subscriber("imu/data", Imu, callback=self.imu_callback, queue_size=10)
         rospy.Subscriber("odom", Odometry, callback=self.odom_callback, queue_size=10)
         rospy.Subscriber("move_base/goal", MoveBaseActionGoal, callback=self.goal_callback, queue_size=10)
         self.srv = Server(CmdVelPIDConfig, self.dynamic_callback)
         # rospy.spin()
-        cmd_vel_repub = rospy.Publisher("cmd_vel_filtered", Twist, queue_size=10)
+        cmd_vel_repub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
         pid_cmd_vel_msg = Twist()
 
 
@@ -79,7 +79,7 @@ class Cmd_Vel_Repub(object):
         # linear PID
 
         self.error_linear= math.sqrt((self.goal_x-self.odom_x)**2+(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
-        self.P_value_linear=self.linear_kp*self.error_linear 
+        self.P_value_linear=self.linear_kp*self.error_linear
         self.D_value_linear=self.linear_kd*math.fabs(self.error_linear - self.Derivator_linear) #always negative before overshoot
 
 
@@ -121,7 +121,7 @@ class Cmd_Vel_Repub(object):
         derivative_error=self.error_angular - self.Derivator_angular
         self.D_value_angular=self.angular_kd*math.fabs(math.atan2(math.sin(derivative_error), math.cos(derivative_error)))
         self.Derivator_angular=self.error_angular
-        
+
         self.Integrator_angular=self.Integrator_angular +self.error_angular
 
         if self.Integrator_angular > self.Integrator_max_angular:
@@ -133,7 +133,7 @@ class Cmd_Vel_Repub(object):
 
         #only do compensation if position is achieved
 
-        if self.angular_z>0:  
+        if self.angular_z>0:
         	pid_angular_z= self.P_value_angular + self.I_value_angular - self.D_value_angular
         else:
         	pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular

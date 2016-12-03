@@ -1,0 +1,169 @@
+<?xml version="1.0"?>
+<!-- modified by ren ye on 2016-07-22 -->
+
+<robot name="auv_sensor_gazebo" xmlns:xacro="http://ros.org/wiki/xacro" >
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    <xacro:property name="ns" value="/auv" />
+
+    <!-- Set up imu configuration -->
+    <gazebo>
+        <plugin name="imu" filename="libhector_gazebo_ros_imu.so">
+            <updateRate>20.0</updateRate>
+            <frameId>imu_link</frameId>
+            <bodyName>base_link</bodyName>
+            <topicName>imu/data</topicName>
+            <serviceName>imu</serviceName>
+            <xyzOffset>0 0 0</xyzOffset> 
+            <rpyOffset>0 0 0</rpyOffset> 
+            <gaussianNoise>0</gaussianNoise> 
+            <accelDrift>0.5 0.5 0.5</accelDrift>
+            <accelGaussianNoise>0.35 0.35 0.3</accelGaussianNoise>
+            <rateDrift>0.1 0.1 0.1</rateDrift>
+            <rateGaussianNoise>0.05 0.05 0.015</rateGaussianNoise>
+            <headingDrift>0.1</headingDrift>
+            <headingGaussianNoise>0.05</headingGaussianNoise>
+        </plugin>
+    </gazebo>
+
+    <!-- Set up gps configuration -->
+    <gazebo>
+        <plugin name="gps" filename="libhector_gazebo_ros_gps.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>10.0</updateRate>
+            <frameId>gps_link</frameId>
+            <bodyName>base_link</bodyName>
+            <topicName>navsat/fix</topicName>
+            <velocityTopicName>navsat/vel</velocityTopicName>
+            <!--referenceLatitude>49.9</referenceLatitude>
+            <referenceLongitude>8.9</referenceLongitude-->
+            <referenceLatitude>1.35012856</referenceLatitude>
+            <referenceLongitude>103.687695</referenceLongitude>
+            <referenceHeading>0</referenceHeading>
+            <referenceAltitude>0</referenceAltitude>
+            <drift>5.0 5.0 5.0</drift>
+            <gaussianNoise>0.1 0.1 0.1</gaussianNoise>
+            <velocityDrift>0 0 0</velocityDrift>
+            <velocityGaussianNoise>0.1 0.1 0.1</velocityGaussianNoise>
+        </plugin>
+    </gazebo>
+
+    <!-- Set up kinect configuration -->
+    <xacro:if value="$(arg kinect_enabled)">
+        <gazebo reference="kinect_camera_depth_frame">
+            <sensor type="depth" name="kinect_camera">
+                <update_rate>20</update_rate>
+                <camera>
+                    <horizontal_fov>${60 * M_PI/180.0}</horizontal_fov>
+                    <image>
+                        <format>R8G8B8</format>
+                        <width>640</width>
+                        <height>480</height>
+                    </image>
+                    <clip>
+                        <near>0.05</near>
+                        <far>3</far>
+                    </clip>
+                </camera>
+                <plugin name="kinect_camera_controller" filename="libgazebo_ros_openni_kinect.so">
+                    <!--robotNamespace>${ns}</robotNamespace-->
+                <cameraName>kinect_camera</cameraName>
+                <imageTopicName>rgb/image_raw</imageTopicName>
+                <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
+                <depthImageTopicName>depth/image_raw</depthImageTopicName>
+                <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
+                <pointCloudTopicName>depth/points</pointCloudTopicName>
+                <pointCloudCutoff>0.05</pointCloudCutoff>
+                <pointCloudCutoffMax>5</pointCloudCutoffMax>
+                <frameName>kinect_camera_depth_optical_frame</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
+</xacro:if>
+
+
+<!-- Set up sonar configuration -->
+    <xacro:if value="$(arg sonar_enabled)">
+        <gazebo reference="sonar_link">
+            <sensor type="ray" name="sonar_sensor">
+                <pose>0 0 0 0 0 0</pose>
+                <visualize>true</visualize>
+                <update_rate>20</update_rate>
+                <ray>
+                    <scan>
+                        <horizontal>
+                            <samples>3</samples>
+                            <resolution>1</resolution>
+                            <min_angle>${-5*M_PI/180}</min_angle>
+                            <max_angle>${5*M_PI/180}</max_angle>
+                        </horizontal>
+                    </scan>
+                    <range>
+                        <min>0.10</min>
+                        <max>30.0</max>
+                        <resolution>0.01</resolution>
+                    </range>
+                    <noise>
+                        <!-- Noise parameters based on published spec for Hokuyo laser
+                             achieving "+-30mm" accuracy at range < 10m.  A mean of 0.0m and
+                             stddev of 0.01m will put 99.7% of samples within 0.03m of the true
+                             reading. -->
+                    <type>gaussian</type>
+                    <mean>0.0</mean>
+                    <stddev>0.01</stddev>
+                </noise>
+            </ray>
+
+            <plugin name="sonar_controller" filename="libhector_gazebo_ros_sonar.so">
+                <!--robotNamespace>${ns}</robotNamespace-->
+            <gaussianNoise>0.005</gaussianNoise>
+            <bodyName>base_link</bodyName>
+            <topicName>sonar/data</topicName>
+            <frameId>sonar_link</frameId>
+            <offset>0</offset>
+            <drift>0</drift>
+            <driftFrequency>0</driftFrequency>
+        </plugin>
+    </sensor>
+</gazebo>
+</xacro:if>
+
+
+<!-- Set up hokuyo configuration -->
+    <xacro:if value="$(arg lidar_enabled)">
+        <gazebo reference="hokuyo_link">
+            <sensor type="ray" name="head_hokuyo_sensor">
+                <pose>0 0 0 0 0 0</pose>
+                <always_on>true</always_on>
+                <visualize>true</visualize>
+                <update_rate>20</update_rate>
+                <ray>
+                    <scan>
+                        <horizontal>
+                            <samples>720</samples>
+                            <resolution>1</resolution>
+                            <min_angle>${-M_PI/2}</min_angle>
+                            <max_angle>${M_PI/2}</max_angle>
+                        </horizontal>
+                    </scan>
+                    <range>
+                        <min>0.08</min>
+                        <max>20</max>
+                        <resolution>0.004</resolution>
+                    </range>
+                    <noise>
+                        <type>gaussian</type>
+                        <mean>0.0</mean>
+                        <stddev>0.01</stddev>
+                    </noise>
+                </ray>
+
+                <plugin name="gazebo_ros_hokuyo_utm30lx_model_controller" filename="libgazebo_ros_laser.so">
+                    <!--robotNamespace>${ns}</robotNamespace-->
+                <bodyName>base_link</bodyName>
+                <topicName>laser/scan</topicName>
+                <frameName>hokuyo_link</frameName>
+            </plugin>
+        </sensor>
+    </gazebo>
+</xacro:if>
+</robot>

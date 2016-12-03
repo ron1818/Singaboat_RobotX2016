@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<launch>
+    <arg name="use_vel" default="false" />
+    <arg name="use_usb" default="true" />
+    <!-- robot state publisher -->
+    <include file="$(find robotx_description)/launch/pvc_description.launch" >
+        <arg name="lidar_enabled" value="false" />
+        <arg name="sonar_enabled" value="false" />
+        <arg name="kinect_enabled" value="false" />
+    </include>
+
+    <!-- motor arduino rosserial -->
+    <!-- only for raspberry pi, udev rule -->
+    <node pkg="rosserial_python" type="serial_node.py" name="rosserial_motor_node" output="screen" >
+        <param name="port" value="/dev/USBmotor" />
+    </node>
+    <!-- motor listen to cmd_vel -->
+    <node pkg="robotx_control" type="lis_cmdvel_boat.py" name="pvc_driver" />
+
+    <!-- gps launcher -->
+    <!-- only for raspberry pi, udev rule -->
+    <include file="$(find robotx_sensor)/launch/gps_serial.launch" 
+        if="$(arg use_usb)"/>
+    <include file="$(find robotx_sensor)/launch/gps_i2c.launch" 
+        unless="$(arg use_usb)"/>
+    <!-- imu launcher -->
+    <!-- only for raspberry pi, udev rule -->
+    <include file="$(find robotx_sensor)/launch/myahrs.launch" />
+    <!--include file="$(find robotx_sensor)/launch/imu_filter.launch" >
+        <arg name="ismyahrs" value="true" if="$(arg use_usb)" />
+        <arg name="ismpu" value="true" unless="$(arg use_usb)" />
+    </include-->
+
+    <!-- robot localization -->
+    <include file="$(find robotx_control)/launch/pvc_r_l_control.launch" 
+        if="$(arg use_vel)" />
+    <!-- or without navsat/vel => odometry/vel -->
+    <include file="$(find robotx_control)/launch/pvc_no_vel_r_l_control.launch" 
+        unless="$(arg use_vel)" />
+</launch>

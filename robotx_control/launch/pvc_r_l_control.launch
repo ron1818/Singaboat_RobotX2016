@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="/use_sim_time" value="false"/>
+
+    <include file="$(find robotx_sensor)/launch/navsat_vel_odom.launch">
+        <arg name="odom_topic" value="odometry/vel" />
+    </include>
+
+    <!--include file="$(find robotx_sensor)/launch/navsat_republish.launch" /-->
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/pvc/localization_global.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/global" />
+    </node>
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/pvc/localization_local.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/local" />
+    </node>
+
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true" output="screen">
+        <rosparam command="load" file="$(find robotx_control)/config/pvc/gps_navsat_transform.yaml" />
+        <remap from="gps/fix" to="navsat/fix" />
+        <!--remap from="imu/data" to="imu/data" /-->
+        <remap from="odometry/filtered" to="odometry/filtered/global" />
+        <remap from="odometry/gps" to="odometry/gps" />
+    </node>
+
+</launch>

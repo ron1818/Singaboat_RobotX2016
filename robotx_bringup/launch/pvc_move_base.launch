@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<launch>
+    <include file="$(find robotx_nav)/launch/move_base_map.launch" >
+        <arg name="ispvc" value="true" />
+        <arg name="cmd_vel_topic" value="move_base_cmd_vel" />
+        <!--arg name="cmd_vel_topic" value="cmd_vel" /-->
+        <arg name="mapname" value="blank_map" />
+        <!--arg name="mapname" value="nanyanglake" /-->
+    </include>
+
+    <node pkg="robotx_control" type="cmd_vel_repub.py" name="cmd_vel_repub" >
+        <remap from="cmd_vel_raw" to="move_base_cmd_vel" />
+        <remap from="odom" to="odometry/filtered/global" />
+        <remap from="cmd_vel" to="cmd_vel" />
+    </node>
+
+</launch>

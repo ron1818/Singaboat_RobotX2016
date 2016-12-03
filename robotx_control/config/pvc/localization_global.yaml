@@ -1,0 +1,51 @@
+# map_frame: map
+odom_frame: odom
+base_link_frame: base_footprint
+world_frame: odom
+sensor_timeout: 0.5
+two_d_mode: true
+
+frequency: 10
+
+odom0: odometry/vel
+odom0_config: [false, false, false,
+               false, false, false,
+               true, false, false,
+               false, false, true,
+               false, false, false]
+odom0_differential: false # with GPS, must be false
+odom0_queue_size: 10
+
+odom1: odometry/filtered/local
+odom1_config: [true, true, false,
+               false, false, true,
+               false, false, false,
+               false, false, true,
+               false, false, false]
+odom1_differential: false # with GPS, must be false
+odom1_queue_size: 10
+
+odom2: odometry/gps
+odom2_config: [true, true, false,
+               false, false, false,
+               false, false, false,
+               false, false, false,
+               false, false, false]
+odom2_differential: false # with GPS, must be false
+odom2_queue_size: 10
+
+imu0: imu/data
+imu0_config: [false, false, false,
+              false, false, true,
+              true, true, false,
+              false, false, true,
+              false, false, false]
+              # true, true, true]
+imu0_differential: false # with GPS, must be false
+imu0_queue_size: 10
+imu0_nodelay: true
+imu0_remove_gravitational_acceleration: true
+
+smooth_lagged_data: true
+history_length: 5
+print_diagnostics: true
