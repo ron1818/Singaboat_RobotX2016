@@ -1,4 +1,5 @@
 <?xml version="1.0"?>
+<!-- obsolete -->
 <launch>
     <arg name="use_filter" default="true" />
     <node pkg="robotx_sensor" type="imu_node" name="imu_node" output="screen" >
