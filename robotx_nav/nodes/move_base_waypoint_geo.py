@@ -26,17 +26,19 @@ from move_base_util import MoveBaseUtil
 
 class MoveToGeo(MoveBaseUtil):
 
-    def __init__(self, nodename, target):
-        MoveBaseUtil.__init__(self, nodename)
+    def __init__(self, nodename, is_newnode=True, target=None):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         # set the distance between waypoints
         self.geo = {}
-        self.target_lat = rospy.get_param("~latitude", target[0])
-        self.target_lon = rospy.get_param("~longitude", target[1])
-        self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
-        #  self.geo["waypoint_distance"] = rospy.get_param("~waypoint_distance", waypoint_distance)
-
-        rate = rospy.Rate(10)
+        if target is not None:
+            self.target_lat = rospy.get_param("~latitude", target[0])
+            self.target_lon = rospy.get_param("~longitude", target[1])
+            self.geo["goal_heading"] = rospy.get_param("~heading", target[2])
+        else:  # must be updated in the self.respawn
+            self.target_lat = 0
+            self.target_lon = 0
+            self.geo["goal_heading"] = 0
 
         self.fix_received = False
         rospy.wait_for_message("/navsat/fix", NavSatFix)

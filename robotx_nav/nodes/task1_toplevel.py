@@ -64,38 +64,43 @@ class Task1(object):
     red_y_list = list()
     green_x_list = list()
     green_y_list = list()
-    roi_target = None
 
     def subscribe_coordinate(self, topic_name, colorname):
         rospy.Subscriber(topic_name, Point, self.roi_coordinate_callback, colorname, queue_size=10)
 
     def __init__(self):
         # 0. parameters
-        self.target_lat = rospy.get_param("~lat", 1.34)
-        self.target_lon = rospy.get_param("~lon", 103.56)
-        self.target_heading = rospy.get_param("~heading", 1.57)  # north
+        self.target_lat = rospy.get_param("~lat", 1.344470)
+        self.target_lon = rospy.get_param("~lon", 103.684937)
+        self.target_heading = rospy.get_param("~heading", 0)  # north
 
-        # rospy.init_node("roi_coordinate")
+        rospy.init_node("task1")
         rospy.on_shutdown(self.shutdown)
         # rate = rospy.Rate(10)
+        self.start_time = rospy.get_time()
+        self.duration = 2
 
+        q = mp.Queue()
+
+        # initialize objects
+        gps_target = [(self.target_lat, self.target_lon, self.target_heading)]
+        self.gps_waypoint = MoveToGeo(nodename="gps", target=None, is_newnode=False)
+        self.constant_heading = Forward(nodename="constant_heading", target=None, waypoint_separation=5, is_relative=True, is_newnode=False)
         # three nodes into worker
         # 1. drive to gps waypoint
-        gps_target = [self.target_lat, self.target_lon, self.target_heading]
-        gps_target = [(1.34, 103.56, 1.57)]
-        gps_move_to = mp.Process(name="gps", target=self.gps_worker,
-                                 args=("gps_test", gps_target))
+        gps_move_to_mp = mp.Process(name="gps", target=self.gps_worker,
+                                 args=(gps_target))
         # 2. roi to get target point, daemon
-        roi_get_target = mp.Process(name="roi_target", target=self.roi_worker,
-                                args=("roi_target",))
-        roi_get_target.daemon = True
+        # roi_get_target_mp = mp.Process(name="roi_target", target=self.roi_worker,
+        #                         args=(q,))
+        # roi_get_target.daemon = True
 
         # 3. constant heading, must get updated target
-        constant_heading = mp.Process(name="constant_heading", target=self.constant_heading_worker,
-                                      args=("constant_heading", self.roi_target))
+        constant_heading_mp = mp.Process(name="constant_heading", target=self.constant_heading_worker,
+                                      args=(q,))
 
         # 4. cancel goal worker
-        cancel_goal = mp.Process(name="cancel_goal", target=self.cancel_goal_worker,
+        cancel_goal_mp = mp.Process(name="cancel_goal", target=self.cancel_goal_worker,
                                  args=("cancel_goal", 10))
 
 
@@ -116,12 +121,15 @@ class Task1(object):
         # self.subscribe_coordinate("transom/totem/greencoordinate", "green")
         # rospy.wait_for_message("bow/left/totem/red/coordinate", Point)
 
-        gps_move_to.start()
-        roi_get_target.start()
-        gps_move_to.join()
+        q.put([10,0,0])
+        # gps_move_to_mp.start()
+        # roi_get_target_mp.start()
+        # gps_move_to_mp.join()
         # wait for self.roi_target to be valid
         # use queue?
-        constant_heading.start()
+        constant_heading_mp.start()
+        constant_heading_mp.join()
+        # roi_get_target_mp.join()
 
     def roi_coordinate_callback(self, msg, colorname):
         if rospy.get_time() - self.start_time < self.duration:
@@ -141,15 +149,13 @@ class Task1(object):
     def shutdown(self):
         pass
 
-    def gps_worker(self, nodename, target_geos):
+    def gps_worker(self, target_geo):
         p = mp.current_process()
         print p.name, p.pid, 'Starting'
-        gps_waypoint = MoveToGeo(nodename=nodename, target=target_geos[0])
-        for target_geo in target_geos:
-            gps_waypoint.respawn(target_geo)
+        self.gps_waypoint.respawn(target_geo)
         print p.name, p.pid, 'Exiting'
 
-    def roi_worker(self, nodename):
+    def roi_worker(self, q):
         p = mp.current_process()
         print p.name, p.pid, 'Starting'
         # calculate the center point bewtween red and green totem
@@ -178,8 +184,8 @@ class Task1(object):
             if self.is_ready:
                 red_x_center, red_y_center = np.median(self.red_x_list), np.median(self.red_y_list)
                 green_x_center, green_y_center = np.median(self.green_x_list), np.median(self.green_y_list)
-                self.roi_target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
-                print self.roi_target
+                roi_target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
+                q.put(roi_target)
                 rate.sleep()
             fig.canvas.draw()
         else:
@@ -187,11 +193,14 @@ class Task1(object):
         print p.name, p.pid, 'Exiting'
 
 
-    def constant_heading_worker(self, nodename, target):
+    def constant_heading_worker(self, q):
         p = mp.current_process()
         print p.name, p.pid, 'Starting'
-        constant_heading = Forward("constant_heading", target=target, waypoint_separation=5, is_relative=False)
         ####
+        if not q.empty():
+            target = q.get()
+            print target
+            self.constant_heading.respawn(target)
         print p.name, p.pid, 'Exiting'
 
     def cancel_goal_worker(self, nodename, repetition):

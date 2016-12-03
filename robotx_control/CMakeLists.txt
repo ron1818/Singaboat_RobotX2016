@@ -94,6 +94,7 @@ find_package(catkin REQUIRED COMPONENTS
 generate_dynamic_reconfigure_options(
     cfg/CalibrateMotor.cfg
 	cfg/CmdVelPID.cfg
+	cfg/StartMotor.cfg
 )
 
 ###################################
@@ -145,12 +146,6 @@ include_directories(
 ## Specify libraries to link a library or executable target against
 add_executable(robotx_control_node src/run_motor.cpp)
 target_link_libraries(robotx_control_node
-   ${catkin_LIBRARIES}
- )
-
-
-add_executable(robotx_control_base_controller src/base_controller.cpp)
-target_link_libraries(robotx_control_base_controller
    ${catkin_LIBRARIES}
  )
 

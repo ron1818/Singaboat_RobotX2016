@@ -24,8 +24,12 @@ class MoveBaseUtil():
     lat, lon = 0, 0
     cancel_id = "cancel"
 
-    def __init__(self, nodename="nav_test"):
-        rospy.init_node(nodename, anonymous=False)
+    def __init__(self, nodename="nav_test", is_newnode=True):
+        if is_newnode:
+            rospy.init_node(nodename, anonymous=False)
+            rate = rospy.Rate(10)
+        else:
+            rate = None
 
         self.base_frame = rospy.get_param("~base_frame", "base_link")
         self.fixed_frame = rospy.get_param("~fixed_frame", "map")
@@ -323,4 +327,4 @@ class MoveBaseUtil():
 if __name__ == "__main__":
     util = MoveBaseUtil()
     # util.get_tf()
-    util.convert_relative_to_absolute(target=[10,0])
+    util.convert_relative_to_absolute(coordinate=[10,0])

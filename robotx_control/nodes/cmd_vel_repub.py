@@ -17,7 +17,7 @@ from nav_msgs.msg import Odometry
 from move_base_msgs.msg import MoveBaseActionGoal  # , MoveBaseGoal
 from tf.transformations import euler_from_quaternion
 from dynamic_reconfigure.server import Server
-from robotx_control.cfg import CmdVelPID
+from robotx_control.cfg import CmdVelPIDConfig
 
 
 class Cmd_Vel_Repub(object):
@@ -27,11 +27,10 @@ class Cmd_Vel_Repub(object):
     linear_acceleration_x, linear_acceleration_y, angular_acceleration_z = 0, 0, 0
     odom_x, odom_y, odom_yaw = 0, 0, 0
     goal_x, goal_y, goal_yaw = 0, 0, 0
-    linear_threshold=5.0
-    angular_threshold=1.0
 
-    linear_velocity_threshold=3
-    angular_velocity_threshold=1.5
+    linear_threshold=5.0
+    linear_velocity_threshold=0.5
+    angular_velocity_threshold=0.3
 
     def __init__(self):
         rospy.init_node('cmd_vel_repub', anonymous=True)
@@ -40,7 +39,7 @@ class Cmd_Vel_Repub(object):
         rospy.Subscriber("imu/data", Imu, callback=self.imu_callback, queue_size=10)
         rospy.Subscriber("odom", Odometry, callback=self.odom_callback, queue_size=10)
         rospy.Subscriber("move_base/goal", MoveBaseActionGoal, callback=self.goal_callback, queue_size=10)
-        self.srv = Server(CmdVelPID, self.dynamic_callback)
+        self.srv = Server(CmdVelPIDConfig, self.dynamic_callback)
         # rospy.spin()
         cmd_vel_repub = rospy.Publisher("cmd_vel_filtered", Twist, queue_size=10)
         pid_cmd_vel_msg = Twist()
@@ -51,7 +50,7 @@ class Cmd_Vel_Repub(object):
         self.Integrator_max_linear=500
         self.Integrator_min_linear=-500
 
-        self.set_point_linear=0.0 #desired value, 
+        self.set_point_linear=0.0 #desired value,
         self.error_linear=0.0
         self.Derivator_linear=0.0
         self.Integrator_linear=0.0
@@ -69,7 +68,7 @@ class Cmd_Vel_Repub(object):
         while not rospy.is_shutdown():
 
             pid_cmd_vel_msg.linear.x = self.pid_linear()
-            pid_cmd_vel_msg.angular_z= self.pid_angular()
+            pid_cmd_vel_msg.angular.z= self.pid_angular()
 
             cmd_vel_repub.publish(pid_cmd_vel_msg)
             r.sleep()
@@ -78,9 +77,12 @@ class Cmd_Vel_Repub(object):
         """ do pid control here """
 
         # linear PID
-        self.error_linear= sqrt((self.goal_x-self.odom_x)**2-(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
+
+        self.error_linear= math.sqrt((self.goal_x-self.odom_x)**2+(self.goal_y-self.odom_y)**2)#desired position - current position, always positive
         self.P_value_linear=self.linear_kp*self.error_linear 
-        self.D_value_linear=self.linear_kd*(self.error_linear - self.Derivator_linear) #always negative before overshoot
+        self.D_value_linear=self.linear_kd*math.fabs(self.error_linear - self.Derivator_linear) #always negative before overshoot
+
+
         self.Derivator_linear=self.error_linear
         self.Integrator_linear=self.Integrator_linear +self.error_linear
 
@@ -93,15 +95,14 @@ class Cmd_Vel_Repub(object):
 
         #only do compensation if inside circular region
         if self.error_linear<self.linear_threshold:
-        	pid_linear_x= self.P_value_linear + self.I_value_linear + self.D_value_linear
-        
+
+        	pid_linear_x= self.P_value_linear + self.I_value_linear - self.D_value_linear
+
         else:
-        	pid_linear_x=0.0        
+        	pid_linear_x=0.0
 
-
-        
         new_linear_x=self.linear_x+pid_linear_x
-        
+
         if new_linear_x>self.linear_velocity_threshold:
         	new_linear_x=self.linear_velocity_threshold
         elif new_linear_x<-self.linear_velocity_threshold:
@@ -113,10 +114,14 @@ class Cmd_Vel_Repub(object):
 
     def pid_angular(self):
     	#angular PID
-        self.error_angular= self.goal_yaw-self.odom_yaw#desired angle - current angle
+        angle_error=math.atan2(self.goal_y-self.odom_y, self.goal_x-self.odom_x)-self.odom_yaw
+        self.error_angular=math.atan2(math.sin(angle_error), math.cos(angle_error)) #trick to remap to -pi -
         self.P_value_angular=self.angular_kp*self.error_angular
-        self.D_value_angular=self.angular_kd*(self.error_angular - self.Derivator_angular)
+
+        derivative_error=self.error_angular - self.Derivator_angular
+        self.D_value_angular=self.angular_kd*math.fabs(math.atan2(math.sin(derivative_error), math.cos(derivative_error)))
         self.Derivator_angular=self.error_angular
+        
         self.Integrator_angular=self.Integrator_angular +self.error_angular
 
         if self.Integrator_angular > self.Integrator_max_angular:
@@ -127,10 +132,11 @@ class Cmd_Vel_Repub(object):
         self.I_value_angular=self.Integrator_angular*self.angular_ki
 
         #only do compensation if position is achieved
-        if self.error_linear<self.angular_threshold:  
-        	pid_angular_z= self.P_value_angular + self.I_value_angular + self.D_value_angular
+
+        if self.angular_z>0:  
+        	pid_angular_z= self.P_value_angular + self.I_value_angular - self.D_value_angular
         else:
-        	pid_angular_z=0.0
+        	pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular
 
         new_angular_z=self.angular_z+pid_angular_z
 
@@ -145,7 +151,7 @@ class Cmd_Vel_Repub(object):
     def dynamic_callback(self, config, level):
         rospy.loginfo("""Reconfigure Request: \
         {linear_kp}, {linear_ki}, {linear_kd}, \
-        {angular_kp}, {angular_ki}, {angular_kd} """.format(**config))
+        {angular_kp}, {angular_ki}, {angular_kd}, {linear_threshold}, {angular_threshold}, {linear_velocity_threshold}, {angular_velocity_threshold}  """.format(**config))
 
         self.linear_kp = config["linear_kp"]
         self.linear_ki = config["linear_ki"]
@@ -153,6 +159,10 @@ class Cmd_Vel_Repub(object):
         self.angular_kp = config["angular_kp"]
         self.angular_ki = config["angular_ki"]
         self.angular_kd = config["angular_kd"]
+
+		self.linear_threshold=config["linear_threshold"]
+    	self.linear_velocity_threshold=config["linear_velocity_threshold"]
+    	self.angular_velocity_threshold=config["angular_velocity_threshold"]
         return config
 
     def cmd_vel_callback(self, msg):
@@ -177,12 +187,12 @@ class Cmd_Vel_Repub(object):
         _, _, self.odom_yaw = euler_from_quaternion((x, y, z, w))
 
     def goal_callback(self, msg):
-        self.goal_x = msg.goal.pose.position.x
-        self.goal_y = msg.goal.pose.position.y
-        x = msg.goal.pose.orientation.x
-        y = msg.goal.pose.orientation.y
-        z = msg.goal.pose.orientation.z
-        w = msg.goal.pose.orientation.w
+        self.goal_x = msg.goal.target_pose.pose.position.x
+        self.goal_y = msg.goal.target_pose.pose.position.y
+        x = msg.goal.target_pose.pose.orientation.x
+        y = msg.goal.target_pose.pose.orientation.y
+        z = msg.goal.target_pose.pose.orientation.z
+        w = msg.goal.target_pose.pose.orientation.w
         _, _, self.goal_yaw = euler_from_quaternion((x, y, z, w))
 
 
