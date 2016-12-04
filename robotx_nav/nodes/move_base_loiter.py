@@ -37,12 +37,11 @@ class Loiter(MoveBaseUtil):
         self.loiter = {}
         self.mode = rospy.get_param("~mode", 1)
         self.mode_param = rospy.get_param("~mode_param", 2)
- 	self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
-	self.loiter["radius"] = rospy.get_param("~radius", radius) #double
+        self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
+        self.loiter["radius"] = rospy.get_param("~radius", radius) #double
         self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
-	self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
-	self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
-
+        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
+        self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
 
         # find the target
         if self.loiter["is_relative"]:
@@ -52,7 +51,6 @@ class Loiter(MoveBaseUtil):
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
             self.loiter["center"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
-
             # heading from boat to center
             self.loiter["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
 
@@ -60,7 +58,7 @@ class Loiter(MoveBaseUtil):
         waypoints = self.create_waypoints()
 
         # # Initialize the visualization markers for RViz
-        # self.init_markers()
+        self.init_markers()
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -154,20 +152,6 @@ class Loiter(MoveBaseUtil):
         # return the resultant waypoints
         return waypoints
 
-    def odom_callback(self, msg):
-        """ call back to subscribe, get odometry data:
-        pose and orientation of the current boat,
-        suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
-        self.z0 = msg.pose.pose.position.z
-        x = msg.pose.pose.orientation.x
-        y = msg.pose.pose.orientation.y
-        z = msg.pose.pose.orientation.z
-        w = msg.pose.pose.orientation.w
-        self.roll0, self.pitch0, self.yaw0 = euler_from_quaternion((x, y, z, w))
-        self.odom_received = True
-        # rospy.loginfo([self.x0, self.y0, self.z0])
 
 
 if __name__ == '__main__':

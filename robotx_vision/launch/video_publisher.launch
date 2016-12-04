@@ -1,11 +1,15 @@
 <launch>
-<node
-	pkg="robotx_vision"
-	type="video_publisher"
-	name="my_video_publisher"
-	required="true"
-	output="screen"
->
-<param name="video_file" value="/home/echo/catkin_ws/src/Singaboat_RobotX2016/robotx_vision/src/image/vid.avi"/>
-</node>
+	<arg name="namespace" default="starboard"/>
+	<arg name="video" default="scene.avi"/>
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="video_publisher"
+			name="video"
+			required="true"
+			output="screen"
+		>
+		<param name="video_file" value="/home/echo/opencv_code/image/$(arg video)"/>
+		</node>
+	</group>
 </launch>

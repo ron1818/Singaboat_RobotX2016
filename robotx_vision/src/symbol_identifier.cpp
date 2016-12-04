@@ -9,8 +9,9 @@
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
+#include <dynamic_reconfigure/server.h>
 #include <robotx_vision/object_detection.h>
-
+#include <robotx_vision/symbolConfig.h>
 //OpenCV libs
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -20,7 +21,6 @@
 
 //C++ standard libs
 #include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
@@ -36,17 +36,21 @@ using namespace std;
 std::string subscribed_image_topic;
 std::string frame_id;
 std::string output_topic_name;
-
+std::string show_screen;
+bool debug;
+//Dynamic_reconfigure parameters
+cv::Scalar blue_low_lim, blue_up_lim;
+cv::Scalar green_low_lim, green_up_lim;
+cv::Scalar red_low_lim, red_up_lim, red_low_lim_wrap, red_up_lim_wrap;
+cv::Scalar white_low_lim, white_up_lim;
 //Image transport vars
 cv_bridge::CvImagePtr cv_ptr;
-
-//Must-have var
+//Message var
 vector<robotx_vision::object_detection> object;
-
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
-std::vector<cv::Point> approx;
+//std::vector<cv::Point> approx;
 cv::Mat src, hsv, hls;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
@@ -56,7 +60,7 @@ cv::Rect r;
 cv::RotatedRect mr;
 int height, width;
 int min_area = 1500;
-double area, r_area, m_area;
+double area, r_area, m_area, hull_area;
 const double eps = 0.15;
 
 //Functions
@@ -84,7 +88,6 @@ void reduce_noise(cv::Mat* bgr)
 {
   cv::morphologyEx(*bgr, *bgr, cv::MORPH_CLOSE, str_el);
   cv::morphologyEx(*bgr, *bgr, cv::MORPH_OPEN, str_el);
-  cv::blur(*bgr,*bgr,Size(2,2));
 }
 
 robotx_vision::object_detection object_return(std::string frame_id, std::string type, std::string color, cv::Rect rect)
@@ -99,7 +102,7 @@ robotx_vision::object_detection object_return(std::string frame_id, std::string 
 
 int tri_detect(int i, std::string obj_color)
 {
-  if((fabs(area/m_area-0.5)<0.08) /*&& cv::isContourConvex(approx)*/)
+  if((fabs(area/m_area-0.5)<0.08) && (std::fabs(area/hull_area - 1) < 0.05))
   {
     cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
     object.push_back(object_return(frame_id,"triangle",obj_color,r));         //Push the object to the vector
@@ -110,7 +113,7 @@ int tri_detect(int i, std::string obj_color)
 
 int cir_detect(int i, std::string obj_color)
 {
-  if((std::abs(area/m_area - 3.141593/4) < 0.12) && cv::isContourConvex(approx))
+  if((std::abs(area/m_area - 3.141593/4) < 0.12) && (std::fabs(area/hull_area - 1) < 0.05))
   {
     cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
     object.push_back(object_return(frame_id,"circle",obj_color,r));         //Push the object to the vector
@@ -161,7 +164,7 @@ void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim,
   for (int i = 0; i < contours.size(); i++)
   {
     // Approximate contour with accuracy proportional to the contour perimeter
-    cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
 
@@ -172,16 +175,21 @@ void detect_symbol(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim,
     r_area = r.height*r.width;
     m_area = (mr.size).height*(mr.size).width;
 
+    vector<Point> hull;
+    convexHull(contours[i], hull, 0, 1);
+    hull_area = contourArea(hull);
+
     if(tri_detect(i, obj_color)) break;
     if(cir_detect(i, obj_color)) break;
     if(cru_detect(i, obj_color)) break;
   }
+  if(debug) if(obj_color == show_screen) cv::imshow("color", color);
 }
 
 void detect_white_marker()
 {
   //Filter red color
-  cv::inRange(hls, cv::Scalar(5, 225, 2), cv::Scalar(255, 255, 255), white);
+  cv::inRange(hls, white_low_lim, white_up_lim, white);
   //Reduce noise
   reduce_noise(&white);
   //Finding shapes
@@ -206,6 +214,7 @@ void detect_white_marker()
       object.push_back(object_return(frame_id,"marker_totem","white",r));         //Push the object to the vector
     }
   }
+  if(debug) if(show_screen == "white") cv::imshow("color", color);
 }
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
@@ -224,18 +233,41 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   //newImage = true;
   //Start the shape detection code
   if (src.empty()) return;
+  cv::blur(src,src,Size(1,1));
   cv::cvtColor(src,hsv,COLOR_BGR2HSV);
   cv::cvtColor(src,hls,COLOR_BGR2HLS);
   width = src.cols;
   height = src.rows;
   //Detect stuffs
   detect_white_marker();
-  detect_symbol("blue", cv::Scalar(105, 100, 100), cv::Scalar(130, 255, 255));
-  detect_symbol("green", cv::Scalar(50, 130, 70), cv::Scalar(96, 255, 255));
-  detect_symbol("red", cv::Scalar(0, 80, 100), cv::Scalar(1, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(176, 255, 255));
+  detect_symbol("blue", blue_low_lim, blue_up_lim);
+  detect_symbol("green", green_low_lim, green_up_lim);
+  detect_symbol("red", red_low_lim, red_up_lim, red_low_lim_wrap, red_up_lim_wrap);
   //Show output on screen
-  //ROS_INFO("Node is working.");
-  cv::imshow("src", src);
+  if(debug)
+  {
+    cv::imshow("src", src);
+  }
+}
+
+void dynamic_configCb(robotx_vision::symbolConfig &config, uint32_t level) 
+{
+  min_area = config.min_area;
+  show_screen = config.show_screen;
+  //Process appropriate parameter for object shape/color
+  blue_low_lim = cv::Scalar(config.blue_H_low,config.blue_S_low,config.blue_V_low);
+  blue_up_lim = cv::Scalar(config.blue_H_high,config.blue_S_high,config.blue_V_high);
+  green_low_lim = cv::Scalar(config.green_H_low,config.green_S_low,config.green_V_low);
+  green_up_lim = cv::Scalar(config.green_H_high,config.green_S_high,config.green_V_high);
+  red_low_lim = cv::Scalar(config.red_H_low1, config.red_S_low, config.red_V_low);
+  red_up_lim = cv::Scalar(config.red_H_high1, config.red_S_high, config.red_V_high);
+  red_low_lim_wrap = cv::Scalar(config.red_H_low2, config.red_S_low, config.red_V_low);
+  red_up_lim_wrap = cv::Scalar(config.red_H_high2, config.red_S_high, config.red_V_high);
+  white_low_lim = cv::Scalar(config.white_H_low,config.white_S_low,config.white_V_low);
+  white_up_lim = cv::Scalar(config.white_H_high,config.white_S_high,config.white_V_high);
+
+
+  ROS_INFO("Reconfigure Requested. All parameters are updated.");
 }
 
 int main(int argc, char** argv)
@@ -247,16 +279,28 @@ int main(int argc, char** argv)
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
   pnh.getParam("frame_id", frame_id);
   pnh.getParam("output_topic_name", output_topic_name);
+  pnh.getParam("debug", debug);
   //Initiate windows
-  cv::namedWindow("src",WINDOW_NORMAL);
-  cv::resizeWindow("src",640,480);
-  cv::startWindowThread();
+  if(debug)
+  {
+    cv::namedWindow("src",WINDOW_NORMAL);
+    cv::resizeWindow("src",640,480);
+    cv::namedWindow("color",WINDOW_NORMAL);
+    cv::resizeWindow("color",640,480);
+    cv::startWindowThread();
+  }
   //Start ROS subscriber...
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe(subscribed_image_topic, 1, imageCb);
   //...and ROS publisher
   ros::Publisher pub = nh.advertise<robotx_vision::object_detection>(output_topic_name, 1000);
   ros::Rate r(30);
+  //...and ROS dynamic_reconfigure
+  dynamic_reconfigure::Server<robotx_vision::symbolConfig> server;
+  dynamic_reconfigure::Server<robotx_vision::symbolConfig>::CallbackType f;
+  f = boost::bind(&dynamic_configCb, _1, _2);
+  server.setCallback(f);
+  //loops
   while (nh.ok())
   {
   	//Publish every object detected

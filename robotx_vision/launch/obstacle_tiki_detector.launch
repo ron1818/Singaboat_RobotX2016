@@ -1,0 +1,13 @@
+<launch>
+<node
+	pkg="robotx_vision"
+	type="obstacle_tiki_detector"
+	name="obstacle_tiki_detector"
+	required="true"
+	output="screen"
+>
+<param name="subscribed_image_topic" value="test"/>
+<param name="frame_id" value="my_camera"/>
+<param name="output_topic_name" value="my_object"/>
+</node>
+</launch>
