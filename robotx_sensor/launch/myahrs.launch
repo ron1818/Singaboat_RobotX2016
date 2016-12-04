@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- sudo apt-get install ros-indigo-myahrs-driver,
+         x: outward from usb, driver converted to ENU -->
+    <arg name="debug" default="false" />
+    <node pkg="myahrs_driver" type="myahrs_driver" name="myahrs_driver">
+        <param name="port" value="/dev/USBimu" />
+        <!--param name="port" value="/dev/ttyACM0" /-->
+        <param name="baud_rate" value="115200" />
+    </node>
+
+    <node pkg="rviz" type="rviz" name="rviz" 
+        args="-d $(find myahrs_driver)/rviz_cfg/imu_test.rviz" 
+        if="$(arg debug)" />
+</launch>

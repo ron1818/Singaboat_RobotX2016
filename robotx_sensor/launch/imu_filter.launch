@@ -1,10 +1,23 @@
+<?xml version="1.0"?>
 <launch>
+    <arg name="ismyahrs" default="false" />
+    <arg name="ismpu" default="false" />
+    <arg name="isgazebo" default="false" />
+    <include file="$(find robotx_sensor)/launch/rtimulib.launch"  if="$(arg ismpu)" >
+        <arg name="ismpu" value="$(arg ismpu)" />
+    </include>
+
+    <include file="$(find robotx_sensor)/launch/myahrs.launch"  if="$(arg ismyahrs)" >
+        <arg name="debug" value="false" />
+    </include>
+
     <node pkg="imu_filter_madgwick" type="imu_filter_node" name="imu_filter_node" output="screen">
-        <remap from="imu/data_raw" to="middle_middle_imu/imu/data_raw"/>
-        <remap from="imu/mag" to="middle_middle_imu/imu/mag"/>
-        <remap from="imu/data" to="middle_middle_imu/imu/data"/>
+        <remap from="imu/data_raw" to="middle_middle_imu/imu/data_raw" if="$(arg isgazebo)" />
+        <remap from="imu/mag" to="middle_middle_imu/imu/mag" if="$(arg isgazebo)" />
+        <remap from="imu/data" to="middle_middle_imu/imu/data" if="$(arg isgazebo)" />
         <param name="use_mag" value="true"/>
-        <param name="world_frame" value="enu"/>
+        <param name="use_magnetic_field_msg" value="false" if="$(arg isgazebo)"/>
+        <param name="world_frame" value="enu" if="$(arg isgazebo)" />
         <param name="fixed_frame" value="map"/>
         <param name="publish_tf" value="false"/>
     </node>

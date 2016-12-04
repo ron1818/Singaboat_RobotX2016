@@ -118,4 +118,6 @@ if __name__ == '__main__':
     constant_heading_mp.start()
     constant_heading_mp.join()
     waypoint_publisher_mp.join()
-cancel_goal_mp.join()
+
+    cancel_goal_mp.join()
+

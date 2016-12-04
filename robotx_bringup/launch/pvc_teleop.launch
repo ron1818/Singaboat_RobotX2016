@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<launch>
+    <!-- inputs are keyboard_cmd_vel, joystick_cmd_vel, move_base_cmd_vel,
+         priority is found in robotx_control/config/yocs...yaml -->
+    <!-- bring up joystick -->
+    <include file="$(find robotx_control)/launch/mux_joystick_teleop.launch" />
+    <!-- bring up keyboard -->
+    <include file="$(find robotx_control)/launch/mux_keyboard_teleop.launch" />
+    <!-- bring up mux -->
+    <include file="$(find robotx_control)/launch/yocs_cmd_vel_with_keyboard.launch" />
+</launch>
