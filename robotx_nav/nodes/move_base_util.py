@@ -201,7 +201,7 @@ class MoveBaseUtil():
     def rotation(self, ang):
 
         rate = rospy.Rate(10)
-        an_vel = 0.2
+        an_vel = 0.1
         duration = ang / an_vel
         msg = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, an_vel))
 
@@ -212,10 +212,10 @@ class MoveBaseUtil():
             current_time = rospy.get_time()
             if (current_time - start_time) > duration:
                 self.cmd_vel_pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2 * an_vel)))
-                rospy.sleep(0.3)
-                pub.publish(Twist())
+                self.cmd_vel_pub.publish(Twist())
                 break
-            pub.publish(msg)
+            else:
+                self.cmd_vel_pub.publish(msg)
             rate.sleep()
 
     def reverse_tf(self, distance=5, speed=-0.2):
@@ -326,5 +326,5 @@ class MoveBaseUtil():
 
 if __name__ == "__main__":
     util = MoveBaseUtil()
-    # util.get_tf()
+    util.rotation(1.57)
     util.convert_relative_to_absolute(coordinate=[10,0])

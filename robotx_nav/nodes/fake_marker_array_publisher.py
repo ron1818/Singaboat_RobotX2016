@@ -31,10 +31,10 @@ class MarkerArrayPublisher():
 
         count = 1
         MARKERS_MAX = 12
-        start_red_x, start_red_y = 10, -5
-        start_green_x, start_green_y = 10, 5
-        end_red_x, end_red_y = 40, -5
-        end_green_x, end_green_y = 40, 5
+        start_red_x, start_red_y = -5, 10
+        start_green_x, start_green_y = 5, 10
+        end_red_x, end_red_y = -5, 40
+        end_green_x, end_green_y = 5, 40
         markerArray = MarkerArray()
         marker = Marker()
         marker.header.frame_id = "/map"

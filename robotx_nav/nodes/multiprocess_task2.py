@@ -31,47 +31,108 @@ from roi_rotate import RoiRotate #TODO
 #     gps_obj.respawn(target)
 #     print p.name, p.pid, 'Exiting'
 
-def constant_heading_worker(q):
-    """ constant heading to pass the gate,
-    need roi_target_identifier to give/update waypoint """
+def moveto_worker(q):
+    """ go to a particular waypoint,
+    normally very near to a totem """
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
-    constant_heading_obj = Forward(nodename="constant_heading", target=None, waypoint_separation=5, is_relative=False)
+    moveto_obj = MoveTo(nodename="moveto", target=None, is_relative=False)
     # get the waypoints, loop wait for updates
-    while not q.empty():
-        constant_heading_obj.respawn(q.get())
+    while  True:
+        target = q.get()
+        if target[2] < -1e6:
+            break
+        else:
+            moveto_obj.respawn(target)
     print p.name, p.pid, 'Exiting'
 
 def loiter_worker(q):
     """ roi give target, according to color, do loitering """
+    p = mp.current_process()
+    print p.name, p.pid, 'Starting'
+    loiter_obj = MoveTo(nodename="loiter", target=None, is_relative=False)
+    while  True:
+        target, is_ccw = q.get()
+        if target[2] < -1e6:
+            break
+        else:
+            waypoint_obj.respawn(target, radius=None, is_ccw=is_ccw)
+    print p.name, p.pid, 'Exiting'
     pass
 
-def roi_target_identifier_worker(q):
-    """ spawn way points based on roi of the cameras, will end by itself """
-    pass  #TODO
+def waypoint_publisher_worker(conn, moveto_q, loiter_q):
+    """ spawn waypoints for both moveto and loter,
+    for moveto, only need [x, y, heading],
+    for loiter, need [[x, y, heading], is_ccw] """
+    p = mp.current_process()
+    print p.name, p.pid, 'Starting'
+    conn.send('idle')  # ask cancel goal to be idle
+    ##########fake test ###############
+    q.put([0, 10, 0])
+    time.sleep(5)
+    conn.send('cancel') # too much, cancel it
+    time.sleep(5)
+    while True:
+        if conn.recv() == 'cancelled':
+           break
+    print "resumed"
+    time.sleep(10)
+    conn.send('idle') # remain idle
+    q.put([-5, 15, -1.57])
+    time.sleep(5)
+    q.put([-10, 15, 1.57])
+    time.sleep(5)
+    q.put([0, 0, 0])
+    q.put([0, 0, -float('inf')])
+    conn.send('exit') # exit
+    # waypoint_publisher_obj = Waypoint_Publisher()
+    # # push the waypoints
+    # while not waypoint_publisher_obj.complete():
+    queue, connect = xxx.pub_waypoint()
+    q.put(queue)
+    conn.send(connect)
+    #     q.put(waypoint_publisher_obj.pub_waypoint())
+    #     conn.send(waypoint_publisher_obj.pub_cancel_goal())
+    #     conn.send(0) # after one clear action, make it idle
+    # else:
+    #     # clear the queue
+    #     q.task_done()
+    #     conn.send(-1)  # task done
+    #     # with q.mutex:
+    #     #     q.queue.clear()
+    print p.name, p.pid, 'Exiting'
 
-def roi_rotate_worker():
-    """ rotate based on the four camera's readings, turn the bow to the totems """
-    pass #TODO
-
-def cancel_goal_worker(repetition):
+def cancel_goal_worker(conn, repetition):
     """ asynchronously cancel goals"""
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
-    force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
+    while True:
+        command = conn.recv()
+        print 'child: ', command
+        if command == 'cancel': # cancel goal
+            print 'doing cancelling'
+            force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
+            conn.send('cancelled')
+        elif command == 'exit': # complete
+            print "cancel goal complete, exit"
+            break
+        else:  # conn.recv() == 0, idle, wait for command
+            pass
+
     print p.name, p.pid, 'Exiting'
 
 
 if __name__ == '__main__':
     # create data queue
-    q = mp.Queue()
+    moveto_q = mp.Queue()
+    loiter_q = mp.Queue()
+    parent_conn, child_conn = mp.Pipe(duplex=True)
+    pool = mp.Pool(processes=4)
     # create workers
-    # gps_target = [1.344423, 103.684952, 1.57]
-    # gps_mp = mp.Process(name="gps", target=gps_worker, args=(gps_target,))
-    loiter_mp = mp.Process(name="loiter", target=loiter_worker, args=(q,))
-    constant_heading_mp = mp.Process(name="csh", target=constant_heading_worker, args=(q,))
-    roi_rotate_mp = mp.Process(name="roi", target=roi_rotate_worker, args=(,))
-    roi_target_mp = mp.Process(name="roi", target=roi_target_identifier_worker, args=(q,))
+    loiter_mp = mp.Process(name="loiter", target=loiter_worker, args=(loiter_q,))
+    moveto_mp = mp.Process(name="mvt", target=moveto_worker, args=(moveto_q,))
+    cancel_goal_mp = mp.Process(name="ccg", target=cancel_goal_worker, args=(child_conn, 5,))
+    waypoint_publisher_mp = mp.Process(name="wpt", target=waypoint_publisher_worker, args=(parent_conn, waypoint_queue,))
     # can run at the background
     roi_mp.daemon = True
 
