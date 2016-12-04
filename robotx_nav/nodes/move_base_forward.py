@@ -14,9 +14,11 @@
     2016-10-02
     # changelog:
     @2016-10-19: class inheriate from movebase util
+    @2016-12-01: split to respawn
 
 """
 
+import time
 import rospy
 import actionlib
 from actionlib_msgs.msg import *
@@ -39,11 +41,11 @@ class Forward(MoveBaseUtil):
         self.forward = {}
         if target is not None:
             self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0.0)
-        else:  # must be updatged in the self.respawn
+        else:  # must be updated in the self.respawn
             self.target = Point(0, 0, 0)
 
-        self.mode = rospy.get_param("~mode", 1)
-        self.mode_param = rospy.get_param("~mode_param", 2)
+        self.mode = rospy.get_param("~mode", 0)
+        self.mode_param = rospy.get_param("~mode_param", 1)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 
@@ -60,6 +62,7 @@ class Forward(MoveBaseUtil):
             self.forward["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
 
     def respawn(self, target=None):
+        # new target
         if target is not None:
             self.target = Point(target[0], target[1], target[2])
             print self.target
@@ -86,9 +89,12 @@ class Forward(MoveBaseUtil):
             self.markers.points.append(p)
 
         # Initialize a counter to track waypoints
-        i = 1  # remove the first point
+        if len(waypoints) > 1:
+            i = 1  # remove the first point
+        else:
+            i = 0
 
-        # Cycle through the four waypoints
+        # Cycle through the waypoints
         while i < len(waypoints) and not rospy.is_shutdown():
             # Update the marker display
             self.marker_pub.publish(self.markers)
@@ -110,7 +116,7 @@ class Forward(MoveBaseUtil):
             i += 1
 
         else:  # escape constant forward and continue to the next waypoint
-            print "task finished"
+            print "constant heading task finished"
 
     def create_waypoints(self):
 
@@ -122,11 +128,14 @@ class Forward(MoveBaseUtil):
         # need polar to catersian transform
 
         # stores number of waypoints
+        # print self.forward["goal_distance"]
+        # print self.forward["translation"]
         N = ceil(self.forward["goal_distance"] / self.forward["waypoint_separation"])
         N = int(N)
+        # print N
 
         # Then convert the angles to quaternions, all have the same heading angles
-        for i in range(N):
+        for i in range(N+1):
             q_angle = quaternion_from_euler(0, 0, self.forward["heading"])
             q = Quaternion(*q_angle)
             quaternions.append(q)
@@ -135,23 +144,28 @@ class Forward(MoveBaseUtil):
         waypoints = list()
         (trans, rot) = self.get_tf()
         catersian_x = [(N - i) * trans.x / N + i * self.forward["translation"][0] / N
-                       for i in range(N)]
+                       for i in range(N+1)]
         catersian_y = [(N - i) * trans.y / N + i * self.forward["translation"][1] / N
-                       for i in range(N)]
+                       for i in range(N+1)]
 
         # Append the waypoints to the list.  Each waypoint
         # is a pose consisting of a position and orientation in the map frame.
-        for i in range(N):
+        for i in range(N+1):
             waypoints.append(Pose(Point(catersian_x[i], catersian_y[i], 0.0),
                              quaternions[i]))
         # return the resultant waypoints
+        # print waypoints
         return waypoints
 
 
 if __name__ == '__main__':
     try:
-        constant_heading = Forward(nodename="constantheading_test", is_relative=True)
-        constant_heading.respawn(None)
+        constant_heading = Forward(nodename="constantheading_test", target=None, is_relative=False)
+        constant_heading.respawn([0,10,0])
+        time.sleep(5)
+        constant_heading.respawn([-5,5,0])
+        time.sleep(10)
+        constant_heading.respawn([4,5,0])
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
