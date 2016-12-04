@@ -5,6 +5,7 @@
     <arg name="isfake" default="false" />
     <arg name="ispvc" default="false" />
     <arg name="iswamv" default="false" />
+    <arg name="no_static_map" default="false" />
     <arg name="/use_sim_time" value="$(arg isgazebo)" />
     
     <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true">
@@ -34,6 +35,7 @@
         <rosparam file="$(find robotx_nav)/config/gazebo/costmap_common_params.yaml" command="load" ns="local_costmap" if="$(arg isgazebo)" />
         <rosparam file="$(find robotx_nav)/config/gazebo/local_costmap_params.yaml" command="load" if="$(arg isgazebo)" />
         <rosparam file="$(find robotx_nav)/config/gazebo/global_costmap_params.yaml" command="load" if="$(arg isgazebo)" />
+        <rosparam file="$(find robotx_nav)/config/gazebo/global_costmap_params_mapless.yaml" command="load" if="$(arg no_static_map)" />
         <rosparam file="$(find robotx_nav)/config/gazebo/base_local_planner_params.yaml" command="load" if="$(arg isgazebo)" />
     </node>
 
