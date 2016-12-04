@@ -37,12 +37,15 @@ class Loiter(MoveBaseUtil):
         self.loiter = {}
         self.mode = rospy.get_param("~mode", 1)
         self.mode_param = rospy.get_param("~mode_param", 2)
- 	self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
-	self.loiter["radius"] = rospy.get_param("~radius", radius) #double
-        self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
-	self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
-	self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
+        if target is not None:
+            self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
+        else:
+            self.target = Point(0, 0, 0)
 
+        self.loiter["radius"] = rospy.get_param("~radius", radius) #double
+        self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
+        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
+        self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
 
         # find the target
         if self.loiter["is_relative"]:
@@ -55,6 +58,33 @@ class Loiter(MoveBaseUtil):
 
             # heading from boat to center
             self.loiter["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
+
+    def respawn(self, target=None, radius=None, is_ccw=None):
+        """respawn when new target received """
+        if target is not None:
+            self.mode = rospy.get_param("~mode", 1)
+            self.mode_param = rospy.get_param("~mode_param", 2)
+            self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
+            self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
+            self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
+            self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
+
+        if radius is not None:
+            self.loiter["radius"] = rospy.get_param("~radius", radius) #double
+        if is_ccw is not None:
+            self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
+
+            # find the target
+            if self.loiter["is_relative"]:
+                self.loiter["center"], self.loiter["heading"] = \
+                    self.convert_relative_to_absolute([self.target.x, self.target.y])
+            else:  # absolute
+                # obtained from vision nodes, absolute catersian
+                # but may be updated later, so need to callback
+                self.loiter["center"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
+
+                # heading from boat to center
+                self.loiter["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
 
         # create waypoints
         waypoints = self.create_waypoints()
@@ -104,7 +134,7 @@ class Loiter(MoveBaseUtil):
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
-            print "task finished"
+            print "loiter task finished"
 
     def create_waypoints(self):
 
@@ -172,7 +202,9 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        Loiter(nodename="loiter_test")
+        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=False)
+        loiter_test.respawn(target=[10, 5, 0])
+
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

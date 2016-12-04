@@ -20,13 +20,9 @@
 
 import time
 import rospy
-import actionlib
-from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist
-from sensor_msgs.msg import RegionOfInterest, CameraInfo
+from geometry_msgs.msg import Pose, Point, Quaternion
 from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
-from visualization_msgs.msg import Marker
+from tf.transformations import quaternion_from_euler
 from math import ceil, atan2, sqrt
 from move_base_util import MoveBaseUtil
 
