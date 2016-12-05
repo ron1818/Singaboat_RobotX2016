@@ -23,35 +23,30 @@ from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
 
 
-class StationKeeping(MoveBaseUtil):
+class Aiming(MoveBaseUtil):
     # initialize boat pose param
     # x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target=None, radius=1, duration=100):
+    def __init__(self, nodename, target=None, radius=10, duration=100, angle_tolerance=2*pi/180.0, box=[2,2,0]):
         MoveBaseUtil.__init__(self, nodename)
 
-        if target is not None:  # a target point to hold the position
-            self.target = Twist(Point(rospy.get_param("~target_x", target[0]),
-                                rospy.get_param("~target_y", target[1]), 0),
-                                Point(0, 0, rospy.get_param("~angle", target[2])))
-        else:  # hold the current boat's position
-            self.target = Twist(Point(self.x0, self.y0, 0),
-                                Point(0, 0, self.yaw0))
+        if target is not None:  # shooting range's position
+            self.target = Twist(Point(rospy.get_param("~station_x", target[0]), rospy.get_param("~station_y", target[1]), 0),
+                                    Point(0, 0, rospy.get_param("~station_yaw", target[2])))
+        else:  # use boat's current position as the shooting range's position
+            self.target = Twist(Point(self.x0, self.y0, 0), Point(0, 0, self.yaw0))
         self.radius = rospy.get_param("~radius", radius)
         self.duration = rospy.get_param("~duration", duration)
+        self.angle_tolerance = rospy.get_param("~angle_tolerance", angle_tolerance)
+        self.box = Point(rospy.get_param("~box_x", box[0]), rospy.get_param("~box_y", box[1]), 0)
 
-
-        ### all in move base util ###
-        # #get boat pose one time only
+        # # get boat pose one time onl
         # self.odom_received = False
         # rospy.wait_for_message("/odom", Odometry)
-        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size = 50)
+        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
         # while not self.odom_received:
         #     rospy.sleep(1)
-
-        # # Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        # self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
 
         # # Subscribe to the move_base action server
         # self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -74,13 +69,18 @@ class StationKeeping(MoveBaseUtil):
 
         self.marker_pub.publish(self.markers)
 
-        #get start time
+        # get start time
         start_time = rospy.get_time()
 
-        while ((rospy.get_time()-start_time < self.duration) or not self.duration) and not rospy.is_shutdown():
-            if (sqrt((self.target.linear.x-self.x0)**2 + (self.target.linear.y-self.y0)**2) < self.radius):
-                self.cmd_vel_pub.publish(Twist())
-                # rospy.loginfo("inside inner radius, no action")
+        while (rospy.get_time() - start_time < self.duration) or not self.duration and not rospy.is_shutdown():
+            if (sqrt((self.target.linear.x - self.x0)**2 + (self.target.linear.y - self.y0) ** 2) < self.radius):
+                rospy.loginfo("inside inner radius, corrects orientation to face box")
+                theta = atan2(self.box.y - self.y0, self.box.x - self.x0)
+                if(abs(theta - self.yaw0) > self.angle_tolerance):
+                    print "correcting", theta , self.yaw0
+                    self.rotation(theta - self.yaw0)
+                    rospy.sleep(1)
+
             else:
                 rospy.loginfo("outside radius")
                 # Intialize the waypoint goal
@@ -99,9 +99,6 @@ class StationKeeping(MoveBaseUtil):
 
                 self.move(goal, 0, 0)
                 rospy.loginfo("goal sent")
-        else:
-            rospy.loginfo("station keep ends")
-
 
     # def odom_callback(self, msg):
     #     """ call back to subscribe, get odometry data:
@@ -121,7 +118,8 @@ class StationKeeping(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        StationKeeping("station_keeping_test")
+
+        Aiming("aiming_test")
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
         pass
