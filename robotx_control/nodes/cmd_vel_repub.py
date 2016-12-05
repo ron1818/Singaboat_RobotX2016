@@ -151,7 +151,7 @@ class Cmd_Vel_Repub(object):
     def dynamic_callback(self, config, level):
         rospy.loginfo("""Reconfigure Request: \
         {linear_kp}, {linear_ki}, {linear_kd}, \
-        {angular_kp}, {angular_ki}, {angular_kd}, {linear_threshold}, {angular_threshold}, {linear_velocity_threshold}, {angular_velocity_threshold}  """.format(**config))
+        {angular_kp}, {angular_ki}, {angular_kd}, {linear_threshold}, {linear_velocity_threshold}, {angular_velocity_threshold}  """.format(**config))
 
         self.linear_kp = config["linear_kp"]
         self.linear_ki = config["linear_ki"]

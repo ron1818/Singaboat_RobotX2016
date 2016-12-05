@@ -38,187 +38,177 @@
 """
 
 import rospy
-import numpy as np
 import multiprocessing as mp
-import sys
-from geometry_msgs.msg import Point
-from move_base_util import MoveBaseUtil
-from move_base_waypoint_geo import MoveToGeo
-from move_base_force_cancel import ForceCancel
-from move_base_forward import Forward
-from roi_coordinate import RoiCoordinate
-import matplotlib.pyplot as plt
+import math
+import time
+import numpy as np
+from sklearn.cluster import KMeans
+from geometry_msgs.msg import Point, Pose
+from visualization_msgs.msg import MarkerArray, Marker
 
-class Task1(object):
-    bow_left_red_x = float("Inf")
-    bow_right_red_x = float("Inf")
-    port_red_x = float("Inf")
-    starboard_red_x = float("Inf")
-    transom_red_x = float("Inf")
-    bow_left_green_x = float("Inf")
-    bow_right_green_x = float("Inf")
-    port_green_x = float("Inf")
-    starboard_green_x = float("Inf")
-    transom_green_x = float("Inf")
-    red_x_list = list()
-    red_y_list = list()
-    green_x_list = list()
-    green_y_list = list()
+class WaypointPublisher(object):
+    x0, y0, yaw0= 0, 5, 0
+    MAX_DATA=15
 
-    def subscribe_coordinate(self, topic_name, colorname):
-        rospy.Subscriber(topic_name, Point, self.roi_coordinate_callback, colorname, queue_size=10)
+    markers_array=MarkerArray()
+    red_totem=np.zeros((MAX_DATA, 2))
+    green_totem=np.zeros((MAX_DATA, 2))
 
-    def __init__(self):
-        # 0. parameters
-        self.target_lat = rospy.get_param("~lat", 1.344470)
-        self.target_lon = rospy.get_param("~lon", 103.684937)
-        self.target_heading = rospy.get_param("~heading", 0)  # north
+    red_position=np.zeros((2, 2)) #ordered list of centers x, y
+    green_position=np.zeros((2, 2))
 
-        rospy.init_node("task1")
-        rospy.on_shutdown(self.shutdown)
-        # rate = rospy.Rate(10)
-        self.start_time = rospy.get_time()
-        self.duration = 2
+    red_counter=0
+    green_counter=0
 
-        q = mp.Queue()
+    def __init__(self, pool):
 
-        # initialize objects
-        gps_target = [(self.target_lat, self.target_lon, self.target_heading)]
-        self.gps_waypoint = MoveToGeo(nodename="gps", target=None, is_newnode=False)
-        self.constant_heading = Forward(nodename="constant_heading", target=None, waypoint_separation=5, is_relative=True, is_newnode=False)
-        # three nodes into worker
-        # 1. drive to gps waypoint
-        gps_move_to_mp = mp.Process(name="gps", target=self.gps_worker,
-                                 args=(gps_target))
-        # 2. roi to get target point, daemon
-        # roi_get_target_mp = mp.Process(name="roi_target", target=self.roi_worker,
-        #                         args=(q,))
-        # roi_get_target.daemon = True
+        rospy.init_node('task_1', anonymous=True)
+        rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
+        self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
+        replan_offset=2
+        #self.odom_received = False
+        # rospy.wait_for_message("/odom", Odometry)
+        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
+        #rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        ##rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        #while not self.odom_received:
+        #   rospy.sleep(1)
+        while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
+            time.sleep(1)
 
-        # 3. constant heading, must get updated target
-        constant_heading_mp = mp.Process(name="constant_heading", target=self.constant_heading_worker,
-                                      args=(q,))
+        prev_target=np.array([self.x0, self.y0, 0])
 
-        # 4. cancel goal worker
-        cancel_goal_mp = mp.Process(name="cancel_goal", target=self.cancel_goal_worker,
-                                 args=("cancel_goal", 10))
+        while not rospy.is_shutdown():
+            self.matrix_reorder()
 
+            target=self.plan_waypoint()    
+            print(target)
 
-        # roi detect color totem, assume already have in launch
-        # then listen to namespace/objectname/colorname/coordinates
+            if self.euclid_distance(target, prev_target)>replan_offset:
+                #replan
+                #force cancel
 
-        # must launch first:
+                pool.apply_async(cancel_goal)
 
-        self.subscribe_coordinate("bow/left/totem/red/coordinate", "red")
-        self.subscribe_coordinate("bow/right/totem/red/coordinate", "red")
-        # self.subscribe_coordinate("port/totem/redcoordinate", "red")
-        # self.subscribe_coordinate("starboard/totem/redcoordinate", "red")
-        # self.subscribe_coordinate("transom/totem/redcoordinate", "red")
-        self.subscribe_coordinate("bow/left/totem/green/coordinate", "green")
-        self.subscribe_coordinate("bow/right/totem/green/coordinate", "green")
-        # self.subscribe_coordinate("port/totem/greencoordinate", "green")
-        # self.subscribe_coordinate("starboard/totem/greencoordinate", "green")
-        # self.subscribe_coordinate("transom/totem/greencoordinate", "green")
-        # rospy.wait_for_message("bow/left/totem/red/coordinate", Point)
+                #plan new constant heading
 
-        q.put([10,0,0])
-        # gps_move_to_mp.start()
-        # roi_get_target_mp.start()
-        # gps_move_to_mp.join()
-        # wait for self.roi_target to be valid
-        # use queue?
-        constant_heading_mp.start()
-        constant_heading_mp.join()
-        # roi_get_target_mp.join()
+                pool.apply_async(constant_heading, args = (target))
 
-    def roi_coordinate_callback(self, msg, colorname):
-        if rospy.get_time() - self.start_time < self.duration:
-            if colorname == "red":
-                if msg.x is not None and msg.y is not None and msg.x < 10000 and msg.y < 10000:
-                    self.red_x_list.extend([msg.x])
-                    self.red_y_list.extend([msg.y])
-            elif colorname == "green":
-                if msg.x is not None and msg.y is not None and msg.x < 10000 and msg.y < 10000:
-                    self.green_x_list.extend([msg.x])
-                    self.green_y_list.extend([msg.y])
-            self.is_ready = False
-        else:
-            self.is_ready = True
-            self.start_time = rospy.get_time()
-
-    def shutdown(self):
-        pass
-
-    def gps_worker(self, target_geo):
-        p = mp.current_process()
-        print p.name, p.pid, 'Starting'
-        self.gps_waypoint.respawn(target_geo)
-        print p.name, p.pid, 'Exiting'
-
-    def roi_worker(self, q):
-        p = mp.current_process()
-        print p.name, p.pid, 'Starting'
-        # calculate the center point bewtween red and green totem
-        # the simplest way: median for (x_red, y_red) and median for (x_green, y_green)
-        # then take the centerpoint for constant heading
-        # the hard way: collect red and green points and use svm to get the separation plane
-        # use the plane for constant heading
-        self.is_ready = False
-        red_x_center, red_y_center = 0, 0
-        green_x_center, green_y_center = 0, 0
-        plt.ion()
-        fig, ax = plt.subplots()
-        plot = ax.scatter([], [])
-        ax.set_xlim(-30, 30)
-        ax.set_ylim(0, 70)
-        while not rospy.is_shutdown() or self.roi_target is None:
-            try:
-                # print len(self.red_x_list), len(self.red_y_list)
-                # print len(self.green_x_list), len(self.green_y_list)
-                ax.scatter(self.red_x_list, self.red_y_list, color="r")
-                ax.scatter(self.green_x_list, self.green_y_list, color="g")
-                # plt.show()
-            except:
+                prev_target=target
+            else:
                 pass
 
-            if self.is_ready:
-                red_x_center, red_y_center = np.median(self.red_x_list), np.median(self.red_y_list)
-                green_x_center, green_y_center = np.median(self.green_x_list), np.median(self.green_y_list)
-                roi_target = [(red_x_center + green_x_center) / 2.0, (red_y_center + green_y_center) / 2.0, 0]
-                q.put(roi_target)
-                rate.sleep()
-            fig.canvas.draw()
-        else:
-            pass
-        print p.name, p.pid, 'Exiting'
-
-
-    def constant_heading_worker(self, q):
-        p = mp.current_process()
-        print p.name, p.pid, 'Starting'
-        ####
-        if not q.empty():
-            target = q.get()
-            print target
-            self.constant_heading.respawn(target)
-        print p.name, p.pid, 'Exiting'
-
-    def cancel_goal_worker(self, nodename, repetition):
-        p = mp.current_process()
-        print p.name, p.pid, 'Starting'
-        counter = 0
-        while counter <= 20:
-            counter += 1
             time.sleep(1)
-        else:
-            force_cancel = ForceCancel(nodename=nodename, repetition=10)
-        print p.name, p.pid, 'Exiting'
+            
+    def plan_waypoint(self):
+        distance=15
+        dis_red=1000
+        dis_green=1000
+            #find closest available totem pairs
 
+        for x in self.red_position:
+            if self.distance_from_boat(x) < dis_red:
+                nearest_red=x
+                dis_red=self.distance_from_boat(x) 
+
+        for x in self.green_position:
+            if self.distance_from_boat(x) < dis_green:
+                nearest_green=x
+                dis_green=self.distance_from_boat(x)
+        #plan 
+        dis=nearest_red-nearest_green
+        [x_center, y_center]=[(nearest_red[0]+nearest_green[0])/2, (nearest_red[1]+nearest_green[1])/2]
+
+        if math.sqrt(dis.dot(dis.T)) <20:
+            theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2))
+        else:
+            theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10/30)), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10/30)))
+
+        return np.array([x_center+distance*math.cos(theta), y_center+distance*math.sin(theta), theta])
+        
+
+    def distance_from_boat(self, target):
+        return math.sqrt((target[0]-self.x0)**2+(target[1]-self.y0)**2)
+
+    def euclid_distance(target1, target2):
+        return math.sqrt((target1[0]-target2[0])**2+(target1[1]-target2[1])**2)
+
+    def is_complete():
+        pass
+
+    def search_marker(self, obj_type, obj_color, pose_list, markers_list):
+        #pose_list is list that stores Pose obj for requested markers
+        N=len(pose_list)
+        
+        if len(markers_list.markers)>0:
+            for i in range(len(markers_list.markers)):
+                if markers_list.markers[i].type == obj_type and markers_list.markers[i].id==obj_color:
+                    #may append more than 1 markers
+                    
+                    if obj_color==0:
+                        pose_list[self.red_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
+                        self.red_counter+=1
+                    elif obj_color==1:
+                        pose_list[self.green_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
+                        self.green_counter+=1
+                else:
+                    pass
+                    
+            if len(pose_list)>self.MAX_DATA:
+                pose_list.pop(0)
+            return True
+        else:
+            return False
+
+    def marker_callback(self, msg):
+        #updates markers_array
+        self.search_marker(3, 0 , self.red_totem, msg)
+        self.search_marker(3, 1 , self.green_totem, msg)
+
+        if (self.red_counter>self.MAX_DATA):
+            red_kmeans = KMeans(n_clusters=2).fit(self.red_totem)
+            self.red_centers=red_kmeans.cluster_centers_
+        if(self.green_counter>self.MAX_DATA):
+            green_kmeans = KMeans(n_clusters=2).fit(self.green_totem)
+            self.green_centers=green_kmeans.cluster_centers_
+        
+        #visualize markers in rviz
+        for i in range(len(msg.markers)):
+            self.marker_pub.publish(msg.markers[i])
+
+    def matrix_reorder(self):
+       
+        if self.red_centers[0].dot(self.red_centers[0].T)< self.red_centers[1].dot(self.red_centers[1].T):
+            self.red_position=self.red_centers
+
+        else:
+            self.red_position[0]=self.red_centers[1]
+            self.red_position[1]=self.red_centers[0]
+
+        if self.green_centers[0].dot(self.green_centers[0].T)< self.green_centers[1].dot(self.green_centers[1].T):
+            self.green_position=self.green_centers
+        else:
+            self.green_position[0]=self.green_centers[1]
+            self.green_position[1]=self.green_centers[0]
+
+    def odom_callback(self, msg):
+        """ call back to subscribe, get odometry data:
+        pose and orientation of the current boat,
+        suffix 0 is for origin """
+        self.x0 = msg.pose.pose.position.x
+        self.y0 = msg.pose.pose.position.y
+        x = msg.pose.pose.orientation.x
+        y = msg.pose.pose.orientation.y
+        z = msg.pose.pose.orientation.z
+        w = msg.pose.pose.orientation.w
+        _, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
+        self.odom_received = True
+    
 
 
 if __name__ == '__main__':
     try:
-        Task1()
+        WaypointPublisher()
         # stage 1: gps
     except rospy.ROSInterruptException:
-        rospy.loginfo("Navigation test finished.")
+        rospy.loginfo("Task 1 Finished")

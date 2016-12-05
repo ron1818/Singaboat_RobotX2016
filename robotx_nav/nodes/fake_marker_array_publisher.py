@@ -1,9 +1,4 @@
 #! /usr/bin/env python
-
-import rospy
-import random
-from visualization_msgs.msg import Marker, MarkerArray
-
 """
 type of marker:
 ARROW = 0   --> triangle
@@ -21,6 +16,10 @@ YELLOW=5
 ORANGE=6
 """
 
+import rospy
+import random
+from visualization_msgs.msg import Marker, MarkerArray
+
 class MarkerArrayPublisher():
     def __init__(self):
         pub = rospy.Publisher("fake_marker_array", MarkerArray, queue_size=50)
@@ -31,8 +30,10 @@ class MarkerArrayPublisher():
         MARKERS_MAX = 4
         start_red_x, start_red_y = -5, 10
         start_green_x, start_green_y = 5, 10
+
         end_red_x, end_red_y = -5, 20
         end_green_x, end_green_y = 5, 20
+
         markerArray = MarkerArray()
 
         while not rospy.is_shutdown():
@@ -94,6 +95,3 @@ if __name__ == "__main__":
          MarkerArrayPublisher()
     except rospy.ROSInterruptException:
         pass
-
-
-

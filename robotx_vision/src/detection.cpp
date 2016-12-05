@@ -22,12 +22,9 @@
 
 //C++ standard libs
 #include <iostream>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#include <cmath>
-
 
 //Namespaces
 using namespace ros;
@@ -110,7 +107,7 @@ void detect_marker()
   for (int i = 0; i < contours.size(); i++)
   {
     // Approximate contour with accuracy proportional to the contour perimeter
-   // cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
 
@@ -131,7 +128,7 @@ void detect_marker()
       double hull_area = contourArea(hull);
       if(((rect.height/rect.width > 1)&&(fabs(area/r_area - 0.65) < eps)&&(fabs(area/hull_area - 0.85) < eps)) 
               || ((rect.height/rect.width > 1) && (fabs(area/r_area - 0.8) < eps)))
-      object_found();
+        object_found();
     }
   }
 }
@@ -239,10 +236,9 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   }
   //Get the image in OpenCV format
   src = cv_ptr->image;
-  //newImage = true;
-  //Start the shape detection code
   if (src.empty()) return;
-  cv::blur(src,src,Size(2,2));
+  //Start the shape detection code
+  cv::blur(src,src,Size(1,1));
   cv::cvtColor(src,hsv,COLOR_BGR2HSV);
   width = src.cols;
   height = src.rows;
