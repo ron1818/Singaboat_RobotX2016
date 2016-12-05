@@ -36,44 +36,47 @@ class Forward(MoveBaseUtil):
 
         self.forward = {}
         if target is not None:
-            self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0.0)
+            self.forward["target"] = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0.0)
         else:  # must be updated in the self.respawn
-            self.target = Point(0, 0, 0)
+            self.forward["target"] = Point(0, 0, 0)
 
-        self.mode = rospy.get_param("~mode", 0)
-        self.mode_param = rospy.get_param("~mode_param", 1)
+        self.forward["mode"] = rospy.get_param("~mode", 0)
+        self.forward["mode_param"] = rospy.get_param("~mode_param", 1)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 
-        if self.forward["is_relative"]:
-            self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.target.x, self.target.y])
-            # print self.forward["translation"], self.forward["heading"]
-            self.forward["goal_distance"] = self.target.x
-        else:
-            # obtained from vision nodes, absolute catersian
-            # but may be updated later, so need to callback
-            self.forward["translation"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
-            self.forward["goal_distance"] = sqrt((self.target.x - self.x0) ** 2 + (self.target.y - self.y0) ** 2)
-            # heading from boat to center
-            self.forward["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
+        # if self.forward["is_relative"]:
+        #     self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.forward["target"].x, self.forward["target"].y])
+        #     # print self.forward["translation"], self.forward["heading"]
+        #     self.forward["goal_distance"] = self.forward["target"].x
+        # else:
+        #     # obtained from vision nodes, absolute catersian
+        #     # but may be updated later, so need to callback
+        #     self.forward["translation"] = (self.forward["target"].x, self.forward["target"].y, self.forward["target"].z)  # (x, y, 0)
+        #     self.forward["goal_distance"] = sqrt((self.forward["target"].x - self.x0) ** 2 + (self.forward["target"].y - self.y0) ** 2)
+        #     # heading from boat to center
+        #     self.forward["heading"] = atan2(self.forward["target"].y - self.y0, self.forward["target"].x - self.x0)
+
+        if target is not None:  # one time job
+            self.respawn(None)
 
     def respawn(self, target=None):
         # new target
         if target is not None:
-            self.target = Point(target[0], target[1], target[2])
-            print self.target
+            self.forward["target"] = Point(target[0], target[1], target[2])
+        print self.forward["target"]
 
         if self.forward["is_relative"]:
-            self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.target.x, self.target.y])
+            self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.forward["target"].x, self.forward["target"].y])
             # print self.forward["translation"], self.forward["heading"]
-            self.forward["goal_distance"] = self.target.x
+            self.forward["goal_distance"] = self.forward["target"].x
         else:
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
-            self.forward["translation"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
-            self.forward["goal_distance"] = sqrt((self.target.x - self.x0) ** 2 + (self.target.y - self.y0) ** 2)
+            self.forward["translation"] = (self.forward["target"].x, self.forward["target"].y, self.forward["target"].z)  # (x, y, 0)
+            self.forward["goal_distance"] = sqrt((self.forward["target"].x - self.x0) ** 2 + (self.forward["target"].y - self.y0) ** 2)
             # heading from boat to center
-            self.forward["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
+            self.forward["heading"] = atan2(self.forward["target"].y - self.y0, self.forward["target"].x - self.x0)
 
         # create waypoints
         waypoints = self.create_waypoints()
@@ -108,7 +111,7 @@ class Forward(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal, self.mode, self.mode_param)
+            self.move(goal, self.forward["mode"], self.forward["mode_param"])
             i += 1
 
         else:  # escape constant forward and continue to the next waypoint
