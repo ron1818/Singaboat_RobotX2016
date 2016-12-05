@@ -43,6 +43,7 @@ import math
 import time
 import numpy as np
 from sklearn.cluster import KMeans
+from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
 from move_base_forward import Forward
@@ -57,6 +58,7 @@ def constant_heading(goal):
 def cancel_goal():
     """ asynchronously cancel goals"""
     force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
+
 
 class WaypointPublisher(object):
     pool = mp.Pool(5)
@@ -74,6 +76,7 @@ class WaypointPublisher(object):
 
     red_counter=0
     green_counter=0
+
 
     replan_offset=5
     termination_displacement=math.sqrt(10**2+30**2)
@@ -95,6 +98,7 @@ class WaypointPublisher(object):
         init_position =np.array([self.x0, self.y0, 0])
         prev_target=np.array([self.x0, self.y0, 0])
 
+
         while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
             #wait for data bucket to fill up
             time.sleep(1)
@@ -104,8 +108,9 @@ class WaypointPublisher(object):
         while not rospy.is_shutdown():
             self.matrix_reorder()
 
-            target=self.plan_waypoint()    
+            target = self.plan_waypoint()
             print(target)
+
 
             if self.euclid_distance(target, prev_target)>self.replan_offset:
                 #replan
@@ -116,7 +121,6 @@ class WaypointPublisher(object):
                 prev_target=target
             else:
                 pass
-
             #termination condition
             if self.euclid_distance(np.array([self.x0, self.y0, 0]), init_position)>self.termination_displacement:
                 print("Task 1 Completed")
@@ -124,6 +128,7 @@ class WaypointPublisher(object):
 
             time.sleep(1)
             
+
     def plan_waypoint(self):
         distance=15
         dis_red=1000
@@ -133,23 +138,24 @@ class WaypointPublisher(object):
         for x in self.red_position:
             if self.distance_from_boat(x) < dis_red:
                 nearest_red=x
-                dis_red=self.distance_from_boat(x) 
+                dis_red=self.distance_from_boat(x)
 
         for x in self.green_position:
             if self.distance_from_boat(x) < dis_green:
                 nearest_green=x
                 dis_green=self.distance_from_boat(x)
-        #plan 
+        #plan
         dis=nearest_red-nearest_green
         [x_center, y_center]=[(nearest_red[0]+nearest_green[0])/2, (nearest_red[1]+nearest_green[1])/2]
 
         if math.sqrt(dis.dot(dis.T)) <20:
-            theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2))
+            # theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2))
+            theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2
         else:
-            theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10/30)), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10/30)))
+            theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10/30)
 
         return np.array([x_center+distance*math.cos(theta), y_center+distance*math.sin(theta), theta])
-        
+
 
     def distance_from_boat(self, target):
         return math.sqrt((target[0]-self.x0)**2+(target[1]-self.y0)**2)
@@ -157,51 +163,67 @@ class WaypointPublisher(object):
     def euclid_distance(self, target1, target2):
         return math.sqrt((target1[0]-target2[0])**2+(target1[1]-target2[1])**2)
 
-    def is_complete():
+    def is_complete(self):
         pass
 
-    def search_marker(self, obj_type, obj_color, pose_list, markers_list):
-        #pose_list is list that stores Pose obj for requested markers
-        N=len(pose_list)
-        
-        if len(markers_list.markers)>0:
-            for i in range(len(markers_list.markers)):
-                if markers_list.markers[i].type == obj_type and markers_list.markers[i].id==obj_color:
+    # def search_marker(self, obj_type, obj_color, markers_list):
+    #     #pose_list is list that stores Pose obj for requested markers
+    #     N=len(pose_list)
+
+    #     if len(markers_list.markers)>0:
+    #         for i in range(len(markers_list.markers)):
+    #             if markers_list.markers[i].type == obj_type and markers_list.markers[i].id==obj_color:
+    #                 #may append more than 1 markers
+
+    #                 if obj_color==0:
+    #                     self.red_totem[self.red_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
+    #                     self.red_counter+=1
+    #                 elif obj_color==1:
+    #                     self.green_totem[self.green_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
+    #                     self.green_counter+=1
+    #             else:
+    #                 pass
+
+    #         # use mod, will not overflow
+    #         # if len(pose_list)>self.MAX_DATA:
+    #         #     pose_list.pop(0)
+    #         return True
+    #     else:
+    #         return False
+
+    def marker_callback(self, msg):
+        # #updates markers_array
+        # self.search_marker(3, 0 , self.red_totem, msg)
+        # self.search_marker(3, 1 , self.green_totem, msg)
+        # print self.red_totem
+        if len(msg.markers)>0:
+            for i in range(len(msg.markers)):
+                if msg.markers[i].type == 3:
                     #may append more than 1 markers
-                    
-                    if obj_color==0:
-                        pose_list[self.red_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
+
+                    if msg.markers[i].id == 0:
+                        self.red_totem[self.red_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
                         self.red_counter+=1
-                    elif obj_color==1:
-                        pose_list[self.green_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
+                    elif msg.markers[i].id == 1:
+                        self.green_totem[self.green_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
                         self.green_counter+=1
                 else:
                     pass
-                    
-            if len(pose_list)>self.MAX_DATA:
-                pose_list.pop(0)
-            return True
-        else:
-            return False
 
-    def marker_callback(self, msg):
-        #updates markers_array
-        self.search_marker(3, 0 , self.red_totem, msg)
-        self.search_marker(3, 1 , self.green_totem, msg)
-
+        # list is full
         if (self.red_counter>self.MAX_DATA):
             red_kmeans = KMeans(n_clusters=2).fit(self.red_totem)
             self.red_centers=red_kmeans.cluster_centers_
         if(self.green_counter>self.MAX_DATA):
             green_kmeans = KMeans(n_clusters=2).fit(self.green_totem)
             self.green_centers=green_kmeans.cluster_centers_
-        
+
         #visualize markers in rviz
         for i in range(len(msg.markers)):
             self.marker_pub.publish(msg.markers[i])
 
     def matrix_reorder(self):
-       
+
         if self.red_centers[0].dot(self.red_centers[0].T)< self.red_centers[1].dot(self.red_centers[1].T):
             self.red_position=self.red_centers
 
@@ -227,7 +249,7 @@ class WaypointPublisher(object):
         w = msg.pose.pose.orientation.w
         _, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
         self.odom_received = True
-    
+
 
 
 if __name__ == '__main__':
