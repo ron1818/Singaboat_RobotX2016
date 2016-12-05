@@ -45,13 +45,28 @@ import numpy as np
 from sklearn.cluster import KMeans
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
+from move_base_forward import Forward
+from move_base_force_cancel import ForceCancel
+from tf.transformation import euler_from_quaternion
+from nav_msgs.msg import Odometry
+
+def constant_heading(goal):
+    if goal is not None:
+        constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
+
+def cancel_goal():
+    """ asynchronously cancel goals"""
+    force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
 
 class WaypointPublisher(object):
-    x0, y0, yaw0= 0, 5, 0
-    MAX_DATA=15
+    pool = mp.Pool(5)
+
+    x0, y0, yaw0= 0, 0, 0
+    MAX_DATA=30
 
     markers_array=MarkerArray()
-    red_totem=np.zeros((MAX_DATA, 2))
+
+    red_totem=np.zeros((MAX_DATA, 2)) #unordered list
     green_totem=np.zeros((MAX_DATA, 2))
 
     red_position=np.zeros((2, 2)) #ordered list of centers x, y
@@ -60,23 +75,31 @@ class WaypointPublisher(object):
     red_counter=0
     green_counter=0
 
-    def __init__(self, pool):
+    replan_offset=5
+    termination_displacement=math.sqrt(10**2+30**2)
+
+    def __init__(self):
 
         rospy.init_node('task_1', anonymous=True)
         rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
-        replan_offset=2
-        #self.odom_received = False
-        # rospy.wait_for_message("/odom", Odometry)
-        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
-        #rospy.wait_for_message("/odometry/filtered/global", Odometry)
-        ##rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
-        #while not self.odom_received:
-        #   rospy.sleep(1)
+        
+        self.odom_received = False
+        #rospy.wait_for_message("/odom", Odometry)
+        #rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
+        rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        while not self.odom_received:
+           rospy.sleep(1)
+
+        init_position =np.array([self.x0, self.y0, 0])
+        prev_target=np.array([self.x0, self.y0, 0])
+
         while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
+            #wait for data bucket to fill up
             time.sleep(1)
 
-        prev_target=np.array([self.x0, self.y0, 0])
+        
 
         while not rospy.is_shutdown():
             self.matrix_reorder()
@@ -84,19 +107,20 @@ class WaypointPublisher(object):
             target=self.plan_waypoint()    
             print(target)
 
-            if self.euclid_distance(target, prev_target)>replan_offset:
+            if self.euclid_distance(target, prev_target)>self.replan_offset:
                 #replan
                 #force cancel
-
-                pool.apply_async(cancel_goal)
-
+                self.pool.apply_async(cancel_goal)
                 #plan new constant heading
-
-                pool.apply_async(constant_heading, args = (target))
-
+                self.pool.apply_async(constant_heading, args = (target))
                 prev_target=target
             else:
                 pass
+
+            #termination condition
+            if self.euclid_distance(np.array([self.x0, self.y0, 0]), init_position)>self.termination_displacement:
+                print("Task 1 Completed")
+                break
 
             time.sleep(1)
             
@@ -130,7 +154,7 @@ class WaypointPublisher(object):
     def distance_from_boat(self, target):
         return math.sqrt((target[0]-self.x0)**2+(target[1]-self.y0)**2)
 
-    def euclid_distance(target1, target2):
+    def euclid_distance(self, target1, target2):
         return math.sqrt((target1[0]-target2[0])**2+(target1[1]-target2[1])**2)
 
     def is_complete():
