@@ -87,12 +87,9 @@ def waypoint_publisher_worker(conn, moveto_q, loiter_q):
     # waypoint_publisher_obj = Waypoint_Publisher()
     # # push the waypoints
     # while not waypoint_publisher_obj.complete():
-<<<<<<< HEAD
-=======
     queue, connect = xxx.pub_waypoint()
     q.put(queue)
     conn.send(connect)
->>>>>>> 8fd7312431a81b9a62cf6a4fa3bd54afedbf6bc5
     #     q.put(waypoint_publisher_obj.pub_waypoint())
     #     conn.send(waypoint_publisher_obj.pub_cancel_goal())
     #     conn.send(0) # after one clear action, make it idle
@@ -125,29 +122,6 @@ def cancel_goal_worker(conn, repetition):
 
 
 if __name__ == '__main__':
-    # create data queue
-<<<<<<< HEAD
-    waypoint_queue = mp.Queue()
-    parent_conn, child_conn = mp.Pipe(duplex=True)
-    # create workers
-    gps_target = [1.344423, 103.684952, 1.57]
-    gps_mp = mp.Process(name="gps", target=gps_worker, args=(gps_target,))
-    constant_heading_mp = mp.Process(name="csh", target=constant_heading_worker, args=(waypoint_queue,))
-    cancel_goal_mp = mp.Process(name="ccg", target=cancel_goal_worker, args=(child_conn, 5,))
-    waypoint_publisher_mp = mp.Process(name="wpt", target=waypoint_publisher_worker, args=(parent_conn, waypoint_queue,))
-
-    # stage1: go to gps points
-    # gps_mp.start()
-    # gps_mp.join()
-    # start to locate waypoints
-    waypoint_publisher_mp.start()
-    cancel_goal_mp.start()
-    # stage2: start constant heading, iterative
-    constant_heading_mp.start()
-    constant_heading_mp.join()
-    waypoint_publisher_mp.join()
-cancel_goal_mp.join()
-=======
     manager = mp.Manager()
     moveto_q = manager.Queue()
     loiter_q = manager.Queue()
@@ -187,4 +161,3 @@ cancel_goal_mp.join()
     # constant_heading_mp.start()
     # constant_heading_mp.join()
 
->>>>>>> 8fd7312431a81b9a62cf6a4fa3bd54afedbf6bc5

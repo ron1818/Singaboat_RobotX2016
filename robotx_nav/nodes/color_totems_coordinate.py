@@ -89,7 +89,7 @@ class ColorTotemCoordinate(object):
 
 if __name__ == "__main__":
     try:
-        totem=ColorTotemCoordinate("color-totem-coordinate")
+        totem=ColorTotemCoordinate("color_totem_coordinate")
     except rospy.ROSInterruptException:
         pass
 

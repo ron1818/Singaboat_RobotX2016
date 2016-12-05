@@ -80,12 +80,7 @@ class Loiter(MoveBaseUtil):
         else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
-<<<<<<< HEAD
-            self.loiter["center"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
-=======
             self.loiter["center"] = (self.loiter["target"].x, self.loiter["target"].y, self.loiter["target"].z)  # (x, y, 0)
-
->>>>>>> 8fd7312431a81b9a62cf6a4fa3bd54afedbf6bc5
             # heading from boat to center
             self.loiter["heading"] = atan2(self.loiter["target"].y - self.y0, self.loiter["target"].x - self.x0)
 

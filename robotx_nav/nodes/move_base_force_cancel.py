@@ -6,10 +6,11 @@ from move_base_msgs.msg import MoveBaseActionGoal
 from actionlib_msgs.msg import GoalID
 
 class ForceCancel(object):
-    def __init__(self, nodename="force_cancel", repetition=10):
+    def __init__(self, nodename="force_cancel", is_newnode=True, repetition=10):
         self.repetition = rospy.get_param("~repetition", repetition)
-        rospy.init_node(name=nodename, anonymous=False)
-        rospy.on_shutdown(self.shutdown)
+        if is_newnode:
+            rospy.init_node(name=nodename, anonymous=False)
+            rospy.on_shutdown(self.shutdown)
 
         pub = rospy.Publisher("move_base/cancel", GoalID, queue_size=1)
         sub = rospy.Subscriber("move_base/goal", MoveBaseActionGoal, self.callback, queue_size=1)
@@ -32,4 +33,4 @@ class ForceCancel(object):
         pass
 
 if __name__ == "__main__":
-    fc = ForceCancel('force_cancel', 5)
+    fc = ForceCancel('force_cancel', False, 5)
