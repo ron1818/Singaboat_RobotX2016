@@ -3,6 +3,7 @@
 import rospy
 import random
 from visualization_msgs.msg import Marker, MarkerArray
+from nav_msgs.msg import Odometry
 
 """
 type of marker:
@@ -35,10 +36,10 @@ class MarkerArrayPublisher():
         # map area (0,0) to (-30,30), (-15, 15) is a division point for observation
         count = 1
         MARKERS_MAX = 12
-        red_x, red_y = -10, 5
-        green_x, green_y = -18, 8
-        yellow_x, yellow_y = -16, 17
-        blue_x, blue_y = -14, 20
+        self.red_x, self.red_y = -10, 5
+        self.green_x, self.green_y = -18, 8
+        self.yellow_x, self.yellow_y = -16, 17
+        self.blue_x, self.blue_y = -14, 20
         markerArray = MarkerArray()
 
         while not rospy.is_shutdown():
@@ -156,20 +157,20 @@ class MarkerArrayPublisher():
         marker.pose.position.z = 0
         if color == "red":
             marker.id = 0  # red
-            marker.pose.position.x = red_x + self.random_noise()
-            marker.pose.position.y = red_y + self.random_noise()
+            marker.pose.position.x = self.red_x + self.random_noise()
+            marker.pose.position.y = self.red_y + self.random_noise()
         elif color == "green":
             marker.id = 1  # green
-            marker.pose.position.x = green_x + self.random_noise()
-            marker.pose.position.y = green_y + self.random_noise()
+            marker.pose.position.x = self.green_x + self.random_noise()
+            marker.pose.position.y = self.green_y + self.random_noise()
         elif color == "blue":
             marker.id = 5  # yellow
-            marker.pose.position.x = yellow_x + self.random_noise()
-            marker.pose.position.y = yellow_y + self.random_noise()
+            marker.pose.position.x = self.yellow_x + self.random_noise()
+            marker.pose.position.y = self.yellow_y + self.random_noise()
         elif color == "yellow":
             marker.id = 2  # blue
-            marker.pose.position.x = blue_x + self.random_noise()
-            marker.pose.position.y = blue_y + self.random_noise()
+            marker.pose.position.x = self.blue_x + self.random_noise()
+            marker.pose.position.y = self.blue_y + self.random_noise()
 
         return marker
 
@@ -180,7 +181,7 @@ class MarkerArrayPublisher():
         return random.choice([True, False, False, False])
 
     def unlikely_spawn(self):
-        return random.choice([False] * 10 + [True])
+        return random.choice([False] * 15 + [True])
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
@@ -198,44 +199,4 @@ if __name__ == "__main__":
          MarkerArrayPublisher()
     except rospy.ROSInterruptException:
         pass
-
-
-
-
-
-            # We add the new marker to the MarkerArray, removing the oldest
-            # marker from it when necessary
-            if(count > MARKERS_MAX):
-                markerArray.markers.pop(0)
-
-            # Publish the MarkerArray
-            pub.publish(markerArray)
-            count += 1
-
-            r.sleep()
-
-    def random_noise(self):
-        return random.random() * 6.0 - 3.0
-
-    def spawn(self):
-        return random.choice([True, False])
-
-    def odom_callback(self, msg):
-        """ call back to subscribe, get odometry data:
-        pose and orientation of the current boat,
-        suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
-        self.odom_received = True
-
-
-
-
-if __name__ == "__main__":
-    try:
-         MarkerArrayPublisher()
-    except rospy.ROSInterruptException:
-        pass
-
-
 
