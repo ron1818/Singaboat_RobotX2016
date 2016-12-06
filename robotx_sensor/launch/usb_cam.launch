@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <launch>
-    <arg name="video_device" default="/dev/video0" />
-    <arg name="namespace" default="c170" />
+    <arg name="video_device" default="/dev/video1" />
+    <arg name="namespace" default="fixed_cam" />
     <arg name="camera_frame_id" default="camera_link" />
     <arg name="camera_info" default="camera_info" />
     <arg name="camera_image_raw" default="image_raw" />
@@ -18,9 +18,9 @@
             <param name="image_width" value="640" />
             <param name="image_height" value="480" />
             <param name="framerate" value="30" />
-            <param name="contrast" value="32" />
+            <!--param name="contrast" value="32" />
             <param name="brightness" value="32" />
-            <param name="saturation" value="32" />
+            <param name="saturation" value="32" /-->
             <param name="pixel_format" value="yuyv" />
             <param name="camera_frame_id" value="$(arg camera_frame_id)" />
             <param name="io_method" value="mmap" />

@@ -11,25 +11,23 @@
 	terminate mission
 
 """
-
 import time
 import multiprocessing as mp
 import sys
 from move_base_waypoint_geo import MoveToGeo
 from move_base_forward import Forward
-from move_base_loiter import Loiter
 from move_base_force_cancel import ForceCancel
 # from roi_waypoint import RoiWaypoint #TODO
 # from roi_rotate import RoiRotate #TODO
 
-# def gps_worker(target):
-#     """ go to gps point """
-#     p = mp.current_process()
-#     print p.name, p.pid, 'Starting'
-#     gps_obj = MoveToGeo(nodename="gps_waypoint", target=None)
-#     # spawn the gps coordinate, one time only
-#     gps_obj.respawn(target)
-#     print p.name, p.pid, 'Exiting'
+def gps_worker(target):
+    """ go to gps point """
+    p = mp.current_process()
+    print p.name, p.pid, 'Starting'
+    gps_obj = MoveToGeo(nodename="gps_waypoint", target=None)
+    # spawn the gps coordinate, one time only
+    gps_obj.respawn(target)
+    print p.name, p.pid, 'Exiting'
 
 def movetso_worker(q):
     """ go to a particular waypoint,
@@ -38,6 +36,7 @@ def movetso_worker(q):
     print p.name, p.pid, 'Starting'
     moveto_obj = MoveTo(nodename="moveto", target=None, is_relative=False)
     # get the waypoints, loop wait for updates
+
     while  True:
         target = q.get()
         if target[2] < -1e6:
@@ -123,7 +122,6 @@ def cancel_goal_worker(conn, repetition):
 
 
 if __name__ == '__main__':
-    # create data queue
     manager = mp.Manager()
     moveto_q = manager.Queue()
     loiter_q = manager.Queue()

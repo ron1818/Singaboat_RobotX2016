@@ -1,8 +1,8 @@
 <launch>
-	<arg name="namespace" default="starboard"/>
-	<arg name="object_shape" default="shape"/>
-	<arg name="object_color" default="color"/>
-	<arg name="debug" default="false"/>
+	<arg name="namespace" default="fixed_cam"/>
+	<arg name="object" default="circle"/>
+	<arg name="color" default="red"/>
+	<arg name="debug" default="true"/>
 
 	<group ns="$(arg namespace)">
 		<node
@@ -13,10 +13,10 @@
 			output="screen"
 		>
 		<param name="subscribed_image_topic" value="image_rect_color"/>
-		<param name="object_shape" value="$(arg object_shape)"/>
-		<param name="object_color" value="$(arg object_color)"/>
+		<param name="object_shape" value="$(arg object)"/>
+		<param name="object_color" value="$(arg color)"/>
 		<param name="debug" value="$(arg debug)"/>
-		<param name="published_topic" value="$(arg object_shape)/$(arg object_color)/roi"/>
+		<param name="published_topic" value="$(arg object)/$(arg color)/roi"/>
 
 		</node>
 	</group>

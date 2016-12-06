@@ -1,13 +1,18 @@
 <launch>
-<node
-	pkg="robotx_vision"
-	type="sequence_scanner"
-	name="sequence_scanner"
-	required="true"
-	output="screen"
->
-<param name="subscribed_image_topic" value="test"/>
-<param name="frame_id" value="my_camera"/>
-<param name="output_topic_name" value="my_object"/>
-</node>
+	<arg name="namespace" default="starboard"/>
+	<arg name="debug" default="true"/>
+
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="sequence_scanner"
+			name="sequence_scanner"
+			required="true"
+			output="screen"
+		>
+		<param name="subscribed_image_topic" value="image_rect_color"/>
+		<param name="debug" value="$(arg debug)"/>
+		<param name="output_topic_name" value="sequence"/>
+		</node>
+	</group>
 </launch>

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-""" movebase constant heading
+""" 
+base constant heading
 
     Command a robot to move forward to a goal
 
@@ -44,18 +45,6 @@ class Forward(MoveBaseUtil):
         self.forward["mode_param"] = rospy.get_param("~mode_param", 1)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
-
-        # if self.forward["is_relative"]:
-        #     self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.forward["target"].x, self.forward["target"].y])
-        #     # print self.forward["translation"], self.forward["heading"]
-        #     self.forward["goal_distance"] = self.forward["target"].x
-        # else:
-        #     # obtained from vision nodes, absolute catersian
-        #     # but may be updated later, so need to callback
-        #     self.forward["translation"] = (self.forward["target"].x, self.forward["target"].y, self.forward["target"].z)  # (x, y, 0)
-        #     self.forward["goal_distance"] = sqrt((self.forward["target"].x - self.x0) ** 2 + (self.forward["target"].y - self.y0) ** 2)
-        #     # heading from boat to center
-        #     self.forward["heading"] = atan2(self.forward["target"].y - self.y0, self.forward["target"].x - self.x0)
 
         if target is not None:  # one time job
             self.respawn(None)
