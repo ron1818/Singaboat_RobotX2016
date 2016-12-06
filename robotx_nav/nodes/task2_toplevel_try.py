@@ -30,11 +30,11 @@ def loiter_worker(v_dict_q, q):
         else:
             loiter_obj.respawn(target, polygon, radius, is_ccw)
             visited_dict[cid] = True
-            v_dict_q.put(visited_dict)
+            v_dict_q.put(visited_dict)  # dont hold moveto
     print p.name, p.pid, 'Exiting'
 
 
-def moveto_worker(q):
+def moveto_worker(q, hold_move_q):
     """ constant heading to pass the gate,
     need roi_target_identifier to give/update waypoint """
     p = mp.current_process()
@@ -48,6 +48,7 @@ def moveto_worker(q):
             break
         else:
             moveto_obj.respawn(target)
+            hold_move_q.put(False)
     print p.name, p.pid, 'Exiting'
 
 
@@ -72,25 +73,38 @@ def cancel_goal_worker(conn, repetition):
     print p.name, p.pid, 'Exiting'
 
 
-def planner_worker(v_dict_q, loiter_q, moveto_q, cancel_conn):
+def planner_worker(v_dict_q, loiter_q, moveto_q, hold_move_q, cancel_conn):
     """ plan for totems """
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
     planner_obj = ColorTotemPlanner("color_planner")
     while True:
-        if not v_dict_q.empty():
-            vd = v_dict_q.get()
-            planner_obj.update_visit(vd)
-        isready, target, allvisited = planner_obj.planner()
-        if isready and not allvisited:
+        if not v_dict_q.empty(): # get update from loiter on visited
+            visited_dict = v_dict_q.get()
+            planner_obj.update_visit(visited_dict)  # update visited
+        if not hold_move_q.empty(): # get update from moveto on success
+            hol = hold_move_q.get()
+            print hol
+            planner_obj.update_hold_moveto(hol)
+        isready, target, allvisited, hold_moveto = planner_obj.planner()  # try to find onhold loiter target
+        # print isready
+        if allvisited:  # all visited, kill all worker and exit
+            poison_pill = [0, 0, -float("inf")]
+            loiter_q.put([None, poison_pill, None, None, None])
+            moveto_q.put(poison_pill)
+        elif isready and not allvisited:  # still have pending loiter points
             print "loiter called"
             loiter_q.put(target)
+        elif not isready and not hold_moveto and not allvisited:  # need to explore for valid loiter points
+            print "moveto called"
+            moveto_q.put(target)
 
     print p.name, p.pid, 'Exiting'
 
 
 if __name__ == "__main__":
     moveto_q = mp.Queue()
+    hold_moveto_q = mp.Queue()
     cancel_p_conn, cancel_c_conn = mp.Pipe()
     # loiter_p_conn, loiter_c_conn = mp.Pipe()
     loiter_q = mp.Queue(1)
@@ -100,9 +114,9 @@ if __name__ == "__main__":
     # visited_dict = {"red": False, "green": False, "blue": False, "yellow": False}
 
     loiter_mp = mp.Process(name="ltr", target=loiter_worker, args=(v_dict_q, loiter_q,))
-    moveto_mp = mp.Process(name="mvt", target=moveto_worker, args=(moveto_q,))
+    moveto_mp = mp.Process(name="mvt", target=moveto_worker, args=(moveto_q, hold_moveto_q,))
     cancel_goal_mp = mp.Process(name="ccg", target=cancel_goal_worker, args=(cancel_p_conn, 5,))
-    planner_mp = mp.Process(name="pln", target=planner_worker, args=(v_dict_q, loiter_q, moveto_q, cancel_c_conn,))
+    planner_mp = mp.Process(name="pln", target=planner_worker, args=(v_dict_q, loiter_q, moveto_q, hold_moveto_q, cancel_c_conn,))
 
     loiter_mp.start()
     moveto_mp.start()

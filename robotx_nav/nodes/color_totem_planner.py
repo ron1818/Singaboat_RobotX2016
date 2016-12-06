@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import random
+import itertools
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Quaternion
@@ -25,11 +27,12 @@ class ColorTotemPlanner(object):
 
         self.visited_dict = {"red": False, "green": False, "blue": False, "yellow": False}
         self.requested_dict =  {"red": False, "green": False, "blue": False, "yellow": False}
+        self.hold_moveto = False
+        self.isready = False
 
     def planner(self):
         r = rospy.Rate(self.rate)
         # while not rospy.is_shutdown():
-        self.isready = False
         self.allvisited = False
         self.loiter_target = list()
         red_centers, green_centers, blue_centers, yellow_centers =\
@@ -50,7 +53,8 @@ class ColorTotemPlanner(object):
         if green_centers != [] and not self.visited_dict["green"] and not self.requested_dict["green"]:
             # loiter counterclockwise
             print "start green"
-            self.isready = True
+            self.isready = True  # go for loiter
+            self.hold_moveto = True
             self.loiter_target = ["green", green_centers, 2.5, 6, True]
             self.requested_dict["green"] = True
 
@@ -58,18 +62,21 @@ class ColorTotemPlanner(object):
             # loiter clockwise
             print "start blue"
             self.isready = True
+            self.hold_moveto = True
             self.loiter_target = ["blue", blue_centers, 2.5, 6, False]
             self.requested_dict["blue"] = True
         if red_centers != [] and not self.visited_dict["red"] and self.visited_dict["blue"] and self.visited_dict["green"] and not self.requested_dict["red"]:
             # loiter clockwise
             print "start red"
             self.isready = True
+            self.hold_moveto = True
             self.loiter_target = ["red", red_centers, 2.5, 6, False]
             self.requested_dict["red"] = True
         if yellow_centers != [] and not self.visited_dict["yellow"] and self.visited_dict["red"] and self.visited_dict["blue"] and self.visited_dict["green"] and not self.requested_dict["yellow"]:
             # loiter counterclockwise
             print "start yellow"
             self.isready = True
+            self.hold_moveto = True
             self.loiter_target = ["yellow", yellow_centers, 2.5, 6, True]
             self.requested_dict["yellow"] = True
 
@@ -78,7 +85,15 @@ class ColorTotemPlanner(object):
             self.allvisited = True
             print "all visited"
 
-        return self.isready, self.loiter_target, self.allvisited
+        if not self.hold_moveto and not self.isready and not all(self.visited_dict.values()):  # no loiter, still did not finish
+            self.loiter_target = list(self.random_walk([red_centers, green_centers, blue_centers, yellow_centers])) + [0]
+            # print self.loiter_target
+            self.hold_moveto = True  # executing moveto, hold the next
+            hold_moveto = False  # executing moveto, hold the next
+        else:
+            hold_moveto = True
+
+        return self.isready, self.loiter_target, self.allvisited, hold_moveto
 
         # if cannot make all visited, random walk move to
         #   r.sleep()
@@ -115,6 +130,19 @@ class ColorTotemPlanner(object):
     def update_visit(self, visited_dict):
         """ update from external process"""
         self.visited_dict = visited_dict
+        self.isready = False  # loiter finish, make it is not ready
+
+    def update_hold_moveto(self, hold_moveto):
+        """ update from external process"""
+        self.hold_moveto = hold_moveto
+
+    def random_walk(self, centers):
+        """ create random walk points and avoid valid centers """
+        self.mapsize = (-30, 30)
+        x_range = range(self.mapsize[0], 0, 5)
+        y_range = range(0, self.mapsize[1], 5)
+        grid = list(itertools.product(x_range, y_range))
+        return random.choice(grid)
 
     def shutdown(self):
         pass
