@@ -41,7 +41,7 @@ class CoralPublisher():
 
         markerArray = MarkerArray()
         count = 0
-        MARKERS_MAX = 2
+        MARKERS_MAX = 1
         while not rospy.is_shutdown():
             if(count > MARKERS_MAX):
                 markerArray.markers.pop(0)
