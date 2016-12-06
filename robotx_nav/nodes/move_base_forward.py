@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-""" movebase constant heading
+""" 
+base constant heading
 
     Command a robot to move forward to a goal
 

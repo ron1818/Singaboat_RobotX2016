@@ -52,10 +52,11 @@ from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 
 def constant_heading(goal):
-    if goal is not None:
-        constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
+    print("const_heading")
+    constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
 
 def cancel_goal():
+    print("cancels goal")
     """ asynchronously cancel goals"""
     force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
 
@@ -71,6 +72,9 @@ class WaypointPublisher(object):
     red_totem=np.zeros((MAX_DATA, 2)) #unordered list
     green_totem=np.zeros((MAX_DATA, 2))
 
+    red_centers=np.zeros((2, 2)) #ordered list of centers x, y
+    green_centers=np.zeros((2, 2))
+
     red_position=np.zeros((2, 2)) #ordered list of centers x, y
     green_position=np.zeros((2, 2))
 
@@ -78,11 +82,12 @@ class WaypointPublisher(object):
     green_counter=0
 
 
-    replan_offset=5
-    termination_displacement=math.sqrt(10**2+30**2)
+    replan_min=5
+
+    termination_displacement=50
 
     def __init__(self):
-
+	print("starting task 1")
         rospy.init_node('task_1', anonymous=True)
         rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
@@ -94,7 +99,7 @@ class WaypointPublisher(object):
         rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
         while not self.odom_received:
            rospy.sleep(1)
-
+	print("odom received")
         init_position =np.array([self.x0, self.y0, 0])
         prev_target=np.array([self.x0, self.y0, 0])
 
@@ -103,21 +108,22 @@ class WaypointPublisher(object):
             #wait for data bucket to fill up
             time.sleep(1)
 
-
+	print("bucket full")
 
         while not rospy.is_shutdown():
             self.matrix_reorder()
-
+	    print("reorder complete")
             target = self.plan_waypoint()
             print(target)
 
 
-            if self.euclid_distance(target, prev_target)>self.replan_offset:
+            if self.euclid_distance(target, prev_target)>self.replan_min:
                 #replan
                 #force cancel
                 self.pool.apply_async(cancel_goal)
                 #plan new constant heading
-                self.pool.apply_async(constant_heading, args = (target))
+		print("replan")
+                self.pool.apply_async(constant_heading, args = (target, ))
                 prev_target=target
             else:
                 pass
@@ -128,31 +134,34 @@ class WaypointPublisher(object):
 
             time.sleep(1)
 
+	self.pool.close()
+	self.pool.join()
+
 
     def plan_waypoint(self):
-        distance=15
+        distance=20
         dis_red=1000
         dis_green=1000
             #find closest available totem pairs
 
-        for x in self.red_position:
-            if self.distance_from_boat(x) < dis_red:
-                nearest_red=x
-                dis_red=self.distance_from_boat(x)
+        for m in self.red_position:
+            if self.distance_from_boat(m) < dis_red:
+                nearest_red=m
+                dis_red=self.distance_from_boat(m)
 
-        for x in self.green_position:
-            if self.distance_from_boat(x) < dis_green:
-                nearest_green=x
-                dis_green=self.distance_from_boat(x)
+        for n in self.green_position:
+            if self.distance_from_boat(n) < dis_green:
+                nearest_green=n
+                dis_green=self.distance_from_boat(n)
         #plan
         dis=nearest_red-nearest_green
         [x_center, y_center]=[(nearest_red[0]+nearest_green[0])/2, (nearest_red[1]+nearest_green[1])/2]
 
         if math.sqrt(dis.dot(dis.T)) <20:
-            # theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2))
-            theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2
+            theta=math.atan2(math.sin(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2), math.cos(math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2))
+            #theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.pi/2
         else:
-            theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10/30)
+            theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10,30)
 
         return np.array([x_center+distance*math.cos(theta), y_center+distance*math.sin(theta), theta])
 
