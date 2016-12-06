@@ -60,7 +60,6 @@ def cancel_goal():
     """ asynchronously cancel goals"""
     force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
 
-
 class WaypointPublisher(object):
     pool = mp.Pool(5)
 
@@ -87,7 +86,7 @@ class WaypointPublisher(object):
     termination_displacement=50
 
     def __init__(self):
-	print("starting task 1")
+	    print("starting task 1")
         rospy.init_node('task_1', anonymous=True)
         rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
@@ -99,7 +98,8 @@ class WaypointPublisher(object):
         rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
         while not self.odom_received:
            rospy.sleep(1)
-	print("odom received")
+	    print("odom received")
+
         init_position =np.array([self.x0, self.y0, 0])
         prev_target=np.array([self.x0, self.y0, 0])
 
@@ -108,11 +108,11 @@ class WaypointPublisher(object):
             #wait for data bucket to fill up
             time.sleep(1)
 
-	print("bucket full")
+	    print("bucket full")
 
         while not rospy.is_shutdown():
             self.matrix_reorder()
-	    print("reorder complete")
+	        print("reorder complete")
             target = self.plan_waypoint()
             print(target)
 
@@ -122,7 +122,7 @@ class WaypointPublisher(object):
                 #force cancel
                 self.pool.apply_async(cancel_goal)
                 #plan new constant heading
-		print("replan")
+	            print("replan")
                 self.pool.apply_async(constant_heading, args = (target, ))
                 prev_target=target
             else:
