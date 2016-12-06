@@ -15,6 +15,7 @@ import time
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn import svm
+import random
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
@@ -26,37 +27,33 @@ from move_base_force_cancel import ForceCancel
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 
-# def constant_heading(goal):
-#     print("const_heading")
-#     constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
-#
-
 
 def loiter_work(target):
     print("loitering")
     loiter_obj = Loiter(nodename="loiter", target=target, radius=5, polygon=6, is_ccw=True, is_relative=False)
 
 
-def stationkeeping_work(target):
+def stationkeeping_work(target, is_newnode):
     print("stationkeep")
-    stationkeep_obj = StationKeeping(nodename="stationkeep", target=target, radius=2, duration=200)
+    stationkeep_obj = StationKeeping(nodename="stationkeep", is_newnode = is_newnode, target=target, radius=2, duration=200)
 
 
-def moveto_work(target):
+def moveto_work(target, is_newnode):
     print("moveto")
-    moveto_obj = MoveTo(nodename="moveto", target=target, is_relative=False)
+    moveto_obj = MoveTo(nodename="moveto", is_newnode=is_newnode, target=target, is_relative=False)
 
 
-def cancel_goal():
+def cancel_goal_work():
     print("cancels goal")
     """ asynchronously cancel goals"""
     force_cancel = ForceCancel(nodename="forcecancel", repetition=5)
 
 
 class ScanTheCode(object):
-    pool = mp.Pool(2)
+    pool = mp.Pool(2, maxtasksperchild=1)
 
-    map_dim = [[0, 0], [-40, 40]]
+    map_dim = [[0, 40], [0, 40]]
+    exit_coordinate = [20, 40]
     x0, y0, yaw0= 0, 0, 0
     totem_center = np.array([0, 0])
     MAX_DATA=30
@@ -82,35 +79,62 @@ class ScanTheCode(object):
         init_position =np.array([self.x0, self.y0, 0])
 
 
+        self.totem_find = False
+        self.led_valid = False
+        # self.first_moveto = True
         while not rospy.is_shutdown():
-            # if no object identified, do a random moveto, and repeat
-
             # if find something, kill random moveto and do a stationkeep
-
+            if self.totem_find and not self.led_valid:
+                self.pool.apply(stationkeeping_work, args=(self.totem_center,))
             # if callback the color sequence is not valid, continue the stationkeep
+            elif self.totem_find and self.led_valid:
+                print "mission accomplish"
+                self.pool.apply(moveto_work, args=(self.exit_coordinate,))
+                self.pool.close()
+                self.pool.join()
+                break
+            # if no object identified, do a random moveto, and repeat
+            elif not self.totem_find and not self.led_valid:
+                res = self.pool.apply_async(moveto_work, args=(self.random_walk(), True))
+                print res.get()
 
+            rospy.sleep(1)
 
+    def random_walk(self):
+        """ create random walk points and more favor towards center """
+        x = random.gauss(np.mean(self.map_dim[0]), 0.25 * np.ptp(self.map_dim[0]))
+        y = random.gauss(np.mean(self.map_dim[1]), 0.25 * np.ptp(self.map_dim[1]))
 
-        self.pool.close()
-        self.pool.join()
+        return self.map_constrain(x, y)
 
+    def map_constrain(self, x, y):
+        """ constrain x and y within map """
+        if x > np.max(self.map_dim[0]):
+            x = np.max(self.map_dim[0])
+        elif x < np.min(self.map_dim[0]):
+            x = np.min(self.map_dim[0])
+        else:
+            x = x
+        if y > np.max(self.map_dim[1]):
+            y = np.max(self.map_dim[1])
+        elif y < np.min(self.map_dim[1]):
+            y = np.min(self.map_dim[1])
+        else:
+            y = y
 
-    def planner(self):
-        """ if cannot get totem center, do a random walk toward the center
-        so need a target for moveto
-        if find a totem center, do a station keeping to that point, make the time long
-        """
+        return [x, y, 0]
 
     def marker_callback(self, msg):
-        if len(msg.markers)>0:
-        for i in range(len(msg.markers)):
-            self.totem_position[self.counter] = [msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
-            self.counter += 1
+        if len(msg.markers) > 0:
+            for i in range(len(msg.markers)):
+                self.totem_position[self.counter] = [msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
+                self.counter += 1
 
         # list is full, get the totem center estimated
-        if (self.totem_position>self.MAX_DATA):
+        if self.totem_position > self.MAX_DATA:
             # do a one class svm
             self.totem_center = self.one_class_svm(self.totem_position)
+            self.totem_find = True
 
         #visualize markers in rviz
         for i in range(len(msg.markers)):
@@ -142,7 +166,6 @@ class ScanTheCode(object):
 
 if __name__ == '__main__':
     try:
-        WaypointPublisher()
-        # stage 1: gps
+        ScanTheCode()
     except rospy.ROSInterruptException:
-        rospy.loginfo("Task 1 Finished")
+        rospy.loginfo("Task 4 Finished")
