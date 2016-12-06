@@ -21,6 +21,7 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
+from aim_to_target import Aim
 
 
 class Aiming(MoveBaseUtil):
@@ -76,14 +77,18 @@ class Aiming(MoveBaseUtil):
             if (sqrt((self.target.linear.x - self.x0)**2 + (self.target.linear.y - self.y0) ** 2) < self.radius):
                 rospy.loginfo("inside inner radius, corrects orientation to face box")
                 theta = atan2(self.box.y - self.y0, self.box.x - self.x0)
-                if(abs(theta - self.yaw0) > self.angle_tolerance):
+                if (abs(math.atan2(math.sin(theta - self.yaw0), math.cos(theta - self.yaw0))) > self.angle_tolerance):
                     print "correcting", theta , self.yaw0
-                    self.rotation(theta - self.yaw0)
+
+                    aim_target=Aim([box[0], box[1]], 30) #recheck condition every 30s
+                    
                     rospy.sleep(1)
 
             else:
                 rospy.loginfo("outside radius")
                 # Intialize the waypoint goal
+                aim_target.shutdown()
+
                 goal = MoveBaseGoal()
 
                 # Use the map frame to define goal poses
