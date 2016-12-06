@@ -93,9 +93,9 @@ generate_messages(
 ##     and list every .cfg file to be processed
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-generate_dynamic_reconfigure_options(
-  cfg/detection.cfg
-)
+# generate_dynamic_reconfigure_options(
+#   cfg/detection.cfg
+# )
 
 ###################################
 ## catkin specific configuration ##

@@ -27,7 +27,7 @@ class Aiming(MoveBaseUtil):
     # initialize boat pose param
     # x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target=None, radius=10, duration=100, angle_tolerance=2*pi/180.0, box=[2,2,0]):
+    def __init__(self, nodename, target=None, radius=2, duration=200, angle_tolerance=1*pi/180.0, box=[5,0,0]):
         MoveBaseUtil.__init__(self, nodename)
 
         if target is not None:  # shooting range's position

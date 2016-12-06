@@ -138,7 +138,11 @@ class Cmd_Vel_Repub(object):
         else:
         	pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular
 
-        new_angular_z=self.angular_z+pid_angular_z
+        if math.sqrt((self.goal_y-self.odom_y)**2+(self.goal_x-self.odom_x)**2)>1:
+	    new_angular_z=self.angular_z+pid_angular_z
+	else:
+	    new_angular=self.angular_z
+
 
         if new_angular_z>self.angular_velocity_threshold:
         	new_angular_z=self.angular_velocity_threshold

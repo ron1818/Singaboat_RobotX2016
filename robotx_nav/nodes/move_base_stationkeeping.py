@@ -27,7 +27,7 @@ class StationKeeping(MoveBaseUtil):
     # initialize boat pose param
     # x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target=None, radius=1, duration=100):
+    def __init__(self, nodename, target=None, radius=2, duration=100):
         MoveBaseUtil.__init__(self, nodename)
 
         if target is not None:  # a target point to hold the position
@@ -80,7 +80,7 @@ class StationKeeping(MoveBaseUtil):
         while ((rospy.get_time()-start_time < self.duration) or not self.duration) and not rospy.is_shutdown():
             if (sqrt((self.target.linear.x-self.x0)**2 + (self.target.linear.y-self.y0)**2) < self.radius):
                 self.cmd_vel_pub.publish(Twist())
-                # rospy.loginfo("inside inner radius, no action")
+                rospy.loginfo("inside inner radius, no action")
             else:
                 rospy.loginfo("outside radius")
                 # Intialize the waypoint goal

@@ -56,9 +56,9 @@ def waypoint_publisher_worker(conn, q):
     print "resumed"
     time.sleep(10)
     conn.send('idle') # remain idle
-    q.put([-5, 15, -1.57])
+    q.put([5, 15, -1.57])
     time.sleep(5)
-    q.put([-10, 15, 1.57])
+    q.put([10, 15, 1.57])
     time.sleep(5)
     q.put([0, 0, 0])
     q.put([0, 0, -float('inf')])
