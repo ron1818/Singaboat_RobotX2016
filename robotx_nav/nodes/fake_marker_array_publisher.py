@@ -28,11 +28,11 @@ class MarkerArrayPublisher():
 
         count = 1
         MARKERS_MAX = 4
-        start_red_x, start_red_y = -5, 10
-        start_green_x, start_green_y = 5, 10
+        start_red_x, start_red_y = -20, 10
+        start_green_x, start_green_y = -10, 10
 
-        end_red_x, end_red_y = -5, 20
-        end_green_x, end_green_y = 5, 20
+        end_red_x, end_red_y = -20, 40
+        end_green_x, end_green_y = -10, 40
 
         markerArray = MarkerArray()
 
@@ -86,7 +86,7 @@ class MarkerArrayPublisher():
             r.sleep()
 
     def random_noise(self):
-        return random.random() * 6.0 - 3.0
+        return random.random() * 10.0 - 5.0
 
 
 
