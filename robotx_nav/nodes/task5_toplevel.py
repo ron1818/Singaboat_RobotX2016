@@ -29,11 +29,11 @@ import multiprocessing as mp
 import math
 import time
 import numpy as np
-from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
 from move_base_forward import Forward
+from move_base_zigzag import Zigzag
 from move_base_force_cancel import ForceCancel
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
