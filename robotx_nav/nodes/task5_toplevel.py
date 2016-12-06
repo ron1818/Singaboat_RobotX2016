@@ -14,14 +14,157 @@
 
 """
 
+#!/usr/bin/env python
+
+""" task 5:
+    -----------------
+    Created by Reinaldo@ 2016-12-06
+    Authors: Reinaldo
+    -----------------
+
+
+"""
 import rospy
-import actionlib
-from actionlib_msgs.msg import *
-from geometry_msgs.msg import Pose, Point, Quaternion, Twist
+import multiprocessing as mp
+import math
+import time
+import numpy as np
 from nav_msgs.msg import Odometry
-from move_base_msgs.msg import MoveBaseAction, MoveBaseGoal
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
-from visualization_msgs.msg import Marker
-from math import radians, pi, sin, cos, tan, atan2
-from move_base_util import MoveBaseUtil
-import thread
+from geometry_msgs.msg import Point, Pose
+from visualization_msgs.msg import MarkerArray, Marker
+from move_base_forward import Forward
+from move_base_zigzag import Zigzag
+from move_base_force_cancel import ForceCancel
+from tf.transformations import euler_from_quaternion
+from nav_msgs.msg import Odometry
+
+def constant_heading(goal):
+    print("const_heading")
+    constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
+
+def cancel_goal():
+    print("cancels goal")
+    """ asynchronously cancel goals"""
+    force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
+
+def zigzag(quadrant=1, map_length=40, map_width=40, half_period=5, half_amplitude=10, offset=3):
+	print("zigzag starts")
+	zigzag=Zigzag(nodename="zigzag", quadrant=quadrant, map_length=map_length, map_width=map_width, half_period=half_period, half_amplitude=half_period, offset=offset)
+	print("zigzag returns")
+
+
+class WaypointPublisher(object):
+    pool = mp.Pool(2)
+
+    x0, y0, yaw0= 0, 0, 0
+
+    shape_counter=0
+    shape_found=[0, 0, 0] #Tri, Cru , Cir
+ 	current_quadrant=0
+
+    def __init__(self, quadrant_list):
+		print("starting task 5")
+        rospy.init_node('task_5', anonymous=True)
+        rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
+        self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
+
+        self.odom_received = False
+        #rospy.wait_for_message("/odom", Odometry)
+        #rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
+        rospy.wait_for_message("/odometry/filtered/global", Odometry)
+        rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        while not self.odom_received:
+           rospy.sleep(1)
+		print("odom received")
+        
+        self.quadrant_visited=list()
+
+        for i in range(len(quadrant_list)):
+        	self.quadrant_visited.append(0) #not visited
+
+
+        while not rospy.is_shutdown():
+        	#main loop
+
+        	#visit quadrant that is not yet visited
+        	for i in range(len(quadrant_list)):
+        		if self.quadrant_visited[i]==0:
+        			self.current_quadrant=i
+
+        	#continuously zigzag in current_quadrant
+        	
+        	self.pool.apply(zigzag, args = (self.current_quadrant, ))
+        	#will block until zigzag finish or when force cancel is called by marker_callback
+
+            time.sleep(1)
+
+	self.pool.close()
+	self.pool.join()
+
+    def is_complete(self):
+        pass
+
+    def marker_callback(self, msg):
+
+
+        if len(msg.markers)>0:
+            
+            if msg.markers[0].type == 0 and self.shape_found[0]==0:
+                #triangle
+                
+                if self.shape_counter==0:
+               		rospy.set_param("/gui/shape1", "TRI")
+               		self.shape_counter+=1
+	    		elif self.shape_counter==1:
+	    			rospy.set_param("/gui/shape2", "TRI")
+	    		self.shape_found[0]=1
+	    		self.quadrant_visited[self.current_quadrant]=1
+	    		self.pool.apply_async(cancel_goal)
+
+            elif msg.markers[0].type == 1 and self.shape_found[1]==0:
+            	#cruciform
+                if self.shape_counter==0:
+               		rospy.set_param("/gui/shape1", "CRU")
+               		self.shape_counter+=1
+	    		elif self.shape_counter==1:
+	    			rospy.set_param("/gui/shape2", "CRU")
+
+	    		self.shape_found[1]=1
+	    		self.quadrant_visited[self.current_quadrant]=1	
+	    		self.pool.apply_async(cancel_goal)
+
+            elif msg.markers[0].type == 2 and self.shape_found[2]==0:
+            	#circle
+            	if self.shape_counter==0:
+               		rospy.set_param("/gui/shape1", "CIR")
+               		self.shape_counter+=1
+	    		elif self.shape_counter==1:
+	    			rospy.set_param("/gui/shape2", "CIR")
+
+	    		self.shape_found[2]=1
+	    		self.quadrant_visited[self.current_quadrant]=1
+	    		self.pool.apply_async(cancel_goal)	
+
+
+    def odom_callback(self, msg):
+        """ call back to subscribe, get odometry data:
+        pose and orientation of the current boat,
+        suffix 0 is for origin """
+        self.x0 = msg.pose.pose.position.x
+        self.y0 = msg.pose.pose.position.y
+        x = msg.pose.pose.orientation.x
+        y = msg.pose.pose.orientation.y
+        z = msg.pose.pose.orientation.z
+        w = msg.pose.pose.orientation.w
+        _, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
+        self.odom_received = True
+
+
+
+if __name__ == '__main__':
+    try:
+        WaypointPublisher([1, 2])
+
+        # stage 1: gps
+    except rospy.ROSInterruptException:
+        rospy.loginfo("Task 1 Finished")
