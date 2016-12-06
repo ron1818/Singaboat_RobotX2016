@@ -90,15 +90,17 @@ class ScanTheCode(object):
             elif self.totem_find and self.led_valid:
                 print "mission accomplish"
                 self.pool.apply(moveto_work, args=(self.exit_coordinate,))
-                self.pool.close()
-                self.pool.join()
+
                 break
             # if no object identified, do a random moveto, and repeat
             elif not self.totem_find and not self.led_valid:
-                res = self.pool.apply_async(moveto_work, args=(self.random_walk(), True))
+                res = self.pool.apply(moveto_work, args=(self.random_walk(), True))
                 print res.get()
 
             rospy.sleep(1)
+
+        self.pool.close()
+        self.pool.join()
 
     def random_walk(self):
         """ create random walk points and more favor towards center """
