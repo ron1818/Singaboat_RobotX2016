@@ -48,7 +48,7 @@ from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
 from move_base_forward import Forward
 from move_base_force_cancel import ForceCancel
-from tf.transformation import euler_from_quaternion
+from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 
 def constant_heading(goal):
@@ -86,7 +86,7 @@ class WaypointPublisher(object):
         rospy.init_node('task_1', anonymous=True)
         rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
-        
+
         self.odom_received = False
         #rospy.wait_for_message("/odom", Odometry)
         #rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
@@ -103,7 +103,7 @@ class WaypointPublisher(object):
             #wait for data bucket to fill up
             time.sleep(1)
 
-        
+
 
         while not rospy.is_shutdown():
             self.matrix_reorder()
@@ -127,7 +127,7 @@ class WaypointPublisher(object):
                 break
 
             time.sleep(1)
-            
+
 
     def plan_waypoint(self):
         distance=15
