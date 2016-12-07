@@ -21,6 +21,7 @@ class ForceCancel(object):
             msg = GoalID()
             msg.id = self.id
             pub.publish(msg)
+	    
             r.sleep()
             counter += 1
     def callback(self, msg):

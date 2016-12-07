@@ -86,7 +86,7 @@ class MarkerArrayPublisher():
             r.sleep()
 
     def random_noise(self):
-        return random.random() * 10.0 - 5.0
+        return random.random() * 6.0 - 3.0
 
 
 

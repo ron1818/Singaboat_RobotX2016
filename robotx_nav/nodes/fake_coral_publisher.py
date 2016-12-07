@@ -41,9 +41,9 @@ class CoralPublisher():
 
         markerArray = MarkerArray()
         count = 0
-        MARKERS_MAX = 1
+        MARKERS_MAX = 2
         while not rospy.is_shutdown():
-            if(count > MARKERS_MAX):
+            if(count > MARKERS_MAX) and len(markerArray.markers):
                 markerArray.markers.pop(0)
             if self.within_range(self.x[0], self.y[0]):
                 markerArray.markers.append(self.create_marker(self.x[0], self.y[0], "triangle"))

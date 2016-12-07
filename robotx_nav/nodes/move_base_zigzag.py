@@ -36,12 +36,12 @@ class Zigzag(MoveBaseUtil):
         self.map_offset = rospy.get_param("~offset", offset)
 
         # get boat position, one time only
-        self.odom_received = False
-        rospy.wait_for_message("/odom", Odometry)
-        rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
+        # self.odom_received = False
+        # rospy.wait_for_message("/odom", Odometry)
+        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
         # Subscribe to the move_base action server
-        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+        # self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
 
         # # information about map, length (X), width (Y), position of the initial point
         # self.map_length = map_length
@@ -81,13 +81,13 @@ class Zigzag(MoveBaseUtil):
             p = waypoint.position
             self.markers.points.append(p)
 
-        rospy.loginfo("Waiting for move_base action server...")
+        # rospy.loginfo("Waiting for move_base action server...")
 
-        # Wait 60 seconds for the action server to become available
-        self.move_base.wait_for_server(rospy.Duration(60))
+        # # Wait 60 seconds for the action server to become available
+        # self.move_base.wait_for_server(rospy.Duration(60))
 
-        rospy.loginfo("Connected to move base server")
-        rospy.loginfo("Starting navigation test")
+        # rospy.loginfo("Connected to move base server")
+        # rospy.loginfo("Starting navigation test")
 
         # Initialize a counter to track waypoints
         i = 0
@@ -164,20 +164,20 @@ class Zigzag(MoveBaseUtil):
         # return the resultant waypoints
         return waypoints
 
-    def odom_callback(self, msg):
-        """ call back to subscribe, get odometry data:
-        pose and orientation of the current boat,
-        suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
-        self.z0 = msg.pose.pose.position.z
-        x = msg.pose.pose.orientation.x
-        y = msg.pose.pose.orientation.y
-        z = msg.pose.pose.orientation.z
-        w = msg.pose.pose.orientation.w
-        self.roll0, self.pitch0, self.yaw0 = euler_from_quaternion((x, y, z, w))
-        self.odom_received = True
-        # rospy.loginfo([self.x0, self.y0, self.z0])
+    # def odom_callback(self, msg):
+    #     """ call back to subscribe, get odometry data:
+    #     pose and orientation of the current boat,
+    #     suffix 0 is for origin """
+    #     self.x0 = msg.pose.pose.position.x
+    #     self.y0 = msg.pose.pose.position.y
+    #     self.z0 = msg.pose.pose.position.z
+    #     x = msg.pose.pose.orientation.x
+    #     y = msg.pose.pose.orientation.y
+    #     z = msg.pose.pose.orientation.z
+    #     w = msg.pose.pose.orientation.w
+    #     self.roll0, self.pitch0, self.yaw0 = euler_from_quaternion((x, y, z, w))
+    #     self.odom_received = True
+    #     # rospy.loginfo([self.x0, self.y0, self.z0])
 
 
 if __name__ == '__main__':

@@ -34,6 +34,14 @@
     7. see new roi from bow
     8. drive with 5 and 6
 
+    reinaldo's approach:
+    1. fill bucket of markers array until full
+    2. do k-means clustering to differentiate monocolor totems
+    3. get closest pairs 
+    4. plan based on pairs, replan if new plan is far from old plan
+    5. loop to 2. 
+    6. terminate if displacement from start to end > termination_distance 
+
 
 """
 
@@ -42,6 +50,7 @@ import multiprocessing as mp
 import math
 import time
 import numpy as np
+import os
 from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
@@ -52,15 +61,12 @@ from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 
 def constant_heading(goal):
-    print("const_heading")
     constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
 
-def cancel_goal():
-    print("cancels goal")
-    """ asynchronously cancel goals"""
-    force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
+def cancel_forward():
+    os.system('rosnode kill constant_heading')
 
-class WaypointPublisher(object):
+class PassGates(object):
     pool = mp.Pool(5)
 
     x0, y0, yaw0= 0, 0, 0
@@ -83,10 +89,10 @@ class WaypointPublisher(object):
 
     replan_min=5
 
-    termination_displacement=50
+    termination_displacement=60
 
     def __init__(self):
-	    print("starting task 1")
+	print("starting task 1")
         rospy.init_node('task_1', anonymous=True)
         rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
@@ -98,7 +104,7 @@ class WaypointPublisher(object):
         rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
         while not self.odom_received:
            rospy.sleep(1)
-	    print("odom received")
+	print("odom received")
 
         init_position =np.array([self.x0, self.y0, 0])
         prev_target=np.array([self.x0, self.y0, 0])
@@ -107,12 +113,13 @@ class WaypointPublisher(object):
         while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
             #wait for data bucket to fill up
             time.sleep(1)
+	print("bucket full")
 
-	    print("bucket full")
+	    
 
         while not rospy.is_shutdown():
             self.matrix_reorder()
-	        print("reorder complete")
+	    print("reorder complete")
             target = self.plan_waypoint()
             print(target)
 
@@ -120,15 +127,16 @@ class WaypointPublisher(object):
             if self.euclid_distance(target, prev_target)>self.replan_min:
                 #replan
                 #force cancel
-                self.pool.apply_async(cancel_goal)
+                self.pool.apply(cancel_forward)
                 #plan new constant heading
-	            print("replan")
+	        print("replan")
                 self.pool.apply_async(constant_heading, args = (target, ))
                 prev_target=target
             else:
                 pass
             #termination condition
             if self.euclid_distance(np.array([self.x0, self.y0, 0]), init_position)>self.termination_displacement:
+		self.pool.apply(cancel_forward)
                 print("Task 1 Completed")
                 break
 
@@ -263,7 +271,7 @@ class WaypointPublisher(object):
 
 if __name__ == '__main__':
     try:
-        WaypointPublisher()
+        PassGates()
         # stage 1: gps
     except rospy.ROSInterruptException:
         rospy.loginfo("Task 1 Finished")

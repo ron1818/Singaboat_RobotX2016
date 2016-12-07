@@ -152,8 +152,8 @@ if __name__ == '__main__':
         constant_heading.respawn([0,10,0])
         time.sleep(5)
         constant_heading.respawn([-5,5,0])
-        time.sleep(10)
-        constant_heading.respawn([4,5,0])
+        #time.sleep(10)
+        #constant_heading.respawn([4,5,0])
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

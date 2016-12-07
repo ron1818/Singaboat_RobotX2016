@@ -22,7 +22,7 @@ from math import radians, pi, sin, cos, sqrt
 class MoveBaseUtil():
     x0, y0, yaw0 = 0, 0, 0
     lat, lon = 0, 0
-    cancel_id = "cancel"
+    cancel_id = ""
 
     def __init__(self, nodename="nav_test", is_newnode=True):
         if is_newnode:
@@ -36,7 +36,7 @@ class MoveBaseUtil():
         # tf_listener
         self.tf_listener = tf.TransformListener()
 
-        rospy.on_shutdown(self.shutdown)
+        #rospy.on_shutdown(self.shutdown)
 
         # * get parameters
         # * Create a list to hold the target quaternions (orientations)
@@ -168,11 +168,9 @@ class MoveBaseUtil():
             while sqrt((self.x0 - goal.target_pose.pose.position.x) ** 2 +
                        (self.y0 - goal.target_pose.pose.position.y) ** 2) > mode_param:
 
-                if self.cancel_id != "":
-                    rospy.sleep(rospy.Duration(1))
-                else:
-                    self.move_base.cancel_all_goals()
-                    break
+                
+                rospy.sleep(rospy.Duration(1))
+
                 # (trans, _) = self.get_tf()
             go_to_next = True
 
@@ -183,10 +181,9 @@ class MoveBaseUtil():
             self.rotation(mode_param)
 
         else:  # normal stop in each waypoint mode, mode_param is unused
-            if self.cancel_id != "":
-                finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
-            else:
-                self.move_base.cancel_all_goals()
+            
+            finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
+ 
 
         # If we don't get there in time, abort the goal
         if not finished_within_time or go_to_next:
