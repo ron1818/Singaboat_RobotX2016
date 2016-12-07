@@ -65,7 +65,7 @@ class WaypointPublisher(object):
     def __init__(self, quadrant_list):
 		print("starting task 5")
         rospy.init_node('task_5', anonymous=True)
-        rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
+        rospy.Subscriber("/coral", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
         self.odom_received = False
@@ -163,7 +163,7 @@ class WaypointPublisher(object):
 
 if __name__ == '__main__':
     try:
-        WaypointPublisher([1, 2])
+        WaypointPublisher([1, 3])
 
         # stage 1: gps
     except rospy.ROSInterruptException:
