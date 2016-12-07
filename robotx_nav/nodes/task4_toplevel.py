@@ -19,13 +19,12 @@ import random
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
+from tf.transformations import euler_from_quaternion
+from nav_msgs.msg import Odometry
 from move_base_forward import Forward
 from move_base_waypoint import MoveTo
 from move_base_loiter import Loiter
-from move_base_stationkeeping import StationKeeping
-from move_base_force_cancel import ForceCancel
-from tf.transformations import euler_from_quaternion
-from nav_msgs.msg import Odometry
+from move_base_aiming import Aiming
 
 
 def loiter_work(target):
@@ -33,7 +32,7 @@ def loiter_work(target):
     loiter_obj = Loiter(nodename="loiter", target=target, radius=5, polygon=6, is_ccw=True, is_relative=False)
 
 
-def stationkeeping_work(target, is_newnode):
+def aim_work(target, box):
     print("stationkeep")
     stationkeep_obj = StationKeeping(nodename="stationkeep", is_newnode = is_newnode, target=target, radius=2, duration=200)
 
@@ -43,10 +42,14 @@ def moveto_work(target, is_newnode):
     moveto_obj = MoveTo(nodename="moveto", is_newnode=is_newnode, target=target, is_relative=False)
 
 
-def cancel_goal_work():
-    print("cancels goal")
-    """ asynchronously cancel goals"""
-    force_cancel = ForceCancel(nodename="forcecancel", repetition=5)
+def cancel_loiter():
+    os.system('rosnode kill loiter')
+
+def cancel_stationkeeping():
+    os.system('rosnode kill stationkeep')
+
+def cancel_moveto():
+    os.system('rosnode kill moveto')
 
 
 class ScanTheCode(object):
@@ -85,12 +88,13 @@ class ScanTheCode(object):
         while not rospy.is_shutdown():
             # if find something, kill random moveto and do a stationkeep
             if self.totem_find and not self.led_valid:
-                self.pool.apply(stationkeeping_work, args=(self.totem_center,))
+                self.pool.apply_async(stationkeeping_work, args=(self.totem_center,))
+		time.sleep(300)
+		self.pool.apply(cancel_stationkeeping)
             # if callback the color sequence is not valid, continue the stationkeep
             elif self.totem_find and self.led_valid:
                 print "mission accomplish"
                 self.pool.apply(moveto_work, args=(self.exit_coordinate,))
-
                 break
             # if no object identified, do a random moveto, and repeat
             elif not self.totem_find and not self.led_valid:

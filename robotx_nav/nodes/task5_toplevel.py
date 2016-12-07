@@ -1,22 +1,18 @@
 #!/usr/bin/env python
 
 """ Mission 5-CORAL SURVEY
-    
+
     Set map border, size and origin
     Set quadrants of interest
-    
+
     Do zigzag scouting to respective quadrants (perpetual)
-	If shape identified or duration timeout
-		Shape identified->set global parameter for gui
-	continue to next quadrant
+    If shape identified or duration timeout
+        Shape identified->set global parameter for gui
+    continue to next quadrant
 
    If both shapes identified or total time exceeded, terminate mission
 
-"""
-
-#!/usr/bin/env python
-
-""" task 5:
+task 5:
     -----------------
     Created by Reinaldo@ 2016-12-06
     Authors: Reinaldo
@@ -29,6 +25,7 @@ import multiprocessing as mp
 import math
 import time
 import numpy as np
+import os
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
@@ -42,28 +39,29 @@ def constant_heading(goal):
     print("const_heading")
     constant_obj = Forward(nodename="constant_heading", target=goal, waypoint_separation=5, is_relative=False)
 
-def cancel_goal():
-    print("cancels goal")
-    """ asynchronously cancel goals"""
-    force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
-
-def zigzag(quadrant=1, map_length=40, map_width=40, half_period=5, half_amplitude=10, offset=3):
-	print("zigzag starts")
-	zigzag=Zigzag(nodename="zigzag", quadrant=quadrant, map_length=map_length, map_width=map_width, half_period=half_period, half_amplitude=half_period, offset=offset)
-	print("zigzag returns")
+def cancel_zigzag():
+    print("kill zigzag")
+    os.system('rosnode kill zigzag')
 
 
-class WaypointPublisher(object):
-    pool = mp.Pool(2)
+def zigzag(quadrant=1, map_length=40, map_width=40, half_period=2, half_amplitude=10, offset=3):
+    print("zigzag starts")
+    zigzag=Zigzag(nodename="zigzag", quadrant=quadrant, map_length=map_length, map_width=map_width, half_period=half_period, half_amplitude=half_amplitude, offset=offset)
+    print("zigzag returns")
+
+
+class CoralSurvey(object):
+    pool = mp.Pool(5)
 
     x0, y0, yaw0= 0, 0, 0
 
     shape_counter=0
     shape_found=[0, 0, 0] #Tri, Cru , Cir
- 	current_quadrant=0
+    current_quadrant=0
+ 
 
     def __init__(self, quadrant_list):
-		print("starting task 5")
+        print("starting task 5")
         rospy.init_node('task_5', anonymous=True)
         rospy.Subscriber("/coral", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
@@ -75,31 +73,33 @@ class WaypointPublisher(object):
         rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
         while not self.odom_received:
            rospy.sleep(1)
-		print("odom received")
-        
+        print("odom received")
+
         self.quadrant_visited=list()
+	self.doing_zigzag=list()
 
         for i in range(len(quadrant_list)):
-        	self.quadrant_visited.append(0) #not visited
-
+            self.quadrant_visited.append(0) #not visited
+	    self.doing_zigzag.append(0)
 
         while not rospy.is_shutdown():
-        	#main loop
+            #main loop
 
-        	#visit quadrant that is not yet visited
-        	for i in range(len(quadrant_list)):
-        		if self.quadrant_visited[i]==0:
-        			self.current_quadrant=i
-
-        	#continuously zigzag in current_quadrant
-        	
-        	self.pool.apply(zigzag, args = (self.current_quadrant, ))
-        	#will block until zigzag finish or when force cancel is called by marker_callback
-
+            #visit quadrant that is not yet visited
+            for i in range(len(quadrant_list)):
+                if self.quadrant_visited[i]==0:
+                    self.current_quadrant=i
+		    break
+	                    
+	    if self.doing_zigzag[self.current_quadrant]==0:
+	        self.pool.apply_async(zigzag, args=(quadrant_list[self.current_quadrant], ))
+	    	self.doing_zigzag[self.current_quadrant]=1
+            
+	    
             time.sleep(1)
-
-	self.pool.close()
-	self.pool.join()
+	print("goodbyee~")
+        self.pool.close()
+        self.pool.join()
 
     def is_complete(self):
         pass
@@ -108,42 +108,45 @@ class WaypointPublisher(object):
 
 
         if len(msg.markers)>0:
-            
+
             if msg.markers[0].type == 0 and self.shape_found[0]==0:
                 #triangle
-                
+
                 if self.shape_counter==0:
-               		rospy.set_param("/gui/shape1", "TRI")
-               		self.shape_counter+=1
-	    		elif self.shape_counter==1:
-	    			rospy.set_param("/gui/shape2", "TRI")
-	    		self.shape_found[0]=1
-	    		self.quadrant_visited[self.current_quadrant]=1
-	    		self.pool.apply_async(cancel_goal)
+                       rospy.set_param("/gui/shape1", "TRI")
+                       self.shape_counter+=1
+                elif self.shape_counter==1:
+                    rospy.set_param("/gui/shape2", "TRI")
+                self.shape_found[0]=1
+                self.quadrant_visited[self.current_quadrant]=1
+                self.pool.apply(cancel_zigzag)
+		print("found Triangle")
 
             elif msg.markers[0].type == 1 and self.shape_found[1]==0:
-            	#cruciform
+                #cruciform
                 if self.shape_counter==0:
-               		rospy.set_param("/gui/shape1", "CRU")
-               		self.shape_counter+=1
-	    		elif self.shape_counter==1:
-	    			rospy.set_param("/gui/shape2", "CRU")
+                    rospy.set_param("/gui/shape1", "CRU")
+                    self.shape_counter+=1
+                elif self.shape_counter==1:
+                    rospy.set_param("/gui/shape2", "CRU")
 
-	    		self.shape_found[1]=1
-	    		self.quadrant_visited[self.current_quadrant]=1	
-	    		self.pool.apply_async(cancel_goal)
+                self.shape_found[1]=1
+                self.quadrant_visited[self.current_quadrant]=1
+                self.pool.apply(cancel_zigzag)
+		print("found Crux")
 
             elif msg.markers[0].type == 2 and self.shape_found[2]==0:
-            	#circle
-            	if self.shape_counter==0:
-               		rospy.set_param("/gui/shape1", "CIR")
-               		self.shape_counter+=1
-	    		elif self.shape_counter==1:
-	    			rospy.set_param("/gui/shape2", "CIR")
+                #circle
+                if self.shape_counter==0:
+                    rospy.set_param("/gui/shape1", "CIR")
+                    self.shape_counter+=1
+                elif self.shape_counter==1:
+                    rospy.set_param("/gui/shape2", "CIR")
 
-	    		self.shape_found[2]=1
-	    		self.quadrant_visited[self.current_quadrant]=1
-	    		self.pool.apply_async(cancel_goal)	
+                self.shape_found[2]=1
+                self.quadrant_visited[self.current_quadrant]=1
+                self.pool.apply(cancel_zigzag)
+		print("found Circle")
 
 
     def odom_callback(self, msg):
@@ -163,8 +166,8 @@ class WaypointPublisher(object):
 
 if __name__ == '__main__':
     try:
-        WaypointPublisher([1, 3])
+        CoralSurvey([1, 3])
 
         # stage 1: gps
     except rospy.ROSInterruptException:
-        rospy.loginfo("Task 1 Finished")
+        rospy.loginfo("Task 5 Finished")
