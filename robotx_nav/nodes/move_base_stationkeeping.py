@@ -50,9 +50,9 @@ class StationKeeping(MoveBaseUtil):
         if duration is not None:
             self.sk["duration"] = duration
 
-        q_angle = quaternion_from_euler(0, 0, self.target.angular.z)
+        q_angle = quaternion_from_euler(0, 0, self.sk["target"].angular.z)
         angle = Quaternion(*q_angle)
-        station = Pose(self.target.linear, angle)
+        station = Pose(self.sk["target"].linear, angle)
 
         p = Point()
         p = station.position

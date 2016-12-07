@@ -19,31 +19,37 @@ from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
+from std_msgs.msg import String
 
 
 class ScanTheCode(object):
     # pool = mp.Pool(2, maxtasksperchild=1)
 
+    x_offset, y_offset = random.random() * 20 - 10, random.random() * 30 - 15
     map_dim = [[0, 40], [0, 40]]
-    exit_coordinate = [20, 40]
+    exit_coordinate = [20, 40, 0]
     x0, y0, yaw0= 0, 0, 0
     totem_center = np.array([0, 0])
-    MAX_DATA=30
+    totem_position = list()
+    counter = 0
+    MAX_DATA = 10
 
-    markers_array=MarkerArray()
+    markers_array = MarkerArray()
 
     def __init__(self, nodename="scanthecode"):
         # print("starting task 4")
         rospy.init_node(nodename, anonymous=False)
         self.rate = rospy.get_param("~rate", 1)
-        rospy.Subscriber("/totem_lamp", MarkerArray, self.marker_callback, queue_size = 50)
-        self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
+        rospy.Subscriber("/totem_lamp", MarkerArray, self.marker_callback, queue_size = 10)
+        rospy.Subscriber("/led_sequence", String, self.led_callback, queue_size = 10)
+        self.marker_pub = rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
 
-        self.hold_moveto = False # by default, let moveto to work
-        self.requested_moveto = False # by default, moveto is not requested
-        self.totem_find = False # is totem find? if not, try moveto, else, stationkeep to totem
+        self.onhold_stationkeep = False
+        self.onhold_moveto = False
+        self.totem_find = False  # is totem find? if not, try moveto, else, stationkeep to totem
+        self.led_valid = False  # from callback, if led_valid, exit
 
     def planner(self):
         """ return data format:
@@ -51,30 +57,24 @@ class ScanTheCode(object):
         """
         self.stationkeep_target = list()
         self.moveto_target = list()
-        self.led_valid = False  # from callback, if led_valid, exit
-        # if callback the color sequence is not valid, continue the stationkeep
-        if self.totem_find and not self.led_valid:
-            self.hold_moveto = True
-            self.stationkeep_target = self.totem_center
-        # if callback the color sequence is valid, complete and exit
-        elif self.totem_find and self.led_valid:
-            self.hold_moveto = False
+
+        if self.led_valid:  # if led is valid, exit
             self.moveto_target = self.exit_coordinate
             print "mission accomplish"
-        # if no object identified, do a random moveto, and repeat
-        elif not self.totem_find and not self.led_valid:
-            if not self.hold_moveto:
-                self.requested_moveto = False
+        else:  # led is not valid, continue searching
+            if self.totem_find and not self.onhold_stationkeep:  # find totem
+                self.stationkeep_target = self.totem_center
+                self.onhold_stationkeep = True
+            elif not self.totem_find and not self.onhold_moveto:  # random walk
                 self.moveto_target = self.random_walk()
-            else:
-                self.requested_moveto = True
+                self.onhold_moveto = True
 
-        return self.totem_find, self.stationkeep_target, self.moveto_target, self.requested_moveto, self.led_valid
+        return self.led_valid, self.totem_find, self.stationkeep_target, self.moveto_target
 
     def random_walk(self):
         """ create random walk points and more favor towards center """
-        x = random.gauss(np.mean(self.map_dim[0]), 0.25 * np.ptp(self.map_dim[0]))
-        y = random.gauss(np.mean(self.map_dim[1]), 0.25 * np.ptp(self.map_dim[1]))
+        x = random.gauss(np.mean(self.map_dim[0]) + self.x_offset, 0.25 * np.ptp(self.map_dim[0]))
+        y = random.gauss(np.mean(self.map_dim[1]) + self.y_offset, 0.25 * np.ptp(self.map_dim[1]))
 
         return self.map_constrain(x, y)
 
@@ -98,11 +98,11 @@ class ScanTheCode(object):
     def marker_callback(self, msg):
         if len(msg.markers) > 0:
             for i in range(len(msg.markers)):
-                self.totem_position[self.counter] = [msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
+                self.totem_position.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])
                 self.counter += 1
 
         # list is full, get the totem center estimated
-        if self.totem_position > self.MAX_DATA:
+        if len(self.totem_position) > self.MAX_DATA:
             # do a one class svm
             self.totem_center = self.one_class_svm(self.totem_position)
             self.totem_find = True
@@ -111,11 +111,19 @@ class ScanTheCode(object):
         for i in range(len(msg.markers)):
             self.marker_pub.publish(msg.markers[i])
 
+    def led_callback(self, msg):
+        if msg.data == "found":
+            self.led_valid = True
+        else:
+            self.led_valid = False
+
+
     def one_class_svm(self, data_list):
         """ return support vector and thus cluster center """
         data_list = np.array(data_list)
         self.ocsvm.fit(data_list)
         sv = self.ocsvm.support_vectors_
+        # print sv
         # find the sv's centroid, assume only one cluster.
         return (np.mean(sv[:,0]), np.mean(sv[:,1]), 0)
         # return (np.median(sv[:,0]), np.median(sv[:,1]))
@@ -133,6 +141,11 @@ class ScanTheCode(object):
         _, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
         self.odom_received = True
 
+    def update_hold_moveto(self, onhold_moveto):
+        self.onhold_moveto = onhold_moveto
+
+    def update_hold_stationkeep(self, onhold_stationkeep):
+        self.onhold_stationkeep = onhold_stationkeep
 
 
 if __name__ == '__main__':
