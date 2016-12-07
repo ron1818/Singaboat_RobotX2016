@@ -1,17 +1,22 @@
 /*This node funtion(s):
-	+ Detect symbols: red/green/blue circle/triangle/cruciform
+  + Detect symbols: red/green/blue circle/triangle/cruciform
   + Detect markers: red/green/blue/yellow/white (totem) markers
   + Detect obstacles
+  + And also give the distance to the object using zed camera
 */
-
 //ROS libs
 #include <ros/ros.h>
 #include <ros/console.h>
-#include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/Image.h>
+#include "sensor_msgs/RegionOfInterest.h"
 #include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <robotx_vision/detectionConfig.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <std_msgs/Float64.h>
 //OpenCV libs
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -23,36 +28,40 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <cmath>
 //Namespaces
 using namespace ros;
 using namespace cv;
 using namespace std;
+using namespace sensor_msgs;
+using namespace message_filters;
 //ROS params
-std::string subscribed_image_topic;
+std::string subscribed_image_topic, subscribed_depth_topic;
 std::string object_shape, object_color;
-std::string published_topic;
+std::string published_roi_topic, published_distance_topic;
+double far_dist = 10;
+double near_dist = 0.5;
 bool debug;
 //Image transport vars
-cv_bridge::CvImagePtr cv_ptr;
+cv_bridge::CvImagePtr cv_ptr, depth_ptr;
 //ROS var
 vector<sensor_msgs::RegionOfInterest> object;
+vector<std_msgs::Float64> dist;
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
-//std::vector<cv::Point> approx;
-cv::Mat src, hsv, hls;
+cv::Mat src, hsv, hls, depth_mat;
 cv::Scalar up_lim, low_lim, up_lim_wrap, low_lim_wrap;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
 cv::Mat color;
-cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4,4));
+cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2,2));
 cv::Rect rect;
 cv::RotatedRect mr;
 int height, width;
 int min_area = 300;
-double area, r_area, mr_area;
+double area, r_area, m_area;
 const double eps = 0.15;
-
 //Functions
 void reduce_noise(cv::Mat* dst)
 {
@@ -99,6 +108,8 @@ void detect_marker()
   //Detect shape for each contour
   for (int i = 0; i < contours.size(); i++)
   {
+    // Approximate contour with accuracy proportional to the contour perimeter
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
 
@@ -107,27 +118,18 @@ void detect_marker()
 
     area = cv::contourArea(contours[i]);
     r_area = rect.height*rect.width;
-    mr_area = (mr.size).height*(mr.size).width;
+    m_area = (mr.size).height*(mr.size).width;
     //Detect
     if(object_color != "red")
-      if(((float)rect.height/rect.width > 1.2) && (area/mr_area > (0.95-eps)))
+      if((rect.height/rect.width > 1) && (area/m_area > (0.95-eps)))
         object_found();
     else 
     {
       vector<Point> hull;
       convexHull(contours[i], hull, 0, 1);
       double hull_area = contourArea(hull);
-      /*ROS_INFO("Object %d", i);
-      cout << "H/W = " << (float)rect.height/rect.width << endl;
-      cout << "area/min_rect_area = " << (float)area/mr_area << endl;
-      cout << "area/hull_area = " << (float)area/hull_area << endl;
-      cout << "hull_area/mr_area = " << (float)hull_area/mr_area << endl;
-      cout << "H/W = " << (bool)((float)rect.height/rect.width > 1.2) << endl;
-      cout << "area/min_rect_area = " << (bool)(fabs(area/mr_area - 0.5) < eps) << endl;
-      cout << "area/hull_area = " << (bool)(fabs(area/hull_area - 0.68) < eps) << endl;
-      cout << "hull_area/mr_area = " << (bool)(fabs(hull_area/mr_area - 0.72) < eps) << endl;*/
-      if((((float)rect.height/rect.width > 1.4) && (fabs(area/mr_area - 0.5) < eps) && (fabs(area/hull_area - 0.68) < eps) && (fabs(hull_area/mr_area - 0.72) < eps)) 
-              || (((float)rect.height/rect.width > 1.4) && (fabs(area/mr_area - 1) < eps)))
+      if(((rect.height/rect.width > 1)&&(fabs(area/r_area - 0.65) < eps)&&(fabs(area/hull_area - 0.85) < eps)) 
+              || ((rect.height/rect.width > 1) && (fabs(area/r_area - 0.8) < eps)))
         object_found();
     }
   }
@@ -189,21 +191,20 @@ void detect_symbol()
     mr = cv::minAreaRect(contours[i]);
 
     area = cv::contourArea(contours[i]);
-    mr_area = (mr.size).height*(mr.size).width;
+    m_area = (mr.size).height*(mr.size).width;
 
     vector<Point> hull;
     convexHull(contours[i], hull, 0, 1);
     double hull_area = contourArea(hull);
 
-    //cout << i << " =>> " << area << "/" << mr_area << "==> " << fabs(area/mr_area - 0.5) << " " << cv::isContourConvex(approx) << endl;
     if(object_shape == "circle") 
     {
-      if((std::fabs(area/mr_area - 3.141593/4) < 0.1) && (std::fabs(area/hull_area - 1) < 0.05))
+      if((std::fabs(area/m_area - 3.141593/4) < 0.1) && (std::fabs(area/hull_area - 1) < 0.05))
         object_found();
     }
     else if(object_shape == "triangle") 
     {
-      if((fabs(area/mr_area - 0.5) < 0.07 && (std::fabs(area/hull_area - 1) < 0.05)) /*&& cv::isContourConvex(approx)*/)
+      if((fabs(area/m_area - 0.5) < 0.07 && (std::fabs(area/hull_area - 1) < 0.05)) /*&& cv::isContourConvex(approx)*/)
         object_found();
     }
     else if(object_shape == "cruciform")
@@ -223,11 +224,12 @@ void detect_symbol()
   }
 }
 
-void imageCb(const sensor_msgs::ImageConstPtr& msg)
+void imageCb(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::ImageConstPtr& depth_msg)
 {
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    depth_ptr = cv_bridge::toCvCopy(depth_msg, "32FC1");
   }
   catch (cv_bridge::Exception& e)
   {
@@ -251,6 +253,28 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   {
     cv::imshow("src", src);
     cv::imshow("color", color);
+  }
+  //Find distance to every detected object
+  //by getting the avarage depth value to the ROI
+  depth_mat = depth_ptr->image;
+  for(vector<sensor_msgs::RegionOfInterest>::iterator it = object.begin(); it != object.end(); it++)
+  {
+    int n = 0;
+    double sum = 0;
+    for (int x = it->x_offset; x <= (it->x_offset + it->width); x++)
+      for (int y = it->y_offset; y <= (it->y_offset + it->height); y++)
+        {
+          cv::Scalar intensity = depth_mat.at<float>(y, x); 
+          double pixel_depth = intensity.val[0];
+          if(!isnan(pixel_depth) && (pixel_depth > near_dist) && (pixel_depth < far_dist))
+          {
+            n++;
+            sum += pixel_depth;
+          }
+        }
+    std_msgs::Float64 distance_msg;
+    distance_msg.data = sum/n;
+    dist.push_back(distance_msg);
   }
 }
 
@@ -297,14 +321,16 @@ void dynamic_configCb(robotx_vision::detectionConfig &config, uint32_t level)
 int main(int argc, char** argv)
 {
   //Initiate node
-  ros::init(argc, argv, "detection");
+  ros::init(argc, argv, "depth_detection");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
+  pnh.getParam("subscribed_depth_topic", subscribed_depth_topic);
   pnh.getParam("object_shape", object_shape);
   pnh.getParam("object_color", object_color);
+  pnh.getParam("published_roi_topic", published_roi_topic);
+  pnh.getParam("published_distance_topic", published_distance_topic);
   pnh.getParam("debug", debug);
-  pnh.getParam("published_topic", published_topic);
   dynamic_reconfigure::Server<robotx_vision::detectionConfig> server;
   dynamic_reconfigure::Server<robotx_vision::detectionConfig>::CallbackType f;
   f = boost::bind(&dynamic_configCb, _1, _2);
@@ -312,29 +338,37 @@ int main(int argc, char** argv)
   
   //Initiate windows
   if(debug)
-  {
-    cv::namedWindow("color",WINDOW_AUTOSIZE);
-    cv::namedWindow("src",WINDOW_AUTOSIZE);
-    /*cv::namedWindow("color",WINDOW_NORMAL);
+  { 
+    cv::namedWindow("color",WINDOW_NORMAL);
     cv::resizeWindow("color",640,480);
     cv::namedWindow("src",WINDOW_NORMAL);
-    cv::resizeWindow("src",640,480);*/
+    cv::resizeWindow("src",640,480);
     cv::startWindowThread();
   }
   //Start ROS subscriber...
-  image_transport::ImageTransport it(nh);
-  image_transport::Subscriber sub = it.subscribe(subscribed_image_topic, 1, imageCb);
+  message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, subscribed_image_topic, 1);
+  message_filters::Subscriber<sensor_msgs::Image> depth_sub(nh, subscribed_depth_topic, 1);
+  typedef sync_policies::ApproximateTime<sensor_msgs::Image, sensor_msgs::Image> MySyncPolicy;
+  // ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+  Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), image_sub, depth_sub);
+  sync.registerCallback(boost::bind(&imageCb, _1, _2));
   //...and ROS publisher
-  ros::Publisher pub = nh.advertise<sensor_msgs::RegionOfInterest>(published_topic, 1000);
+  ros::Publisher roi_pub = nh.advertise<sensor_msgs::RegionOfInterest>(published_roi_topic, 1000);
+  ros::Publisher dist_pub = nh.advertise<std_msgs::Float64>(published_distance_topic, 1000);
   ros::Rate r(30);
   while (nh.ok())
   {
-  	//Publish every object detected
-    for(vector<sensor_msgs::RegionOfInterest>::iterator it = object.begin(); it != object.end(); it++)
-      pub.publish(*it);
+    //Publish every object detected
+    if(object.size() != dist.size()) ROS_INFO("Unmatched numbers of objects & distances!");
+    else for(int i = 0; i < object.size(); i++)
+    {
+      roi_pub.publish(object[i]);
+      dist_pub.publish(dist[i]);
+    }
     //Reinitialize the object counting vars
     object.clear();
-
+    dist.clear();
+    //Spin
     ros::spinOnce();
     r.sleep();
   }
