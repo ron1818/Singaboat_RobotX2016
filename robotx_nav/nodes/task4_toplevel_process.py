@@ -21,75 +21,85 @@ from move_base_force_cancel import ForceCancel
 from scan_the_code_planner import ScanTheCode
 
 
-def stationkeeping_worker(q):
+def stationkeeping_worker(data_q, res_q):
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
-    stationkeep_obj = StationKeeping(nodename="stationkeep", target=None, radius=2, duration=200)
+    stationkeep_obj = StationKeeping(nodename="stationkeep", target=None, radius=2, duration=30)
     while True:
-        target, radius, duration = q.get()
+        target, radius, duration = data_q.get()
         print "from planner", target
         if target[2] < -1e6: # unless send a -inf z by waypoint pub: terminating
             break
         else:
             stationkeep_obj.respawn(target, radius, duration)
+            res_q.put(False)  # do not onhold stationkeep
     print p.name, p.pid, 'Exiting'
 
 
-def moveto_worker(q, hold_move_q):
+def moveto_worker(data_q, res_q):
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
     # get the waypoints, loop wait for updates
     moveto_obj = MoveTo("moveto", is_newnode=True, target=None, is_relative=False)
     while True:
-        target = q.get()
+        target = data_q.get()
         print target
-        if target[2] < -1e6: # unless send a -inf z by waypoint pub: terminating
+        if target[2] < -1e6:  # unless send a -inf z by waypoint pub: terminating
             break
         else:
             moveto_obj.respawn(target)
-            hold_move_q.put(False)
+            res_q.put(False)  # do not onhold moveto
     print p.name, p.pid, 'Exiting'
 
 
-def planner_worker(station_keep_q, moveto_q, hold_moveto_q):
+def planner_worker(sk_data_q, moveto_data_q, sk_res_q, moveto_res_q):
     """ plan for totems """
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
     planner_obj = ScanTheCode("scanthecode")
     while True:
-        if not hold_moveto_q.empty(): # get update from moveto on success
-            hol = hold_move_q.get() # free moveto to be on hold after moveto finished
+        if not moveto_res_q.empty(): # get update from moveto on success
+            hol = moveto_res_q.get()  # free moveto to be on hold after moveto finished
             planner_obj.update_hold_moveto(hol)
-        isready, stationkeep_target, moveto_target, hold_moveto, completed = planner_obj.planner()  # try to find totem lamp
-        if completed:  # code get
+        if not sk_res_q.empty(): # get update from sk on success
+            hol = sk_res_q.get()  # free sk to be on hold after sk finished
+            planner_obj.update_hold_stationkeep(hol)
+
+        is_led_valid, is_totem_found, sk_target, moveto_target = planner_obj.planner()  # get data
+        if is_led_valid:  # finish job
+            print "mp find the led"
             poison_pill = [0, 0, -float("inf")]
-            station_keep_q.put([poison_pill, None, None])
+            sk_data_q.put([poison_pill, None, None])
             # need an exit target
             if moveto_target != []:
-                moveto_q.put(moveto_target)
-
+                print "mp", moveto_target
+                moveto_data_q.put(moveto_target)
             # finally kill moveto
-            time.sleep(1)
-            moveto_q.put(poison_pill)
+            time.sleep(10)
+            moveto_data_q.put(poison_pill)
+            time.sleep(10)
             break
-        elif isready and not completed and stationkeep_target != []:  # still have pending loiter points
-            print "stationkeep called"
-            station_keep_q.put(stationkeep_target)
-        elif not isready and not hold_moveto and not completed and moveto_target != []:  # need to explore for valid loiter points
-            moveto_q.put(moveto_target)
+        else:  # led is not valid
+            if sk_target != [] and moveto_target == []:  # planner want sk_target
+                print "mp stationkeep called"
+                sk_data_q.put([sk_target, 2, 30])
+            elif sk_target == [] and moveto_target != []:  # planner want random walk
+                print "mp random walk called"
+                moveto_data_q.put(moveto_target)
 
+        time.sleep(0.5)
     print p.name, p.pid, 'Exiting'
 
 
 if __name__ == "__main__":
-    moveto_q = mp.Queue()
-    hold_moveto_q = mp.Queue()
-    station_keep_q = mp.Queue(1)
-    v_dict_q = mp.Queue(1)
+    moveto_data_q = mp.Queue()
+    moveto_res_q = mp.Queue()
+    sk_data_q = mp.Queue()
+    sk_res_q = mp.Queue()
 
-    stationkeeping_mp = mp.Process(name="skp", target=stationkeeping_worker, args=(station_keep_q,))
-    moveto_mp = mp.Process(name="mvt", target=moveto_worker, args=(moveto_q, hold_moveto_q,))
-    planner_mp = mp.Process(name="pln", target=planner_worker, args=(station_keep_q, moveto_q, hold_moveto_q,))
+    stationkeeping_mp = mp.Process(name="skp", target=stationkeeping_worker, args=(sk_data_q, sk_res_q,))
+    moveto_mp = mp.Process(name="mvt", target=moveto_worker, args=(moveto_data_q, moveto_res_q,))
+    planner_mp = mp.Process(name="pln", target=planner_worker, args=(sk_data_q, moveto_data_q, sk_res_q, moveto_res_q,))
 
     stationkeeping_mp.start()
     moveto_mp.start()
