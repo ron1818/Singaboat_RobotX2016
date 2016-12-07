@@ -27,14 +27,18 @@ class ColorTotemPlanner(object):
 
         self.visited_dict = {"red": False, "green": False, "blue": False, "yellow": False}
         self.requested_dict =  {"red": False, "green": False, "blue": False, "yellow": False}
-        self.hold_moveto = False
-        self.isready = False
+        self.hold_moveto = False # by default, let moveto to work
+        self.requested_moveto = False # by default, moveto is not requested
+        self.isready = False # is loiter ready? by default not go for loiter, only when loiter target identified
+
+        self.exit_target = [-30, 15, 0]
 
     def planner(self):
         r = rospy.Rate(self.rate)
         # while not rospy.is_shutdown():
-        self.allvisited = False
+        self.allvisited = False # is all totems visited?
         self.loiter_target = list()
+        self.moveto_target = list()
         red_centers, green_centers, blue_centers, yellow_centers =\
                list(), list(), list(), list()  # np.array([[0,0]]*2), np.array([[0,0]]*2)
         # # k means clustering for both redlist and greenlist
@@ -54,9 +58,9 @@ class ColorTotemPlanner(object):
             # loiter counterclockwise
             print "start green"
             self.isready = True  # go for loiter
-            self.hold_moveto = True
+            self.hold_moveto = True # not go for moveto
             self.loiter_target = ["green", green_centers, 2.5, 6, True]
-            self.requested_dict["green"] = True
+            self.requested_dict["green"] = True # request to go for loiter, on hold for loiter
 
         if blue_centers != [] and not self.visited_dict["blue"] and self.visited_dict["green"] and not self.requested_dict["blue"]:
             # loiter clockwise
@@ -83,17 +87,20 @@ class ColorTotemPlanner(object):
         if all(self.visited_dict.values()):  # all visited
             # exit the region
             self.allvisited = True
+            self.moveto_target = self.exit_target
             print "all visited"
 
-        if not self.hold_moveto and not self.isready and not all(self.visited_dict.values()):  # no loiter, still did not finish
-            self.loiter_target = list(self.random_walk([red_centers, green_centers, blue_centers, yellow_centers])) + [0]
-            # print self.loiter_target
-            self.hold_moveto = True  # executing moveto, hold the next
-            hold_moveto = False  # executing moveto, hold the next
-        else:
-            hold_moveto = True
+        # moveto not hold, not ready for loiter, still did not finish, go for moveto
+        if not self.isready and not all(self.visited_dict.values()):
+            if not self.hold_moveto:
+                self.moveto_target = list(self.random_walk([red_centers, green_centers, blue_centers, yellow_centers])) + [0]
+                self.hold_moveto = True  # executing moveto, hold ongoing moveto task
+                self.requested_moveto = False
+                # hold_moveto = False  # executing moveto, hold the next
+            else:  # moveto not hold, not ready for loiter, still did not finish, go for moveto
+                self.requested_moveto = True
 
-        return self.isready, self.loiter_target, self.allvisited, hold_moveto
+        return self.isready, self.loiter_target, self.moveto_target, self.allvisited, self.requested_moveto
 
         # if cannot make all visited, random walk move to
         #   r.sleep()
