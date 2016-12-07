@@ -53,7 +53,7 @@ def planner_worker(loiter_data_q, moveto_data_q, loiter_res_q, moveto_res_q):
     """ plan for totems """
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
-    planner_obj = ScanTheCode("scanthecode")
+    planner_obj = Pinger("pinger")
     while True:
         if not moveto_res_q.empty(): # get update from moveto on success
             hol = moveto_res_q.get()  # free moveto to be on hold after moveto finished

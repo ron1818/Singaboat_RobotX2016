@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   roslaunch
   dynamic_reconfigure
+  tf
 )
 
 find_package(OpenCV REQUIRED)
@@ -139,18 +140,24 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 # add_dependencies(robotx_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
+#mission nodes
 add_executable(detection src/detection.cpp)
 target_link_libraries(detection ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(sequence_scanner src/sequence_scanner.cpp)
-target_link_libraries(sequence_scanner ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(sequence_scanner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(zed_detection src/zed_detection.cpp)
+target_link_libraries(zed_detection ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(zed_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(underwater src/underwater.cpp)
 target_link_libraries(underwater ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(underwater ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(sequence_scanner src/sequence_scanner.cpp)
+target_link_libraries(sequence_scanner ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(sequence_scanner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+#utility nodes:
 add_executable(image_publisher src/image_publisher.cpp)
 target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(image_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -167,6 +174,7 @@ add_dependencies(subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTE
 ## same as for the library above
 # add_dependencies(robotx_vision_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(detection ${PROJECT_NAME}_gencfg)
+add_dependencies(zed_detection ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(robotx_vision_node

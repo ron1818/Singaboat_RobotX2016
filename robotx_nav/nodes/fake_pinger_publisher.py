@@ -2,6 +2,7 @@
 
 import rospy
 import random
+import numpy as np
 from visualization_msgs.msg import Marker, MarkerArray
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
@@ -46,9 +47,10 @@ class PingerPublisher():
         self.pinger = [8+7.07/2, 30-7.07/2]
         markerArray = MarkerArray()
         pinger = String()
+        threshold = 30
 
         while not rospy.is_shutdown():
-            if self.distance(self.red_totem) < threshold:
+            if self.distance(self.red) < threshold:
                 if self.likely_spawn():
                     count += 1
                     if(count > MARKERS_MAX):
@@ -74,7 +76,7 @@ class PingerPublisher():
                     if(count > MARKERS_MAX):
                         markerArray.markers.pop(0)
                     markerArray.markers.append(self.create_marker("green"))
-            if self.distance(self.green_totem) < threshold:
+            if self.distance(self.green) < threshold:
                 if self.unlikely_spawn():
                     count += 1
                     if(count > MARKERS_MAX):
@@ -100,7 +102,7 @@ class PingerPublisher():
                     if(count > MARKERS_MAX):
                         markerArray.markers.pop(0)
                     markerArray.markers.append(self.create_marker("black"))
-            if self.distance(self.white1_totem) < threshold:
+            if self.distance(self.white1) < threshold:
                 if self.unlikely_spawn():
                     count += 1
                     if(count > MARKERS_MAX):
@@ -126,7 +128,7 @@ class PingerPublisher():
                     if(count > MARKERS_MAX):
                         markerArray.markers.pop(0)
                     markerArray.markers.append(self.create_marker("black"))
-            if self.distance(self.white2_totem) < threshold:
+            if self.distance(self.white2) < threshold:
                 if self.unlikely_spawn():
                     count += 1
                     if(count > MARKERS_MAX):
@@ -152,7 +154,7 @@ class PingerPublisher():
                     if(count > MARKERS_MAX):
                         markerArray.markers.pop(0)
                     markerArray.markers.append(self.create_marker("black"))
-            if self.distance(self.black_totem) < threshold:
+            if self.distance(self.black) < threshold:
                 if self.unlikely_spawn():
                     count += 1
                     if(count > MARKERS_MAX):
@@ -180,12 +182,13 @@ class PingerPublisher():
                     markerArray.markers.append(self.create_marker("black"))
 
             if self.distance(self.pinger) < threshold * 0.75:
-                pinger.data = "matching"
+                pinger.data = "matched"
             else:
                 pinger.data = "unknown"
 
             # Publish the MarkerArray
-            pub.publish(markerArray)
+            gate_pub.publish(markerArray)
+            pinger_pub.publish(pinger)
 
             r.sleep()
 
@@ -228,14 +231,17 @@ class PingerPublisher():
 
         return marker
 
+    def distance(self, target):
+        return np.sqrt((self.x0 - target[0]) ** 2 + (self.y0 - target[1]) ** 2)
+
     def random_noise(self):
         return random.random() * 4.0 - 2.0
 
     def likely_spawn(self):
-        return random.choice([True, False, False, False])
+        return random.choice([True, True])
 
     def unlikely_spawn(self):
-        return random.choice([False] * 25 + [True])
+        return random.choice([True] * 4 + [True])
 
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
