@@ -31,7 +31,9 @@
     <include file="$(find robotx_control)/launch/gazebo_r_l_control.launch" if="$(arg use_vel)" />
     <include file="$(find robotx_control)/launch/gazebo_no_vel_r_l_control.launch" unless="$(arg use_vel)" />
     <!-- imu filter by madgwick/-->
-    <include file="$(find robotx_sensor)/launch/imu_filter.launch"/>
+    <include file="$(find robotx_sensor)/launch/imu_filter.launch" >
+        <arg name="isgazebo" value="true" />
+    </include>
 
     <!-- Run a python script to the send a service call to gazebo_ros to spawn a URDF robot -->
     <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"

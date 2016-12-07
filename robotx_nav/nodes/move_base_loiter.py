@@ -31,36 +31,64 @@ from move_base_util import MoveBaseUtil
 class Loiter(MoveBaseUtil):
     # initialize boat pose param
 
-    def __init__(self, nodename, target=[10,0,0], radius=5, polygon=6, is_ccw=True, is_relative=True):
-        MoveBaseUtil.__init__(self, nodename)
+    def __init__(self, nodename, is_newnode=True, target=[10,0,0], radius=5, polygon=6, is_ccw=True, is_relative=True):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         self.loiter = {}
-        self.mode = rospy.get_param("~mode", 1)
-        self.mode_param = rospy.get_param("~mode_param", 2)
- 	self.target = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
-	self.loiter["radius"] = rospy.get_param("~radius", radius) #double
-        self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
-	self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
-	self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
 
+        self.loiter["mode"] = rospy.get_param("~mode", 1)
+        self.loiter["mode_param"] = rospy.get_param("~mode_param", 2)
+
+        if target is not None:
+            self.loiter["target"] = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
+        else:
+            self.loiter["target"] = Point(0, 0, 0)
+
+        self.loiter["radius"] = rospy.get_param("~radius", radius) #double
+        self.loiter["polygon"] = rospy.get_param("~polygon", polygon) #int
+        self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
+        self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
+
+        # # find the target
+        # if self.loiter["is_relative"]:
+        #     self.loiter["center"], self.loiter["heading"] = \
+        #         self.convert_relative_to_absolute([self.loiter["target"].x, self.loiter["target"].y])
+        # else:  # absolute
+        #     # obtained from vision nodes, absolute catersian
+        #     # but may be updated later, so need to callback
+        #     self.loiter["center"] = (self.loiter["target"].x, self.loiter["target"].y, self.loiter["target"].z)  # (x, y, 0)
+
+        #     # heading from boat to center
+        #     self.loiter["heading"] = atan2(self.loiter["target"].y - self.y0, self.loiter["target"].x - self.x0)
+        if target is not None: # onetime job
+            self.respawn()
+
+    def respawn(self, target=None, polygon=None, radius=None, is_ccw=None):
+        """respawn when new target received """
+        if target is not None:
+            self.loiter["target"] = Point(target[0], target[1], 0)
+
+        if radius is not None:
+            self.loiter["radius"] = radius
+        if is_ccw is not None:
+            self.loiter["is_ccw"] = is_ccw
 
         # find the target
         if self.loiter["is_relative"]:
             self.loiter["center"], self.loiter["heading"] = \
-                self.convert_relative_to_absolute([self.target.x, self.target.y])
+                self.convert_relative_to_absolute([self.loiter["target"].x, self.loiter["target"].y])
         else:  # absolute
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
-            self.loiter["center"] = (self.target.x, self.target.y, self.target.z)  # (x, y, 0)
-
+            self.loiter["center"] = (self.loiter["target"].x, self.loiter["target"].y, self.loiter["target"].z)  # (x, y, 0)
             # heading from boat to center
-            self.loiter["heading"] = atan2(self.target.y - self.y0, self.target.x - self.x0)
+            self.loiter["heading"] = atan2(self.loiter["target"].y - self.y0, self.loiter["target"].x - self.x0)
 
         # create waypoints
         waypoints = self.create_waypoints()
 
         # # Initialize the visualization markers for RViz
-        # self.init_markers()
+        self.init_markers()
 
         # Set a visualization marker at each waypoint
         for waypoint in waypoints:
@@ -100,11 +128,11 @@ class Loiter(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal, self.mode, self.mode_param)
+            self.move(goal, self.loiter["mode"], self.loiter["mode_param"])
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
-            print "task finished"
+            print "loiter task finished"
 
     def create_waypoints(self):
 
@@ -154,25 +182,13 @@ class Loiter(MoveBaseUtil):
         # return the resultant waypoints
         return waypoints
 
-    def odom_callback(self, msg):
-        """ call back to subscribe, get odometry data:
-        pose and orientation of the current boat,
-        suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
-        self.z0 = msg.pose.pose.position.z
-        x = msg.pose.pose.orientation.x
-        y = msg.pose.pose.orientation.y
-        z = msg.pose.pose.orientation.z
-        w = msg.pose.pose.orientation.w
-        self.roll0, self.pitch0, self.yaw0 = euler_from_quaternion((x, y, z, w))
-        self.odom_received = True
-        # rospy.loginfo([self.x0, self.y0, self.z0])
 
 
 if __name__ == '__main__':
     try:
-        Loiter(nodename="loiter_test")
+        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=False)
+        loiter_test.respawn(target=[10, 5, 0])
+
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")

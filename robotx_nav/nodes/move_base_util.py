@@ -22,7 +22,7 @@ from math import radians, pi, sin, cos, sqrt
 class MoveBaseUtil():
     x0, y0, yaw0 = 0, 0, 0
     lat, lon = 0, 0
-    cancel_id = "cancel"
+    cancel_id = ""
 
     def __init__(self, nodename="nav_test", is_newnode=True):
         if is_newnode:
@@ -36,7 +36,7 @@ class MoveBaseUtil():
         # tf_listener
         self.tf_listener = tf.TransformListener()
 
-        rospy.on_shutdown(self.shutdown)
+        #rospy.on_shutdown(self.shutdown)
 
         # * get parameters
         # * Create a list to hold the target quaternions (orientations)
@@ -61,7 +61,7 @@ class MoveBaseUtil():
         # * Set a visualization marker at each waypoint
 
         # * Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
 
         # * Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -168,11 +168,9 @@ class MoveBaseUtil():
             while sqrt((self.x0 - goal.target_pose.pose.position.x) ** 2 +
                        (self.y0 - goal.target_pose.pose.position.y) ** 2) > mode_param:
 
-                if self.cancel_id != "":
-                    rospy.sleep(rospy.Duration(1))
-                else:
-                    self.move_base.cancel_all_goals()
-                    break
+                
+                rospy.sleep(rospy.Duration(1))
+
                 # (trans, _) = self.get_tf()
             go_to_next = True
 
@@ -183,10 +181,9 @@ class MoveBaseUtil():
             self.rotation(mode_param)
 
         else:  # normal stop in each waypoint mode, mode_param is unused
-            if self.cancel_id != "":
-                finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
-            else:
-                self.move_base.cancel_all_goals()
+            
+            finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
+ 
 
         # If we don't get there in time, abort the goal
         if not finished_within_time or go_to_next:
@@ -201,7 +198,7 @@ class MoveBaseUtil():
     def rotation(self, ang):
 
         rate = rospy.Rate(10)
-        an_vel = 0.2
+        an_vel = 0.1
         duration = ang / an_vel
         msg = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, an_vel))
 
@@ -212,10 +209,10 @@ class MoveBaseUtil():
             current_time = rospy.get_time()
             if (current_time - start_time) > duration:
                 self.cmd_vel_pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2 * an_vel)))
-                rospy.sleep(0.3)
-                pub.publish(Twist())
+                self.cmd_vel_pub.publish(Twist())
                 break
-            pub.publish(msg)
+            else:
+                self.cmd_vel_pub.publish(msg)
             rate.sleep()
 
     def reverse_tf(self, distance=5, speed=-0.2):
@@ -326,5 +323,5 @@ class MoveBaseUtil():
 
 if __name__ == "__main__":
     util = MoveBaseUtil()
-    # util.get_tf()
+    util.rotation(1.57)
     util.convert_relative_to_absolute(coordinate=[10,0])

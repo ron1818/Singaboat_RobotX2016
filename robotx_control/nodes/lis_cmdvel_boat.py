@@ -13,9 +13,9 @@ import math
 from geometry_msgs.msg import Twist
 from std_msgs.msg import UInt16MultiArray, MultiArrayDimension  # for PWM signal
 from dynamic_reconfigure.server import Server
-from auv_ros_control.cfg import CalibrateMotorConfig
-from auv_ros_control.PCA9685PW import PCA9685PW
-from auv_ros_control.SC16IS750_I2C import SC16IS750
+from robotx_control.cfg import CalibrateMotorConfig
+# from auv_ros_control.PCA9685PW import PCA9685PW
+# from auv_ros_control.SC16IS750_I2C import SC16IS750
 
 """ use ROS to send cmd_vel to AUV boat with
 1) differential propeller drive
