@@ -5,6 +5,8 @@
     
     1. Random walk with gaussian at center of map until station position is acquired
     2. loiter around until correct face seen
+    3. if symbol seen, move towards symbol perpendicularly
+    4. if close enough, do move_base aiming
 
 task 7:
     -----------------
@@ -31,13 +33,13 @@ from move_base_aiming import Aiming
 
 is_loitering=False
 
-def loiter_work(target):
+def loiter_work(target, radius):
     print("loitering")
     is_loitering=True
-    loiter_obj = Loiter(nodename="loiter", target=target, radius=5, polygon=6, is_ccw=True, is_relative=False)
+    loiter_obj = Loiter(nodename="loiter", target=target, radius=radius, polygon=6, is_ccw=True, is_relative=False)
     is_loitering=False
 
-def aim_work(target, radius=2, duration=0, box=[5,0,0])):
+def aim_work(target, radius=2, duration=0, box=[20,20,0]):
     print("aiming")
     stationkeep_obj = StationKeeping(nodename="aiming", radius=radius, duration=duration, angle_tolerance=1*pi/180.0, box=box))
 
@@ -66,6 +68,7 @@ class DetectDeliver(object):
     x0, y0, yaw0= 0, 0, 0
     symbols=np.zeros((MAX_DATA, 2)) #unordered list
     symbols_counter=0
+    angle_threshold=10*math.pi/180
 
     def __init__(self, symbol_list):
         print("starting task 7")
@@ -92,23 +95,53 @@ class DetectDeliver(object):
 	
 	#loiter around station until symbol's face seen
 	loiter_radius=math.sqrt((self.x0-self.station_position[0])**2+(self.y0-self.station_position[1])**2)
-	
+	if loiter_radius>10:
+	    loiter_radius=10	
+
         while not rospy.is_shutdown() and not self.symbol_seen:
 	    self.loitering=is_loitering
 	    if not self.loitering:
-	    	self.pool.apply_async(loiter, args=())
+	    	self.pool.apply_async(loiter, args=(self.station_position, loiter_radius))
 		self.loitering=True
 	        
 		if loiter_radius>3:
 		    loiter_radius-=1
 		
 	self.pool.apply(cancel_loiter)
-	
+	d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)
 	#moveto an offset, replan in the way
+	while not rospy.is_shutdown() and self.symbol_seen and d > 3:
+	    alpha=math.fabs(self.yaw0-self.symbol_position[2])
+	    theta=math.atan2(math.sin(alpha), math.cos(alpha)) #always +ve
+	    d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)
+	    perpendicular_d=0.6*d/math.cos(theta)
+	    
+	
+	    if theta>self.angle_threshold:
+		print("replan")
+		self.pool.apply_async(cancel_moveto, args())
+		target=[self.symbol_position[0]-perpendicular_d*math.cos(self.symbol_position[2]), self.symbol_position[1]-perpendicular_d*math.sin(self.symbol_position[2])]
 		
-
+		self.pool.apply(moveto_work, args=(target))
+		self.pool.apply_async(moveto_work, args([self.symbol_position[0], self.symbol_position[1]])
+	    time.sleep(2)	
+	    
+	    
 	#aiming to the box
-
+	self.shooting_complete=False
+	self.is_aiming=False
+	while not rospy.is_shutdown() and not self.shooting_complete:
+	    #start shooting module
+	    target=[self.x0, self.y0]
+	    box=[self.symbol_position[0], self.symbol_position[1]]
+	    radius=2
+	    #duration 0 is forever
+	    if not self.is_aiming:	    	
+		self.pool.apply_async(aim_work, args=(target, radius, 0, box))
+		self.is_aiming=True
+	    time.sleep(1)
+	    
+	self.pool.apply(cancel_aiming)
         self.pool.close()
         self.pool.join()
 
@@ -189,6 +222,5 @@ if __name__ == '__main__':
 	#[id,type]circle red
         DetectDeliver([0,1])
 
-        # stage 1: gps
     except rospy.ROSInterruptException:
         rospy.loginfo("Task 7 Finished")
