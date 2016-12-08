@@ -61,7 +61,8 @@ class MoveBaseUtil():
         # * Set a visualization marker at each waypoint
 
         # * Publisher to manually control the robot (e.g. to stop it, queue_size=5)
-        self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
+        # self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
+        self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
 
         # * Subscribe to the move_base action server
         self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
@@ -168,7 +169,7 @@ class MoveBaseUtil():
             while sqrt((self.x0 - goal.target_pose.pose.position.x) ** 2 +
                        (self.y0 - goal.target_pose.pose.position.y) ** 2) > mode_param:
 
-                
+
                 rospy.sleep(rospy.Duration(1))
 
                 # (trans, _) = self.get_tf()
@@ -181,9 +182,9 @@ class MoveBaseUtil():
             self.rotation(mode_param)
 
         else:  # normal stop in each waypoint mode, mode_param is unused
-            
+
             finished_within_time = self.move_base.wait_for_result(rospy.Duration(60 * 1))
- 
+
 
         # If we don't get there in time, abort the goal
         if not finished_within_time or go_to_next:
@@ -215,7 +216,7 @@ class MoveBaseUtil():
                 self.cmd_vel_pub.publish(msg)
             rate.sleep()
 
-    def reverse_tf(self, distance=5, speed=-0.2):
+    def reverse_tf(self, distance=5, speed=-1):
         """ reverse to certain distance """
         rate = rospy.Rate(10)
         linear_speed = speed
@@ -238,11 +239,11 @@ class MoveBaseUtil():
         d = 0
 
         # Enter the loop to move along a side
-        while distance < distance and not rospy.is_shutdown():
+        while d < distance and not rospy.is_shutdown():
             # Publish the Twist message and sleep 1 cycle
             self.cmd_vel_pub.publish(move_cmd)
 
-            r.sleep()
+            rate.sleep()
 
             # Get the current position
             # (position, rotation) = self.get_tf()
@@ -250,7 +251,7 @@ class MoveBaseUtil():
             # Compute the Euclidean distance from the start
             d = sqrt(pow((self.x0 - x_start), 2) +
                      pow((self.y0 - y_start), 2))
-            print d
+            # print d
 
         # Stop the robot before the rotation
         move_cmd = Twist()
@@ -267,18 +268,13 @@ class MoveBaseUtil():
         start_time = rospy.get_time()
 
         while not rospy.is_shutdown():
-            try:
-                current_time = rospy.get_time()
-                if (current_time - start_time) > duration:
-                    self.cmd_vel_pub.publish(Twist(Vector3(speed, 0.0, 0.0), Vector3(0.0, 0.0, 0.0)))
-                    rospy.sleep(1)
-                    self.cmd_vel_pub.publish(Twist())
-                else:
-                    self.cmd_vel_pub.publish(msg)
-                rate.sleep()
-            except:
-                # stop the robot
+            current_time = rospy.get_time()
+            if (current_time - start_time) > duration:
                 self.cmd_vel_pub.publish(Twist())
+                break
+            else:
+                self.cmd_vel_pub.publish(msg)
+            rate.sleep()
 
 
     def init_markers(self):
@@ -323,5 +319,4 @@ class MoveBaseUtil():
 
 if __name__ == "__main__":
     util = MoveBaseUtil()
-    util.rotation(1.57)
-    util.convert_relative_to_absolute(coordinate=[10,0])
+    util.reverse_tf()
