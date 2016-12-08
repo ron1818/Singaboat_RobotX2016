@@ -107,8 +107,8 @@ class CamShiftColor(ROS2OpenCV2):
                 print self.hist
                 self.show_hist()
 
-            # if self.detect_box is not None:
-            #     self.selection = None
+            if self.detect_box is not None:
+                self.selection = None
 
             # If we have a histogram, track it with CamShift
             if self.hist is not None:

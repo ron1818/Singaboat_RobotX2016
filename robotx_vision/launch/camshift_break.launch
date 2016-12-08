@@ -4,9 +4,8 @@
     <arg name="namespace" default="fixed_cam" />
     <arg name="objectname" default="totem" />
     <arg name="color_under_detect" default="red" />
-  <node pkg="robotx_vision" name="camshift_$(arg color_under_detect)" type="camshift_color.py" output="screen" ns="$(arg namespace)" >
+  <node pkg="robotx_vision" name="camshift_break" type="camshift_break.py" output="screen" ns="$(arg namespace)" >
       <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
-      <remap from="/roi" to="$(arg objectname)/$(arg color_under_detect)/$(arg roi)" />
     <rosparam>
        smin: 85
        vmin: 50
