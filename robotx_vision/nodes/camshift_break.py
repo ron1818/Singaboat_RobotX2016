@@ -10,7 +10,6 @@ import rospy
 import cv2
 from cv2 import cv as cv
 from robotx_vision.ros2opencv2 import ROS2OpenCV2
-from robotx_vision.find_mask import Masking
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 import numpy as np
@@ -22,11 +21,6 @@ class CamShiftColor(ROS2OpenCV2):
         ROS2OpenCV2.__init__(self, node_name)
 
         self.node_name = node_name
-        self.color_under_detect = rospy.get_param("~color_under_detect", "red")
-        # call masking alglorthm to get the color mask
-        self.mymask = Masking(color=self.color_under_detect, shape=None,
-                              masker=None, detector=None, matcher=None, matching_method=None)
-
         # The minimum saturation of the tracked color in HSV space,
         # as well as the min and max value (the V in HSV) and a
         # threshold on the backprojection probability image.
@@ -70,6 +64,27 @@ class CamShiftColor(ROS2OpenCV2):
     def set_threshold(self, pos):
         self.threshold = pos
 
+
+    def color_mask(self, frame):
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+
+        mask = cv2.inRange(hsv, self.lower_orange, self.upper_orange) + \
+                cv2.inRange(hsv, self.lower_yellow, self.upper_yellow)
+        return mask
+
+    def find_max_contour(self, mask):
+        # find contours
+        contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # for multiple contours, find the maximum
+        area=list()
+        approx=list()
+        for i, cnt in enumerate(contours):
+            approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
+            area.append(cv2.contourArea(cnt))
+        # overwrite selection box by automatic color matching
+        return cv2.boundingRect(approx[np.argmax(area)])
+
     # The main processing function computes the histogram and backprojection
     def process_image(self, cv_image):
 
@@ -86,9 +101,9 @@ class CamShiftColor(ROS2OpenCV2):
             # not select any region, do automatic color rectangle
             if self.selection is None:
                 # obtain the color mask
-                color_mask = self.mymask.color_mask(frame, self.color_under_detect)
+                color_mask = self.color_mask(frame)
                 # create bounding box from the maximum mask
-                self.selection = self.mymask.find_max_contour(color_mask)
+                self.selection = self.find_max_contour(color_mask)
                 self.detect_box = self.selection
                 self.track_box = None
 
@@ -104,11 +119,10 @@ class CamShiftColor(ROS2OpenCV2):
                 self.hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
                 cv2.normalize(self.hist, self.hist, 0, 255, cv2.NORM_MINMAX);
                 self.hist = self.hist.reshape(-1)
-                print self.hist
                 self.show_hist()
 
-            # if self.detect_box is not None:
-            #     self.selection = None
+            if self.detect_box is not None:
+                self.selection = None
 
             # If we have a histogram, track it with CamShift
             if self.hist is not None:
@@ -130,6 +144,9 @@ class CamShiftColor(ROS2OpenCV2):
 
                 # Run the CamShift algorithm
                 self.track_box, self.track_window = cv2.CamShift(backproject, self.track_window, term_crit)
+                x0, y0, x1, y1 = self.track_window
+                hsv_cs_roi = hsv[y0:y1, x0:x1]
+                print np.median(hsv_cs_roi)
 
                 # Display the resulting backprojection
                 cv2.imshow("Backproject", backproject)
