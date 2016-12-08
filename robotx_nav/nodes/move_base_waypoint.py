@@ -25,7 +25,7 @@ class MoveTo(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, is_newnode=True, target=[0,10,1.57], is_relative=False):
+    def __init__(self, nodename, is_newnode=True, target=[0,10,1.57], mode=0, mode_param =0, is_relative=False):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         self.moveto={}
@@ -37,14 +37,21 @@ class MoveTo(MoveBaseUtil):
             self.moveto["target"] = Point(0, 0, 0)
 
         self.moveto["is_relative"] = rospy.get_param("~is_relative", is_relative)
+        self.moveto["mode"] = rospy.get_param("~mode", mode)
+        self.moveto["mode_param"] = rospy.get_param("~mode_param", mode_param)
 
         if target is not None:
             self.respawn()
 
 
-    def respawn(self, target=None):
+    def respawn(self, target=None, mode=None, mode_param=None):
         if target is not None:
             self.moveto["target"] = Point(target[0], target[1], target[2])
+
+        if mode is not None:
+            self.moveto["mode"] = mode
+        if mode_param is not None:
+            self.moveto["mode_param"] = mode_param
 
         print self.moveto["target"]
 
@@ -80,7 +87,7 @@ class MoveTo(MoveBaseUtil):
         goal.target_pose.pose = waypoint
 
         # Start the robot moving toward the goal
-        self.move(goal, 0, 0)
+        self.move(goal, self.moveto["mode"], self.moveto["mode_param"])
 
 
 if __name__ == '__main__':

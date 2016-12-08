@@ -34,7 +34,7 @@ class Pinger(object):
 
         self.kmeans = KMeans(n_clusters=2)
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
-        self.moveto = MoveTo("moveto", is_newnode=False, target=None)
+        self.moveto = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
         self.loiter = Loiter("loiter", is_newnode=False, target=None, is_relative=False)
 
         # Subscribe to marker array publisher
@@ -46,9 +46,11 @@ class Pinger(object):
         rospy.Subscriber("pinger", String, self.pinger_callback, queue_size=10)
 
 
-        self.entry_distance = 5
+        self.entry_distance = 2
         self.exited = False
         self.gate_totem_find = False
+        self.pinger_find = False
+        self.center_gate = list()  # later need to fill in
         self.entry_gate = list()  # later need to fill in
         self.exit_gate = list()  # later need to fill in
         self.hold_loiter = False
@@ -76,7 +78,6 @@ class Pinger(object):
             r.sleep()
         else:  # find the gate totems
             # # get the gate line, done immediatedly after gate totem find
-            # self.find_gateline()
             print "gate totem find"
             while not self.pinger_find:
                 print "go along line"
@@ -87,6 +88,8 @@ class Pinger(object):
                 # find the entry point who has pinger
                 self.locate_pinger_gate()
                 print "enter gate"
+                self.moveto.respawn(self.exit_gate)
+                self.moveto.respawn(self.center_gate)
                 print self.entry_gate
                 self.moveto.respawn(self.entry_gate)
                 while not self.black_totem_find:
@@ -101,6 +104,7 @@ class Pinger(object):
                     self.loiter.respawn(self.black_center)
                     # followed by exit the gate
                     print "exit"
+                    self.moveto.respawn(self.center_gate)
                     print self.exit_gate
                     self.moveto.respawn(self.exit_gate)
                     # exit complete
@@ -117,36 +121,35 @@ class Pinger(object):
     def pinger_callback(self, msg):
         """ get pinger information """
         if msg.data == "matched":
-            self.pinger_find = True  # for planner
-        else:
-            self.pinger_find = False # for planner
-
-        if self.pinger_find:
             self.pinger_list.append([self.x0, self.y0])
 
+        self.find_pinger_center()
+
     def find_pinger_center(self):
-        if len(self.pinger_list) >= 1:  # self.MAX_LENS:
+        if len(self.pinger_list) >= self.MAX_LENS:
             self.pinger_center = self.one_class_svm(self.pinger_list)
+            self.pinger_find = True
         else:
+            self.pinger_find = False
             print "pinger not find"
 
     def markerarray_callback(self, msg):
         """ calculate average over accumulate """
         # accumulate data
         for i in range(len(msg.markers)):
-            if msg.markers[i].id == 0: # red
+            if msg.markers[i].id == 0:  # red
                 if len(self.red_list) > self.MAX_LENS:
                     self.red_list.pop(0)
                 self.red_list.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])
-            elif msg.markers[i].id == 1: # green
+            elif msg.markers[i].id == 1:  # green
                 if len(self.green_list) > self.MAX_LENS:
                     self.green_list.pop(0)
                 self.green_list.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])
-            elif msg.markers[i].id == 4: # white
+            elif msg.markers[i].id == 4:  # white
                 if len(self.white_list) > 2 * self.MAX_LENS:
                     self.white_list.pop(0)
                 self.white_list.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])
-            elif msg.markers[i].id == 3: # black
+            elif msg.markers[i].id == 3:  # black
                 if len(self.black_list) > self.MAX_LENS:
                     self.black_list.pop(0)
                 self.black_list.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])
@@ -223,30 +226,33 @@ class Pinger(object):
 
     def locate_pinger_gate(self):
         # find the gate now
-        self.find_pinger_center()  # find pinger center
+        # self.find_pinger_center()  # find pinger center
         # shortest distance to the identified gate center
-        print self.pinger_center
-        print self.rwl
+        print "pinger center", self.pinger_center
+        print "rwl", self.rwl
         pinger_to_entry_distance = [self.distance(self.pinger_center, self.rwl),
                                     self.distance(self.pinger_center, self.wwl),
                                     self.distance(self.pinger_center, self.gwl)]
 
         shortest_d = np.argmin(pinger_to_entry_distance)
         # entry_gate identified
-        self.entry_gate = [self.rwl, self.wwl, self.gwl][shortest_d] + [0]
-        self.exit_gate = [self.rwlm, self.wwlm, self.gwlm][shortest_d] + [0]
+        # must be inside
+        # exit gate must be outside
+        self.center_gate = [self.rwc, self.wwc, self.gwc][shortest_d] + [0]
+        self.entry_gate = [self.rwlm, self.wwlm, self.gwlm][shortest_d] + [0]
+        self.exit_gate = [self.rwl, self.wwl, self.gwl][shortest_d] + [0]
 
     def find_listen_point(self):
         # find pinger listening point and mirrored point
         # listen point is for detecting pinger, and mirrored point is to supply the direction
         # first is to find the two point that is with d to the gate entry
         theta = -1.0 / self.gateline.coef_
-        rw = [[self.rwc[0] + self.entry_distance * math.cos(theta), self.rwc[0] - self.entry_distance * math.cos(theta)],
-              [self.rwc[1] + self.entry_distance * math.sin(theta), self.rwc[1] - self.entry_distance * math.sin(theta)]]
-        ww = [[self.wwc[0] + self.entry_distance * math.cos(theta), self.wwc[0] - self.entry_distance * math.cos(theta)],
-              [self.wwc[1] + self.entry_distance * math.sin(theta), self.wwc[1] - self.entry_distance * math.sin(theta)]]
-        gw = [[self.gwc[0] + self.entry_distance * math.cos(theta), self.gwc[0] - self.entry_distance * math.cos(theta)],
-              [self.gwc[1] + self.entry_distance * math.sin(theta), self.gwc[1] - self.entry_distance * math.sin(theta)]]
+        rw = [[self.rwc[0] + self.entry_distance * math.cos(theta), self.rwc[1] + self.entry_distance * math.sin(theta)],
+              [self.rwc[0] - self.entry_distance * math.cos(theta), self.rwc[1] - self.entry_distance * math.sin(theta)]]
+        ww = [[self.wwc[0] + self.entry_distance * math.cos(theta), self.wwc[1] + self.entry_distance * math.sin(theta)],
+              [self.wwc[0] - self.entry_distance * math.cos(theta), self.wwc[1] - self.entry_distance * math.sin(theta)]]
+        gw = [[self.gwc[0] + self.entry_distance * math.cos(theta), self.gwc[1] + self.entry_distance * math.sin(theta)],
+              [self.gwc[0] - self.entry_distance * math.cos(theta), self.gwc[1] - self.entry_distance * math.sin(theta)]]
 
         # l is listening point, lm is the mirrored point
         if self.before_line_sign * (self.gateline.predict([rw[0][0]]) - rw[0][1]) > 0:
