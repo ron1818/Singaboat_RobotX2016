@@ -19,7 +19,6 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
-from aim_to_target import Aim
 
 
 class Aiming(MoveBaseUtil):

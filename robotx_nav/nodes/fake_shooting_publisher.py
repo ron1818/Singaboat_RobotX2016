@@ -26,15 +26,15 @@ ORANGE=6
 """
 
 class ShootingPublisher():
-	x0, y0 = 5,15
+	x0, y0 = 0,0
 	def __init__(self):
 		rospy.init_node('shoot_pub', anonymous=False)
 		r = rospy.Rate(1)
 		pub = rospy.Publisher("shoot", MarkerArray, queue_size=50)
-		#self.odom_received = False
-		#rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=None)
-		#while not self.odom_received:
-		#    r.sleep()
+		self.odom_received = False
+		rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=None)
+		while not self.odom_received:
+		    r.sleep()
 
 		count = 1
 		MARKERS_MAX = 12
