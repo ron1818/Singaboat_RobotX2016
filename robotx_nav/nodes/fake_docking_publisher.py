@@ -2,8 +2,10 @@
 
 import rospy
 import random
+import math
 import numpy as np
 from visualization_msgs.msg import Marker, MarkerArray
+from tf.transformations import quaternion_from_euler
 from nav_msgs.msg import Odometry
 
 """
@@ -24,7 +26,7 @@ ORANGE=6
 """
 
 class DockPublisher():
-	x0, y0 = 20,40
+	x0, y0 = 20,10
 	def __init__(self):
 		rospy.init_node('dock_pub', anonymous=False)
 		r = rospy.Rate(1)
@@ -126,6 +128,7 @@ class DockPublisher():
 			marker.pose.position.x = self.red_x + self.random_noise()
 			marker.pose.position.y = self.red_y + self.random_noise()
 			marker.pose.position.z = self.red_z + self.random_noise()
+			quaternion = quaternion_from_euler(0, 0, math.pi*3/2)
 		elif number == "2":
 			marker.id = 2 #blue
 			marker.type = marker.SPHERE  # totem
@@ -133,6 +136,7 @@ class DockPublisher():
 			marker.pose.position.x = self.blue_x + self.random_noise()
 			marker.pose.position.y = self.blue_y + self.random_noise()
 			marker.pose.position.z = self.blue_z + self.random_noise()
+			quaternion = quaternion_from_euler(0, 0, math.pi*3/2)
 		elif number == "3":
 			marker.id = 1  # green
 			marker.type = marker.CUBE  # totem
@@ -140,6 +144,12 @@ class DockPublisher():
 			marker.pose.position.x = self.green_x + self.random_noise()
 			marker.pose.position.y = self.green_y + self.random_noise()
 			marker.pose.position.z = self.green_z + self.random_noise()
+			quaternion = quaternion_from_euler(0, 0, math.pi*3/2)
+
+		marker.pose.orientation.x = quaternion[0]
+		marker.pose.orientation.y = quaternion[1]
+		marker.pose.orientation.z = quaternion[2]
+		marker.pose.orientation.w = quaternion[3] 
        
 
 		return marker
