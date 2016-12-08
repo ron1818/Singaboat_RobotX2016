@@ -60,7 +60,7 @@ class Aiming(MoveBaseUtil):
                     print "correcting", theta , self.yaw0
 
                     aim_target=self.aim_to_box([self.box.x, self.box.y], 30) #recheck condition every 30s
-                    
+
                     rospy.sleep(1)
 
             else:
@@ -102,7 +102,7 @@ class Aiming(MoveBaseUtil):
         start_time = rospy.get_time()
 
         while not (rospy.get_time() - start_time) < duration:
-        
+
             pid_cmd_vel_msg.angular.z= self.pid_angular(target)
 
             cmd_vel_pub.publish(pid_cmd_vel_msg)

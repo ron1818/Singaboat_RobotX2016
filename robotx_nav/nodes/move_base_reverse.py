@@ -21,38 +21,30 @@ created by Reinaldo @2016-10-20
 
 import rospy
 from geometry_msgs.msg import Twist, Vector3
+from move_base_util import MoveBaseUtil
 
 
-def reverse(duration, speed):
+class Reversing(MoveBaseUtil):
 
-    speed = rospy.get_param("~speed", speed)
-    duration = rospy.get_param("~duration", duration)
-    pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-    rospy.init_node('reverse', anonymous=True)
-    rate = rospy.Rate(10)
+    def __init__(self, nodename="reverse", is_newnode=True, mode="timed", speed=-1, duration=10, distance=5):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
-    msg = Twist(Vector3(speed, 0.0, 0.0), Vector3(0.0, 0.0, 0.0))
+        self.reversing ={}
+        self.reversing["speed"] = rospy.get_param("~speed", speed)
+        self.reversing["duration"] = rospy.get_param("~duration", duration)
+        self.reversing["distance"] = rospy.get_param("~duration", distance)
+        self.reversing["mode"] = rospy.get_param("~duration", mode)
 
-    rate.sleep()
-    start_time = rospy.get_time()
-
-    try:
-        while not rospy.is_shutdown():
-            current_time = rospy.get_time()
-            if (current_time - start_time) > duration:
-                pub.publish(Twist(Vector3(-speed, 0.0, 0.0), Vector3(0.0, 0.0, 0.0)))
-                rospy.sleep(1)
-                pub.publish(Twist())
-                break
-            pub.publish(msg)
-            rate.sleep()
-    except:
-        pub.publish(Twist())
-
+    def respawn(self):
+        if self.reversing["mode"] == "timed":
+            self.reverse_time(self.reversing["duration"], self.reversing["speed"])
+        else:  # odomed
+            self.reverse_tf(self.reversing["distance"], self.reversing["speed"])
 
 
 if __name__ == '__main__':
     try:
-        reverse(duration=10, speed=-0.3)
+        rev = Reversing(mode="timed")
+        rev.respawn()
     except rospy.ROSInterruptException:
         pass
