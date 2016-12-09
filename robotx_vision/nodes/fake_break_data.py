@@ -2,7 +2,7 @@
 '''This example is aiming to generate several Gaussian function samples in one picture '''
 
 from sklearn.cluster import DBSCAN
-from sklearn.preprocessing import normalize
+from sklearn.preprocessing import normalize, StandardScaler
 import numpy as np
 # from mpl_toolkits.mplot3d import Axes3D
 # import matplotlib.pyplot as plt
@@ -66,7 +66,8 @@ while True:
 # plt.plot(data[:,0], data[:,1])
 
 dbscan = DBSCAN(eps= 0.05, min_samples=5)
-print normalize(data, axis=0)
-dbscan.fit(normalize(data, axis=0))
+X1 = normalize(data, axis=0)
+X2 = StandardScaler().fit_transform(data)
+dbscan.fit(X1)
 print dbscan.labels_
 # plt.show()
