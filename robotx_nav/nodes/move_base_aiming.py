@@ -25,8 +25,8 @@ class Aiming(MoveBaseUtil):
     # initialize boat pose param
     # x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, target=None, radius=2, duration=200, angle_tolerance=1*pi/180.0, box=[5,0,0]):
-        MoveBaseUtil.__init__(self, nodename)
+    def __init__(self, nodename, is_newnode=True, target=None, radius=2, duration=200, angle_tolerance=1*pi/180.0, box=[5,0,0]):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         if target is not None:  # shooting range's position
             self.target = Twist(Point(rospy.get_param("~station_x", target[0]), rospy.get_param("~station_y", target[1]), 0),
@@ -54,12 +54,12 @@ class Aiming(MoveBaseUtil):
         while (rospy.get_time() - start_time < self.duration) or not self.duration and not rospy.is_shutdown():
             if (sqrt((self.target.linear.x - self.x0)**2 + (self.target.linear.y - self.y0) ** 2) < self.radius):
                 rospy.loginfo("inside inner radius, corrects orientation to face box")
-                theta = atan2(self.box.y - self.y0, self.box.x - self.x0)
-                if (abs(math.atan2(math.sin(theta - self.yaw0), math.cos(theta - self.yaw0))) > self.angle_tolerance):
+                theta = atan2(self.box.y -self.y0, self.box.x - self.x0)
+                if (abs(atan2(sin(theta - self.yaw0), cos(theta - self.yaw0))) > self.angle_tolerance):
                     print "correcting", theta , self.yaw0
 
                     aim_target=self.aim_to_box([self.box.x, self.box.y], 30) #recheck condition every 30s
-                    
+
                     rospy.sleep(1)
 
             else:
@@ -101,7 +101,7 @@ class Aiming(MoveBaseUtil):
         start_time = rospy.get_time()
 
         while not (rospy.get_time() - start_time) < duration:
-        
+
             pid_cmd_vel_msg.angular.z= self.pid_angular(target)
 
             cmd_vel_pub.publish(pid_cmd_vel_msg)
@@ -112,11 +112,11 @@ class Aiming(MoveBaseUtil):
     	#angular PID
         angle_error=math.atan2(target[1]-self.y0, target[0]-self.x0)-self.yaw0
 
-        self.error_angular=math.atan2(math.sin(angle_error), math.cos(angle_error)) #trick to remap to -pi -
+        self.error_angular=atan2(sin(angle_error), cos(angle_error)) #trick to remap to -pi -
         self.P_value_angular=self.angular_kp*self.error_angular
 
         derivative_error=self.error_angular - self.Derivator_angular
-        self.D_value_angular=self.angular_kd*math.atan2(math.sin(derivative_error), math.cos(derivative_error))
+        self.D_value_angular=self.angular_kd*atan2(sin(derivative_error), cos(derivative_error))
         self.Derivator_angular=self.error_angular
 
         self.Integrator_angular=self.Integrator_angular +self.error_angular

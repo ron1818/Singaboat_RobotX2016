@@ -34,39 +34,8 @@ from move_base_aiming import Aiming
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
 
-
-def loiter_work(target, radius):
-
-    loiter_obj = Loiter(nodename="loiter", target=target, radius=radius, polygon=6, is_ccw=True, is_relative=False)
-    print("loiter done")
-    cancel_loiter()
-
-
-def aim_work(target, radius=2, duration=0, box=[20,20,0]):
-    print("aiming")
-    aiming_obj = Aiming(nodename="aiming", radius=radius, duration=duration, angle_tolerance=1*pi/180.0, box=box)
-    print("aiming_done")
-
-
-def moveto_work(target, is_newnode=True):
-    print("moveto")
-    moveto_obj = MoveTo(nodename="moveto", is_newnode=is_newnode, target=target, is_relative=False)
-    print("moveto done")
-    cancel_moveto()
-
-def cancel_loiter():
-    os.system('rosnode kill loiter')
-
-def cancel_aiming():
-    os.system('rosnode kill aiming')
-
-def cancel_moveto():
-    os.system('rosnode kill moveto')
-
-
-
 class DetectDeliver(object):
-    pool = mp.Pool()
+
     map_dim = [[0, 40], [0, 40]]
 
     MAX_DATA=60
@@ -76,11 +45,23 @@ class DetectDeliver(object):
     symbols_counter=0
     angle_threshold=10*math.pi/180
 
+    symbol_location=np.zeros((MAX_DATA, 2))
+    
+    shape_counter=0
+
+
+
     def __init__(self, symbol_list):
         print("starting task 7")
         rospy.init_node('task_7', anonymous=True)
         rospy.Subscriber("/shoot", MarkerArray, self.symbol_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
+
+
+    	self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, is_relative=False)
+    	self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
+    	
+
 
         self.odom_received = False
         rospy.wait_for_message("/odometry/filtered/global", Odometry)
@@ -95,12 +76,11 @@ class DetectDeliver(object):
 	self.station_seen=False #station here is cluster center of any face
 	self.station_position=[0, 0]
 	print(self.symbol)
+
+
 	while not rospy.is_shutdown() and not self.station_seen:
-	    #random walk around center
-	    self.pool.apply(moveto_work, args=(self.random_walk(), True)) 
-	    #self.pool.apply_async(moveto_work, args=(self.random_walk(), True)) #blocked is fine
-	    #time.sleep(10)
-	    #self.pool.apply(cancel_moveto)
+	    self.moveto_obj.respawn(self.random_walk(), )
+
 	print("station: ")
 	print(self.station_position)
 
@@ -112,35 +92,41 @@ class DetectDeliver(object):
 
         while not rospy.is_shutdown():
 	    print(loiter_radius)
-	    self.pool.apply(loiter_work, args=(self.station_position, loiter_radius))
-		
-	    
-	    if loiter_radius>3:
-	        loiter_radius-=1
+
+	    self.loiter_obj.respawn(self.station_position, loiter_radius, )
+
+	    if loiter_radius>4:
+	        loiter_radius-=2
+
 	    if self.symbol_seen:
+		print(self.symbol_position)
 		print("symbol's position acquired, exit loitering")
 		break
+	    time.sleep(1)
 	
 
 	print(self.symbol_position)
 	d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)
 	counter=0
 	print(d)
+
 	#moveto an offset, replan in the way
 	while not rospy.is_shutdown():
+
 	    alpha=self.yaw0-self.symbol_position[2]
 	    theta=math.atan2(math.fabs(math.sin(alpha)), math.fabs(math.cos(alpha))) #always +ve and 0-pi/2
 	    d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)
-	    perpendicular_d=0.6*d/math.cos(theta)
+	    perpendicular_d=0.6*d*math.cos(theta)
 	    
 	    
 	    if counter ==0 or theta>self.angle_threshold or d>3:
 		print("replan")
 		target=[self.symbol_position[0]+perpendicular_d*math.cos(self.symbol_position[2]),self.symbol_position[1]+perpendicular_d*math.sin(self.symbol_position[2]), -self.symbol_position[2]]
-		self.pool.apply(moveto_work, args=(target, ))
-		counter+=1
 
-	    if d<3 and theta<self.angle_threshold or counter>5:
+	        self.moveto_obj.respawn(target, )
+	        counter+=1
+
+	    if d<3:
 		break
 	    time.sleep(1)	
 	    
@@ -148,30 +134,26 @@ class DetectDeliver(object):
 	#aiming to the box
 	self.shooting_complete=False
 	self.is_aiming=False
-	print("aiming to station")
+	print("aiming to box")
+
 	while not rospy.is_shutdown():
 	    
-	    target=[self.x0, self.y0]
-	    box=[self.symbol_position[0], self.symbol_position[1]]
+	    target=[self.x0, self.y0, -self.symbol_position[2]]
+	    box=[self.symbol_position[0], self.symbol_position[1], self.symbol_position[2]]
 	    radius=2
 	    #duration 0 is forever
 	    if not self.is_aiming:	    	
-		self.pool.apply_async(aim_work, args=(target, radius, 0, box))
+		self.aiming_obj = Aiming("aiming", is_newnode=False, target=target, radius=radius, duration=0, angle_tolerance=5*math.pi/180.0, box=box)
 		self.is_aiming=True
-	    print("aiming to station")
 
 	    time.sleep(10)
 	    print("start shooting module")
 	    self.shooting_complete=True
 	    if self.shooting_complete:
-		self.pool.apply(cancel_aiming)
+		
 		print("shooting done, return to base")		
 		break
 	    time.sleep(1)
-	    
-	
-        self.pool.close()
-        self.pool.join()
 
     def is_complete(self):
         pass
@@ -216,8 +198,7 @@ class DetectDeliver(object):
 
 		self.symbols[self.symbols_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
 		self.symbols_counter+=1
-
-            	
+		
             	if msg.markers[i].type==self.symbol[0] and msg.markers[i].id==self.symbol[1]:
              	    #set position_list (not sure)
 		    self.symbol_position[0]=msg.markers[i].pose.position.x
@@ -227,8 +208,19 @@ class DetectDeliver(object):
         	    z = msg.markers[i].pose.orientation.z
         	    w = msg.markers[i].pose.orientation.w
         	    _, _, self.symbol_position[2] = euler_from_quaternion((x, y, z, w))
-            	    if self.station_seen:
+
+		    self.symbol_location[self.shape_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
+		    self.shape_counter+=1
+		
+            	    if self.station_seen and self.shape_counter>self.MAX_DATA:
+              		symbol_kmeans = KMeans(n_clusters=1).fit(self.symbol_location)
+            		self.symbol_center=symbol_kmeans.cluster_centers_
+			self.symbol_position[0]=self.symbol_center[0][0]
+			self.symbol_position[1]=self.symbol_center[0][1]
+			#print(self.symbol_position)
 			self.symbol_seen=True
+			
+			#self.pool.apply(cancel_loiter)
 
 
     def odom_callback(self, msg):
@@ -253,4 +245,3 @@ if __name__ == '__main__':
 
     except rospy.ROSInterruptException:
         rospy.loginfo("Task 7 Finished")
-

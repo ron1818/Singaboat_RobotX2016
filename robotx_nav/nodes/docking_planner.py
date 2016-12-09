@@ -12,6 +12,7 @@ from sklearn import svm
 from sklearn.linear_model import LinearRegression
 from move_base_loiter import Loiter
 from move_base_waypoint import MoveTo
+from move_base_reverse import Reversing
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
@@ -27,23 +28,25 @@ class Docking(object):
     x0, y0, yaw0 = 0, 0, 0
     initial_position = list()
 
-    def __init__(self, nodename="docking_planner"):
+    def __init__(self, nodename="docking_planner", assigned=[[0,0], [1,1]]):
         rospy.init_node(nodename)
         rospy.on_shutdown(self.shutdown)
 
         self.rate = rospy.get_param("~rate", 1)
+        self.assigned = assigned
 
         self.kmeans = KMeans(n_clusters=2)
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
         self.moveto = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
         self.loiter = Loiter("loiter", is_newnode=False, target=None, is_relative=False)
+        self.timed_reverse = Reversing("reverse", is_newnode=False, mode="timed")
 
         # Subscribe to marker array publisher
         self.odom_received = False
         rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=None)
         while not self.odom_received:
             pass
-        rospy.Subscriber("docking_symbol", MarkerArray, self.markerarray_callback, queue_size=10)
+        rospy.Subscriber("dock", MarkerArray, self.markerarray_callback, queue_size=10)
 
         self.docker_find = False
         self.symbols_find = False
@@ -75,17 +78,17 @@ class Docking(object):
             else:
                 print "symbols find"
                 # find the entry point who has pinger
-                self.identify_symbol()
+                # self.identify_symbol()
                 print "enter first"
                 self.moveto.respawn(self.first_entry_path[0] + [0])
                 self.moveto.respawn(self.first_entry_path[1] + [0])
-                self.timed_reverse(10)
+                self.timed_reverse.respawn()
                 print "enter second"
                 self.moveto.respawn(self.second_entry_path[0] + [0])
                 self.moveto.respawn(self.second_entry_path[1] + [0])
-                self.timed_reverse(10)
+                self.timed_reverse.respawn()
                 print "exit"
-                self.moveto.respawn(self.exit_point)
+                # self.moveto.respawn(self.exit_point)
                 print "complete"
 
     def odom_callback(self, msg):
@@ -108,10 +111,10 @@ class Docking(object):
             if msg.markers[i].id == self.assigned[0][0] and msg.markers[i].type == self.assigned[0][1]: # first assigned color and shape
                 if len(self.first_dock_list) > self.MAX_LENS:
                     self.first_dock_list.pop(0)
-                _, _, yaw = euler_from_quaternion(msg.markers[i].pose.orientation.x,
-                                                  msg.markers[i].pose.orientation.y,
-                                                  msg.markers[i].pose.orientation.z,
-                                                  msg.markers[i].pose.orientation.w)
+                _, _, yaw = euler_from_quaternion((msg.markers[i].pose.orientation.x,
+                                                   msg.markers[i].pose.orientation.y,
+                                                   msg.markers[i].pose.orientation.z,
+                                                   msg.markers[i].pose.orientation.w))
                 self.first_dock_list.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])  # , yaw])
                 if len(self.facing_list) > 2 * self.MAX_LENS:
                     self.facing_list.pop(0)
@@ -119,15 +122,16 @@ class Docking(object):
             elif msg.markers[i].id == self.assigned[1][0] and msg.markers[i].type == self.assigned[1][1]: # second assigned color and shape
                 if len(self.second_dock_list) > self.MAX_LENS:
                     self.second_dock_list.pop(0)
-                _, _, yaw = euler_from_quaternion(msg.markers[i].pose.orientation.x,
-                                                  msg.markers[i].pose.orientation.y,
-                                                  msg.markers[i].pose.orientation.z,
-                                                  msg.markers[i].pose.orientation.w)
+                _, _, yaw = euler_from_quaternion((msg.markers[i].pose.orientation.x,
+                                                   msg.markers[i].pose.orientation.y,
+                                                   msg.markers[i].pose.orientation.z,
+                                                   msg.markers[i].pose.orientation.w))
                 self.second_dock_list.append([msg.markers[i].pose.position.x, msg.markers[i].pose.position.y])  # , yaw])
                 if len(self.facing_list) > 2 * self.MAX_LENS:
                     self.facing_list.pop(0)
                 self.facing_list.append([yaw])
         self.find_docker_position()  # find the docker position
+        self.identify_symbol()
 
     def find_docker_position(self):
         """ use ocsvm to find the position of the docker"""

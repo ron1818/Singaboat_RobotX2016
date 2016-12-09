@@ -6,6 +6,56 @@ import random
 import time
 
 
+
+def random_walk(map_corners, current_position, style, *args, **kwargs):
+    """ create random walk points and avoid valid centers """
+    delta_y = kwargs["delta"]
+    target = None
+    x0, y0 = current_posistion
+    map_center = [np.mean(map_corners[:,0]), np.mean(map_corners[:,1])]
+    sigma = kwargs["sigma"]
+    line_points = kwargs["line_points"]
+    if style == "gaussian":
+        while not within_map(map_corners, target):
+            target = [random.gauss(map_center[0], sigma[0]),
+                      random.gauss(map_center[1], sigma[1])]
+
+    elif style == "nearby":  # near the current position
+        # do a gaussian distribution with center be the boat's current position and
+        while not within_map(map_corners, target):
+            target = [random.gauss(x0, sigma[0]), random.gauss(y0, sigma[1])]
+
+    elif style == "near_line":  # gate data partially known, need to go around the line area
+        x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
+        y_estimate = [self.roughline.predict(x) - delta_y * self.before_roughline_sign for x in x_range]
+        choices_idx = range(len(x_range))
+        candidate_target_idx = random.choice(choices_idx)
+        while not target:
+            if np.min(self.map_dim[1]) < y_estimate[candidate_target_idx] < np.max(self.map_dim[1]):
+                # it is after the gateline
+                target = [x_range(candidate_target_idx), y_estimate(candidate_target_idx)]
+            else:
+                target = None
+
+    elif style == "along_line":  # gate data known, need to go to the three listener point
+        while not within_map(map_corners, target):
+            target = random.choice(line_points)
+
+    elif style == "after_line":
+        # do a uniform distribution by grid search
+        x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
+        y_range = range(np.min(self.map_dim[1]), np.max(self.map_dim[1]), 5)
+        grid = list(itertools.product(x_range, y_range))
+        # filter out those who is before the gate line
+        while not target:
+            candidate_target = random.choice(grid)
+            if (self.gateline.predict([candidate_target[0]]) - candidate_target[1]) * self.before_line_sign < 0:
+                # it is after the gateline
+                target = candidate_target
+            else:
+                target = None
+    return target + [0]
+
 def within_map(map_corners, point):
     """ determine whether a point is within a map (four corners),
     1. calculate the area of the map by sum of two triangles
@@ -15,6 +65,9 @@ def within_map(map_corners, point):
     use heron's triangle equation
     * map corners must in ccw or cw sequence
     """
+
+    if point is None:
+        return False
 
     # map_corners = np.array[[x0,y0],[x1,y1],[x2,y2],[x3,y3]]
     # point = np.array[[xt,yt]]

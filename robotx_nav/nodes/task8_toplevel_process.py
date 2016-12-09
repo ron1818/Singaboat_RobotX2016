@@ -17,7 +17,6 @@ from move_base_waypoint import MoveTo
 from move_base_loiter import Loiter
 from pinger_planner import Pinger
 
-
 def loiter_worker(data_q, res_q):
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
