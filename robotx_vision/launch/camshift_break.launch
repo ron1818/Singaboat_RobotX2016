@@ -4,13 +4,13 @@
     <arg name="namespace" default="fixed_cam" />
     <arg name="objectname" default="totem" />
     <arg name="color_under_detect" default="red" />
-  <node pkg="robotx_vision" name="camshift_break" type="camshift_break.py" output="screen" ns="$(arg namespace)" >
-      <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
-    <rosparam>
-       smin: 85
-       vmin: 50
-       vmax: 254
-       threshold: 50
-    </rosparam>
-  </node>
+    <node pkg="robotx_vision" name="camshift_break" type="camshift_break.py" output="screen" ns="$(arg namespace)" >
+        <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
+        <rosparam>
+            smin: 85
+            vmin: 50
+            vmax: 254
+            threshold: 50
+        </rosparam>
+    </node>
 </launch>
