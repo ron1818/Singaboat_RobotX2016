@@ -26,34 +26,28 @@ class Zigzag(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, quadrant=1, map_length=10, map_width=10, half_period=10, half_amplitude=10, offset=0):
-        MoveBaseUtil.__init__(self, nodename)
-	self.quadrant = rospy.get_param("~quadrant", quadrant)
-        self.map_length = rospy.get_param("~map_length", map_length)
-        self.map_width = rospy.get_param("~map_width", map_width)
-        self.map_half_period = rospy.get_param("~half_period", half_period)
-        self.map_half_amplitude = rospy.get_param("~half_amplitude", half_amplitude)
-        self.map_offset = rospy.get_param("~offset", offset)
+    def __init__(self, nodename, is_newnode=True, quadrant=1, map_length=10, map_width=10, half_period=10, half_amplitude=10, offset=0):
+        MoveBaseUtil.__init__(self, nodename, is_newnode)
 
-        # get boat position, one time only
-        # self.odom_received = False
-        # rospy.wait_for_message("/odom", Odometry)
-        # rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 
-        # Subscribe to the move_base action server
-        # self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
+	if quadrant is not None:
+	    self.quadrant = quadrant
+	else:
+	    self.quadrant = rospy.get_param("~quadrant", quadrant)
 
-        # # information about map, length (X), width (Y), position of the initial point
-        # self.map_length = map_length
-        # self.map_width = map_width
+        self.map_length = map_length
+        self.map_width = map_width
+        self.map_half_period = half_period
+        self.map_half_amplitude = half_amplitude
+        self.map_offset = offset
 
-        # # set the half period and half amplitude
-        # map_half_period = half_period
-        # map_half_amplitude = half_amplitude
-        # map_offset = offset
 
-        while not self.odom_received:
-            rospy.sleep(1)
+	if quadrant is not None:
+	    self.respawn()
+
+
+    def respawn(self, quadrant)
+	self.quadrant=quadrant
 
         # assumption point 0,0 is the left-bottom of map
         if self.quadrant == 1:
@@ -81,15 +75,6 @@ class Zigzag(MoveBaseUtil):
             p = waypoint.position
             self.markers.points.append(p)
 
-        # rospy.loginfo("Waiting for move_base action server...")
-
-        # # Wait 60 seconds for the action server to become available
-        # self.move_base.wait_for_server(rospy.Duration(60))
-
-        # rospy.loginfo("Connected to move base server")
-        # rospy.loginfo("Starting navigation test")
-
-        # Initialize a counter to track waypoints
         i = 0
 
         # Cycle through the waypoints
@@ -163,22 +148,6 @@ class Zigzag(MoveBaseUtil):
 
         # return the resultant waypoints
         return waypoints
-
-    # def odom_callback(self, msg):
-    #     """ call back to subscribe, get odometry data:
-    #     pose and orientation of the current boat,
-    #     suffix 0 is for origin """
-    #     self.x0 = msg.pose.pose.position.x
-    #     self.y0 = msg.pose.pose.position.y
-    #     self.z0 = msg.pose.pose.position.z
-    #     x = msg.pose.pose.orientation.x
-    #     y = msg.pose.pose.orientation.y
-    #     z = msg.pose.pose.orientation.z
-    #     w = msg.pose.pose.orientation.w
-    #     self.roll0, self.pitch0, self.yaw0 = euler_from_quaternion((x, y, z, w))
-    #     self.odom_received = True
-    #     # rospy.loginfo([self.x0, self.y0, self.z0])
-
 
 if __name__ == '__main__':
     try:
