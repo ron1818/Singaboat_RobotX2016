@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!--arg name="latitude" default="1.345124" />
+    <arg name="longitude" default="103.684729" /-->
+    <!--arg name="latitude" default="1.344452" />
+    <arg name="longitude" default="103.684660" /-->
+    <arg name="heading" default="1.57" />
+    <arg name="isfake" default="false" />
+    <arg name="isgazebo" default="false" />
+    <arg name="iswamv" default="false" />
+    <arg name="cmd_vel_topic" default="cmd_vel" />
+    <param name="/use_sim_time" value="$(arg isgazebo)"/>
+
+    <node pkg="robotx_nav" type="move_base_waypoint_geo.py" name="gps_waypoint_behavior" output="screen" >
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="cmd_vel" to="$(arg cmd_vel_topic)" if="$(arg iswamv)" />
+        <!--param name="latitude" value="$(arg latitude)" />
+        <param name="longitude" value="$(arg longitude)" />
+        <param name="heading" value="$(arg heading)" /-->
+    </node>
+
+</launch>

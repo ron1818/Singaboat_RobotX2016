@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- arguments for sensors -->
+    <arg name="sonar_enabled" default="false"/>
+    <arg name="lidar_enabled" default="false"/>
+    <arg name="kinect_enabled" default="false"/>
+
+    <!-- Send the auv Robot URDF/XACRO to param server -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find robotx_description)/urdf/auv_standard.urdf.xacro' sonar_enabled:=$(arg sonar_enabled) lidar_enabled:=$(arg lidar_enabled) kinect_enabled:=$(arg kinect_enabled)" />
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
+        <param name="publish_frequency" type="double" value="20.0"/>
+    </node>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+</launch>

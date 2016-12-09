@@ -1,11 +1,17 @@
 <launch>
-<node
-	pkg="robotx_vision"
-	type="image_publisher"
-	name="my_publisher"
-	required="true"
-	output="screen"
->
-<param name="image_file" value="/home/echo/opencv_code/image/t5.png"/>
-</node>
+	<arg name="namespace" default="starboard"/>
+	<arg name="image" default="ss1.png"/>
+	<arg name="output" default="image_rect_color"/>
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="image_publisher"
+			name="image"
+			required="true"
+			output="screen"
+		>
+		<param name="image_file" value="/home/echo/opencv_code/image/$(arg image)"/>
+		<param name="output" value="$(arg output)"/>
+		</node>
+	</group>
 </launch>

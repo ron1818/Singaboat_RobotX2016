@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   roslaunch
+  dynamic_reconfigure
+  tf
 )
 
 find_package(OpenCV REQUIRED)
@@ -93,8 +95,7 @@ generate_messages(
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 # generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
+#   cfg/detection.cfg
 # )
 
 ###################################
@@ -139,18 +140,24 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 # add_dependencies(robotx_vision ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(object_detector src/object_detector.cpp)
-target_link_libraries(object_detector ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(object_detector ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#mission nodes
+add_executable(detection src/detection.cpp)
+target_link_libraries(detection ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(symbol_identifier src/symbol_identifier.cpp)
-target_link_libraries(symbol_identifier ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(symbol_identifier ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(zed_detection src/zed_detection.cpp)
+target_link_libraries(zed_detection ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(zed_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_executable(underwater src/underwater.cpp)
+target_link_libraries(underwater ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(underwater ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 add_executable(sequence_scanner src/sequence_scanner.cpp)
 target_link_libraries(sequence_scanner ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(sequence_scanner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+#utility nodes:
 add_executable(image_publisher src/image_publisher.cpp)
 target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(image_publisher ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -166,6 +173,8 @@ add_dependencies(subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTE
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(robotx_vision_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(detection ${PROJECT_NAME}_gencfg)
+add_dependencies(zed_detection ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(robotx_vision_node

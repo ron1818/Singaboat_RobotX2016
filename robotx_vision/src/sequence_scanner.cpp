@@ -1,3 +1,7 @@
+/*This node funtions are:
+  + Detect light sequence of the light buoy
+*/
+
 //ROS libs
 #include <ros/ros.h>
 #include <ros/console.h>
@@ -31,23 +35,24 @@ using namespace std;
 std::string subscribed_image_topic;
 std::string frame_id;
 std::string output_topic_name;
+bool debug;
 
 //Image transport vars
 cv_bridge::CvImagePtr cv_ptr;
 
 //Must-have var
-vector<robotx_vision::object_detection> object;
+vector<sensor_msgs::RegionOfInterest> object;
 
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
-std::vector<cv::Point> approx;
+//std::vector<cv::Point> approx;
 cv::Mat src, hsv, hls;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
 cv::Mat color;
 cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(3,3));
-cv::Rect r;
+cv::Rect rect;
 cv::RotatedRect mr;
 int height, width;
 int min_area = 1500;
@@ -59,41 +64,45 @@ vector<std::string> color_sequence;
 double sample_area;
 
 //Functions
-double v_angle(int y)
+void setLabel(cv::Mat& im, std::vector<cv::Point>& contour, const double area)
 {
-  //Camera's vertical angle of view (calculated) is 65.28
-  return atan(tan(0.560)*(2*(double)y/height-1)); //Angle in rad
+  std::ostringstream strs;
+  strs << area;
+  std::string label = strs.str();
+  int fontface = cv::FONT_HERSHEY_SIMPLEX;
+  double scale = 0.4;
+  int thickness = 1;
+  int baseline = 0;
+
+  cv::Size text = cv::getTextSize(label, fontface, scale, thickness, &baseline);
+  cv::Rect r = cv::boundingRect(contour);
+
+  cv::Point pt(r.x + ((r.width - text.width) / 2), r.y + ((r.height + text.height) / 2));
+  cv::rectangle(im, pt + cv::Point(0, baseline), pt + cv::Point(text.width, -text.height), CV_RGB(255,255,255), CV_FILLED);
+  cv::putText(im, label, pt, fontface, scale, CV_RGB(0,0,0), thickness, 10);
 }
 
-double h_angle(int x)
+void reduce_noise(cv::Mat* dst)
 {
-  //Camera's horizontal angle of view (as in specification) is 81
-  return atan(tan(0.707)*(2*(double)x/width-1)); //Angle in rad
+  cv::morphologyEx(*dst, *dst, cv::MORPH_CLOSE, str_el);
+  cv::morphologyEx(*dst, *dst, cv::MORPH_OPEN, str_el);
 }
 
-void angle(robotx_vision::object_detection* ob, cv::Rect rect)
+sensor_msgs::RegionOfInterest object_return()
 {
-  ob->angle_t = v_angle((rect.tl()).y);
-  ob->angle_b = v_angle((rect.br()).y);
-  ob->angle_l = h_angle((rect.tl()).x);
-  ob->angle_r = h_angle((rect.br()).x);
-}
-
-void reduce_noise(cv::Mat* bgr)
-{
-  cv::morphologyEx(*bgr, *bgr, cv::MORPH_CLOSE, str_el);
-  cv::morphologyEx(*bgr, *bgr, cv::MORPH_OPEN, str_el);
-  cv::blur(*bgr,*bgr,Size(2,2));
-}
-
-robotx_vision::object_detection object_return(std::string frame_id, std::string type, std::string color, cv::Rect rect)
-{
-  robotx_vision::object_detection obj;
-  obj.frame_id = frame_id;
-  obj.type = type;
-  obj.color = color;
-  angle(&obj, rect);
+  sensor_msgs::RegionOfInterest obj;
+  obj.x_offset = (rect.tl()).x;
+  obj.y_offset = (rect.tl()).y;
+  obj.height = rect.height;
+  obj.width = rect.width;
+  obj.do_rectify = true;
   return obj;
+}
+
+void object_found()
+{
+  object.push_back(object_return());         //Push the object to the vector
+  if(debug) cv::rectangle(src, rect.tl(), rect.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
 }
 
 int is_white(cv::Point2f vtx)
@@ -127,31 +136,29 @@ int rect_detect(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim, cv
   }
   //Reduce noise
   reduce_noise(&color);
+  //if(debug) cv::imshow("color",color);
   //Finding shapes
   cv::findContours(color.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-  //Detect shape for each contour
+  //Traverse through each contour and analyze
   for (int i = 0; i < contours.size(); i++)
   {
     // Approximate contour with accuracy proportional to the contour perimeter
-    cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.01, true);
     // Skip small objects 
     if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
-    //Traverse through contours and fine the object
-    for (int i = 0; i < contours.size(); i++)
+    //Find the object
+    rect = cv::boundingRect(contours[i]);
+    mr = cv::minAreaRect(contours[i]);
+    //if(check_white_bounded()) //Check if object is in front of a white background
     {
-      r = cv::boundingRect(contours[i]);
-      mr = cv::minAreaRect(contours[i]);
-      if(check_white_bounded()) //Check if object is in front of a white background
+      area = cv::contourArea(contours[i]);
+      m_area = (mr.size).height*(mr.size).width;
+      if(debug) setLabel(src, contours[i], area);
+      
+      if((fabs(1.0-area/m_area) < eps) && (rect.height > rect.width))
       {
-        area = cv::contourArea(contours[i]);
-        m_area = (mr.size).height*(mr.size).width;
-        
-        if((fabs(1.0-area/m_area) < eps) && (r.height > r.width))
-        {
-          cv::rectangle(src, r.tl(), r.br()-cv::Point(1,1), cv::Scalar(0,255,255), 4, 8, 0);
-          object.push_back(object_return(frame_id,"code",obj_color,r));         //Push the object to the vector
-          return 1;
-        }
+        object_found();
+        return 1;
       }
     }
     return 0;
@@ -175,36 +182,41 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   //newImage = true;
 
   //Start the shape detection code
-  if (src.empty()) return;
+  if(src.empty()) return;
   cv::cvtColor(src,hsv,COLOR_BGR2HSV);
   cv::cvtColor(src,hls,COLOR_BGR2HLS);
   width = src.cols;
   height = src.rows;
-
   //Detect a black rect first
-  if(rect_detect("black", cv::Scalar(0, 0, 0), cv::Scalar(180, 255, 20)))
+  if(rect_detect("black", cv::Scalar(0, 0, 0), cv::Scalar(179, 255, 5)))
   {
-    sample_area = m_area; //Register the area of the black rect for reference
+    if(m_area > sample_area) sample_area = m_area;
     color_sequence.clear();
+    ROS_INFO("Found black, start scanning...");
   }
   //Detecting other colors depending on the bgyr[] array assignment
   //BLUE
-  if(rect_detect("blue", cv::Scalar(90, 250, 90), cv::Scalar(130, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
-    if(color_sequence.empty() || (color_sequence.back() != "blue"))
+  if(color_sequence.empty() || (color_sequence.back() != "blue"))
+  	if(rect_detect("blue", cv::Scalar(90, 250, 90), cv::Scalar(130, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
       color_sequence.push_back("blue");
   //GREEN
-  if(rect_detect("green", cv::Scalar(50, 200, 200), cv::Scalar(80, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
-    if(color_sequence.empty() || (color_sequence.back() != "green"))
+  if(color_sequence.empty() || (color_sequence.back() != "green"))
+  	if(rect_detect("green", cv::Scalar(50, 200, 200), cv::Scalar(80, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
       color_sequence.push_back("green");
   //YELLOW
-  if(rect_detect("yellow", cv::Scalar(20, 80, 100), cv::Scalar(30, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
-    if(color_sequence.empty() || (color_sequence.back() != "yellow"))
+  if(color_sequence.empty() || (color_sequence.back() != "yellow"))
+  	if(rect_detect("yellow", cv::Scalar(20, 80, 100), cv::Scalar(30, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
       color_sequence.push_back("yellow");
   //RED
-  if(rect_detect("red", cv::Scalar(0, 80, 100), cv::Scalar(10, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(176, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
-    if(color_sequence.empty() || (color_sequence.back() != "red"))
-      color_sequence.push_back("red");
-
+  if(color_sequence.empty() || (color_sequence.back() != "red"))
+  	if(rect_detect("red", cv::Scalar(0, 80, 100), cv::Scalar(10, 255, 255), cv::Scalar(165, 80, 100), cv::Scalar(176, 255, 255)) && (fabs(m_area/sample_area - 1) < (eps+0.1)))
+    	color_sequence.push_back("red");
+	if(debug && (color_sequence.size() > 0))
+	{
+		for(vector<std::string>::iterator its = color_sequence.begin(); its != color_sequence.end(); ++its)
+			cout << *its << "-";
+		cout << endl;
+	}
   if(color_sequence.size()==3)
   {
     ros::param::set("/gui/color1", color_sequence[0]);
@@ -213,7 +225,10 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     ros::shutdown(); //Shutdown when job is done
   }
   //Show output on screen
-  cv::imshow("src", src);
+  if(debug)
+  {
+  	cv::imshow("src", src);
+  }
 }
 
 int main(int argc, char** argv)
@@ -223,26 +238,31 @@ int main(int argc, char** argv)
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
-  pnh.getParam("frame_id", frame_id);
+  pnh.getParam("debug", debug);
   pnh.getParam("output_topic_name", output_topic_name);
 
   //Initiate windows
-  cv::namedWindow("src",WINDOW_NORMAL);
-  cv::resizeWindow("src",640,480);
-  cv::startWindowThread();
+  if(debug)
+  {
+	  cv::namedWindow("src",WINDOW_AUTOSIZE);
+	  cv::resizeWindow("src",640,480);
+	  //cv::namedWindow("color",WINDOW_AUTOSIZE);
+	  //cv::resizeWindow("color",640,480);
+	  cv::startWindowThread();
+	}
 
   //Start ROS subscriber...
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe(subscribed_image_topic, 1, imageCb);
 
   //...and ROS publisher
-  ros::Publisher pub = nh.advertise<robotx_vision::object_detection>(output_topic_name, 1000);
-  ros::Rate rate(5);
+  ros::Publisher pub = nh.advertise<sensor_msgs::RegionOfInterest>(output_topic_name, 1000);
+  ros::Rate rate(2);
 
   while (nh.ok())
   {
     //Publish every object detected
-    for(vector<robotx_vision::object_detection>::iterator it = object.begin(); it != object.end(); it++)
+    for(vector<sensor_msgs::RegionOfInterest>::iterator it = object.begin(); it != object.end(); it++)
       pub.publish(*it);
     //Reinitialize the object counting vars
     object.clear();

@@ -1,0 +1,15 @@
+<launch>
+    <arg name="calibrate_magn" default="true"/>
+    <arg name="razor_config_file" default="$(find robotx_sensor)/config/my_razor.yaml"/>
+    <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" 
+        output="screen" ns="middle_middle_imu">
+        <remap from="imu" to="imu/data" />
+        <rosparam file="$(arg razor_config_file)" command="load"/>
+        <remap from="imu" to="imu/data" />
+        <param name="calibration_magn_use_extended" value="$(arg calibrate_magn)" />
+    </node>
+    <!-- this razor imu's orientation: x: towards short edge with soldering pins
+      x: forward, y: right hand, z: upward,  
+      when properlly aligned with ENU to the base link, there is no yaw offset:
+      when boat is facing north, the yaw is 0 (facing east) -->
+</launch>

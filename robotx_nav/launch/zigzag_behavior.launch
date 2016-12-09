@@ -1,10 +1,30 @@
 <?xml version="1.0"?>
 <launch>
     <arg name="isgazebo" default="false" />
+    <arg name="isfake" default="false" />
+    <arg name="iswamv" default="false" />
+    <arg name="ispvc" default="false" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
+    <arg name="quad" default="1" />
+    <arg name="length" default="20" />
+    <arg name="width" default="20" />
+    <arg name="period" default="2" />
+    <arg name="amplitude" default="2" />
+    <arg name="off" default="2" />
 
     <node pkg="robotx_nav" type="move_base_zigzag.py" name="zigzag_behavior" >
-        <remap from="/odom" to="/odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg isgazebo)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg iswamv)" />
+        <remap from="odom" to="odometry/filtered/global" if="$(arg ispvc)" />
+        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg ispvc)" />
+        <remap from="cmd_vel" to="move_base_cmd_vel" if="$(arg iswamv)" />
+        <param name="quadrant" value="$(arg quad)" type="double"/>
+	<param name="map_length" value="$(arg length)" type="double"/>
+	<param name="map_width" value="$(arg width)" type="double"/>
+	<param name="half_period" value="$(arg period)" type="double"/>
+	<param name="half_amplitude" value="$(arg amplitude)" type="double"/>
+        <param name="offset" value="$(arg off)" type="double"/>
+
     </node>
 
 </launch>

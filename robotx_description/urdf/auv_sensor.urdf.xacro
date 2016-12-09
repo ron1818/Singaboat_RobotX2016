@@ -1,0 +1,149 @@
+<?xml version="1.0"?>
+<!-- modified by ren ye on 2016-07-22 -->
+
+<robot name="auv_sensors" xmlns:xacro="http://ros.org/wiki/xacro" >
+
+    <xacro:property name="M_PI" value="3.1415926535897931" />
+    <xacro:property name="ns" value="/auv" />
+
+    <joint name="imu_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="sensor_box_link"/>
+        <child link="imu_link"/>
+    </joint>
+    <link name="imu_link"/>
+
+    <joint name="gps_joint" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <parent link="sensor_box_link"/>
+        <child link="gps_link"/>
+    </joint>
+    <link name="gps_link"/>
+
+    <!--kinect camera -->
+    <xacro:if value="$(arg kinect_enabled)" >
+        <joint name="kinect_camera_joint" type="fixed">
+            <origin xyz="0 0 0.35" rpy="0 0 0" />
+            <parent link="base_link"/>
+            <child link="kinect_camera_link"/>
+        </joint>
+
+        <link name="kinect_camera_link">
+            <!--xacro:inertial_sphere mass="0.01" diameter="0.07" /-->
+            <inertial>
+                <mass value="0.01" />
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <inertia ixx="2.632e-4" ixy="0" ixz="0" iyy="2.632e-4" iyz="0" izz="1.62e-4" />
+            </inertial>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/kinect_camera/kinect_camera_simple.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/kinect_camera/kinect_camera_simple.stl"/>
+                </geometry>
+            </collision>
+        </link>
+
+        <joint name="kinect_camera_depth_joint" type="fixed">
+            <origin xyz="0.0 -0.01 0.0" rpy="0 0 0" />
+            <parent link="kinect_camera_link" />
+            <child link="kinect_camera_depth_frame"/>
+        </joint>
+
+        <link name="kinect_camera_depth_frame"/>
+
+        <joint name="kinect_camera_depth_optical_joint" type="fixed">
+            <origin xyz="0 0 0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+            <parent link="kinect_camera_depth_frame" />
+            <child link="kinect_camera_depth_optical_frame"/>
+        </joint>
+
+        <link name="kinect_camera_depth_optical_frame"/>
+
+        <joint name="kinect_camera_rgb_joint" type="fixed">
+            <origin xyz="0.0 -0.0125 0.0" rpy="0 0 0" />
+            <parent link="kinect_camera_link" />
+            <child link="kinect_camera_rgb_frame"/>
+        </joint>
+
+        <link name="kinect_camera_rgb_frame"/>
+
+        <joint name="kinect_camera_rgb_optical_joint" type="fixed">
+            <origin xyz="0 0 0" rpy="${-M_PI/2} 0.0 ${-M_PI/2}" />
+            <parent link="kinect_camera_rgb_frame" />
+            <child link="kinect_camera_rgb_optical_frame"/>
+        </joint>
+
+        <link name="kinect_camera_rgb_optical_frame"/>
+    </xacro:if>
+
+
+    <!-- Set up sonar linkage and configuration -->
+    <xacro:if value="$(arg sonar_enabled)" >
+        <joint name="base_link_sonar_link_joint" type="fixed">
+            <origin xyz="0 0 -0.05" rpy="0 ${M_PI/2} 0" />
+            <parent link="base_link"/>
+            <child link="sonar_link" />
+        </joint>
+
+        <link name="sonar_link">
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0"/>
+                <inertia ixx="0.1" ixy="0.0" ixz="0.0" iyy="0.1" iyz="0.0" izz="0.1"/>
+            </inertial>
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/sonar_sensor/max_sonar_ez4.dae"/>
+                </geometry>
+            </visual>
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <box size="0.02 0.02 0.02" />
+                </geometry>
+            </collision>
+        </link>
+    </xacro:if>
+
+    <xacro:if value="$(arg lidar_enabled)">
+        <joint name="hokuyo_joint" type="fixed">
+            <origin xyz="0.2 0.0 0.2" rpy="0 0 0"/>
+            <parent link="base_link"/>
+            <child link="hokuyo_link"/>
+        </joint>
+
+        <!-- Hokuyo Laser -->
+        <link name="hokuyo_link">
+            <collision>
+                <origin xyz="0 0 -0.0115" rpy="0 0 0"/>
+                <geometry>
+                    <box size="0.058 0.058 0.087"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <mesh filename="package://hector_sensors_description/meshes/hokuyo_utm30lx/hokuyo_utm_30lx.dae"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="0.27" />
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <inertia ixx="2.632e-4" ixy="0" ixz="0" iyy="2.632e-4" iyz="0" izz="1.62e-4" />
+            </inertial>
+        </link>
+    </xacro:if>
+
+</robot>
+
+
+

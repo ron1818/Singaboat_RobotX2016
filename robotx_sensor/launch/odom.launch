@@ -1,38 +1,8 @@
-<<<<<<< HEAD
 <launch>
-
-    <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="gps_serial">
-        <param name="useRMC" value="True"/>
-        <param name="port" value="/dev/ttyUSB0"/>
-=======
-<?xml version="1.0"?>
-<launch>
-    <!-- call nmea_navsat to output gps /fix message-->
-    <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="gps_serial">
-        <param name="useRMC" value="True"/>
-        <param name="port" value="/dev/ttyS5"/>
->>>>>>> 7b74f1ecff0149e57efeb937a0b8e609cf9e33cb
-        <param name="baud" value="9600"/>
-        <param name="frame_id" value="gps"/>
-        <remap from="fix" to="/navsat/fix" />
-        <remap from="vel" to="/navsat/vel" />
-    </node>
-<<<<<<< HEAD
-
-    <node pkg="robotx_sensor" type="imu_node" name="imu_node" output="screen" />
-
-    <node pkg="robotx_sensor" type="navsat_vel_odom.py" name="navsat_vel_odom" output="screen" >
-        <remap from="imu/data" to="middle_middle_imu/imu/data"/>
-        <param name="is_pub_tf" value="false"/>
-    </node>
-=======
-	
-    <node pkg="robotx_sensor" type="imu_node" name="imu_node" output="screen" />
     
-        <node pkg="robotx_sensor" type="navsat_vel_odom.py" name="navsat_vel_odom" output="screen" >
+    <node pkg="robotx_sensor" type="navsat_vel_odom.py" name="navsat_vel_odom" output="screen" >
         <param name="is_pub_tf" value="false"/>
     </node>
 
 
->>>>>>> 7b74f1ecff0149e57efeb937a0b8e609cf9e33cb
 </launch>

@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+    <param name="/use_sim_time" value="false"/>
+
+    <include file="$(find robotx_sensor)/launch/navsat_vel_odom.launch">
+        <arg name="odom_topic" value="odometry/vel/bag" />
+    </include>
+
+    <include file="$(find robotx_sensor)/launch/navsat_republish.launch" />
+    <include file="$(find robotx_sensor)/launch/imu_republish.launch" />
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_global" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/bag/localization_global.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/global/bag" />
+    </node>
+
+    <node pkg="robot_localization" type="ekf_localization_node" name="ekf_localization_local" respawn="true" >
+        <rosparam command="load" file="$(find robotx_control)/config/bag/localization_local.yaml" />
+        <remap from="odometry/filtered" to="odometry/filtered/local/bag" />
+    </node>
+
+    <node pkg="robot_localization" type="navsat_transform_node" name="navsat_transform" clear_params="true" output="screen">
+        <rosparam command="load" file="$(find robotx_control)/config/bag/gps_navsat_transform.yaml" />
+        <remap from="gps/fix" to="navsat/fix/republish" />
+        <remap from="imu/data" to="middle_middle_imu/imu/data/republish" />
+        <remap from="odometry/filtered" to="odometry/filtered/global/bag" />
+        <remap from="odometry/gps" to="odometry/gps/bag" />
+    </node>
+    <node pkg="tf" type="static_transform_publisher" name="imu_baselink_broadcaster" args="0 0 0 0 0 0 base_link /base_imu_link 100" />
+    <node pkg="tf" type="static_transform_publisher" name="gps_baselink_broadcaster" args="0 0 0 0 0 0 base_link gps_link 100" />
+</launch>

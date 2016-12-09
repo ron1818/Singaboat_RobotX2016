@@ -4,7 +4,7 @@
 
     <world name="default">
         <include>
-            <uri>model://ground_plane</uri>
+            <uri>model://water_plane</uri>
         </include>
 
         <!-- Global light source -->

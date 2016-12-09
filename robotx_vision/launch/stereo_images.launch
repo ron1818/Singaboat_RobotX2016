@@ -1,0 +1,27 @@
+<launch>
+	<arg name="namespace" default="stereo"/>
+
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="image_publisher"
+			name="left"
+			required="true"
+			output="screen"
+		>
+		<param name="image_file" value="/home/echo/opencv_code/image/cam1.jpg"/>
+		<param name="output" value="left"/>
+		</node>
+
+		<node
+			pkg="robotx_vision"
+			type="image_publisher"
+			name="right"
+			required="true"
+			output="screen"
+		>
+		<param name="image_file" value="/home/echo/opencv_code/image/cam2.jpg"/>
+		<param name="output" value="right"/>
+		</node>
+	</group>
+</launch>

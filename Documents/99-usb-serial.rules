@@ -1,0 +1,5 @@
+# SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="0043", ATTRS{serial}=="95336333635351305221", SYMLINK+="USBArduinoPololu"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="0042", ATTRS{serial}=="7553335303835181E0B1", SYMLINK+="USBmotor"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6001", ATTRS{serial}=="AI032CF1", SYMLINK+="USBimu"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="2a03", ATTRS{idProduct}=="0043", ATTRS{serial}=="753303039343515101E2", SYMLINK+="USBled"
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1735", ATTRS{idProduct}=="0002", SYMLINK+="USBgps"

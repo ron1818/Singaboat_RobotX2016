@@ -5,12 +5,12 @@
   <arg name="camera_name_r_l" default="left" />
   <arg name="camera_name_l_r" default="right" />
   <arg name="camera_name_l_l" default="left" />    
-  <arg name="camera_ip_f_r" default="192.168.1.100" />
-  <arg name="camera_ip_f_l" default="192.168.1.101" />
-  <arg name="camera_ip_r_r" default="192.168.1.102" />
-  <arg name="camera_ip_r_l" default="192.168.1.103" />
-  <arg name="camera_ip_l_r" default="192.168.1.104" />
-  <arg name="camera_ip_l_l" default="192.168.1.105" />
+  <arg name="camera_ip_f_r" default="192.168.0.100" />
+  <arg name="camera_ip_f_l" default="192.168.0.101" />
+  <arg name="camera_ip_r_r" default="192.168.0.102" />
+  <arg name="camera_ip_r_l" default="192.168.0.103" />
+  <arg name="camera_ip_l_r" default="192.168.0.104" />
+  <arg name="camera_ip_l_l" default="192.168.0.105" />
 
   <arg name="image_width" default="640" />
   <arg name="image_height" default="480" />

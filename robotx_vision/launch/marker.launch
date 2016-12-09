@@ -1,0 +1,23 @@
+<launch>
+	<arg name="namespace" default="starboard"/>
+	<arg name="object_shape" default="shape"/>
+	<arg name="object_color" default="color"/>
+	<arg name="debug" default="false"/>
+
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="vision2"
+			name="vision2"
+			required="true"
+			output="screen"
+		>
+		<param name="subscribed_image_topic" value="image_rect_color"/>
+		<param name="object_shape" value="$(arg object_shape)"/>
+		<param name="object_color" value="$(arg object_color)"/>
+		<param name="debug" value="$(arg debug)"/>
+		<param name="published_topic" value="$(arg object_shape)/$(arg object_color)/roi"/>
+
+		</node>
+	</group>
+</launch>
