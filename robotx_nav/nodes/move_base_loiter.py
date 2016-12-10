@@ -49,17 +49,6 @@ class Loiter(MoveBaseUtil):
         self.loiter["is_ccw"] = rospy.get_param("~is_ccw", is_ccw) #bool
         self.loiter["is_relative"] = rospy.get_param("~is_relative", is_relative) #bool
 
-        # # find the target
-        # if self.loiter["is_relative"]:
-        #     self.loiter["center"], self.loiter["heading"] = \
-        #         self.convert_relative_to_absolute([self.loiter["target"].x, self.loiter["target"].y])
-        # else:  # absolute
-        #     # obtained from vision nodes, absolute catersian
-        #     # but may be updated later, so need to callback
-        #     self.loiter["center"] = (self.loiter["target"].x, self.loiter["target"].y, self.loiter["target"].z)  # (x, y, 0)
-
-        #     # heading from boat to center
-        #     self.loiter["heading"] = atan2(self.loiter["target"].y - self.y0, self.loiter["target"].x - self.x0)
         if target is not None: # onetime job
             self.respawn()
 

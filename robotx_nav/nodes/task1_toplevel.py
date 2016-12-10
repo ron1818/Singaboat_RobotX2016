@@ -67,7 +67,7 @@ def cancel_forward():
     os.system('rosnode kill constant_heading')
 
 class PassGates(object):
-    pool = mp.Pool(5)
+    pool = mp.Pool()
 
     x0, y0, yaw0= 0, 0, 0
     MAX_DATA=30
@@ -183,36 +183,8 @@ class PassGates(object):
     def is_complete(self):
         pass
 
-    # def search_marker(self, obj_type, obj_color, markers_list):
-    #     #pose_list is list that stores Pose obj for requested markers
-    #     N=len(pose_list)
-
-    #     if len(markers_list.markers)>0:
-    #         for i in range(len(markers_list.markers)):
-    #             if markers_list.markers[i].type == obj_type and markers_list.markers[i].id==obj_color:
-    #                 #may append more than 1 markers
-
-    #                 if obj_color==0:
-    #                     self.red_totem[self.red_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
-    #                     self.red_counter+=1
-    #                 elif obj_color==1:
-    #                     self.green_totem[self.green_counter%self.MAX_DATA]=[markers_list.markers[i].pose.position.x, markers_list.markers[i].pose.position.y]
-    #                     self.green_counter+=1
-    #             else:
-    #                 pass
-
-    #         # use mod, will not overflow
-    #         # if len(pose_list)>self.MAX_DATA:
-    #         #     pose_list.pop(0)
-    #         return True
-    #     else:
-    #         return False
-
     def marker_callback(self, msg):
-        # #updates markers_array
-        # self.search_marker(3, 0 , self.red_totem, msg)
-        # self.search_marker(3, 1 , self.green_totem, msg)
-        # print self.red_totem
+
         if len(msg.markers)>0:
             for i in range(len(msg.markers)):
                 if msg.markers[i].type == 3:
