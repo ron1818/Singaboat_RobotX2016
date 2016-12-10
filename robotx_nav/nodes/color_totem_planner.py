@@ -13,7 +13,11 @@ class ColorTotemPlanner(object):
     red_list, green_list, yellow_list, blue_list = list(), list(), list(), list()
     MAX_LENS = 20 # actually 21
 
-    def __init__(self, nodename="color_totem_coordinate"):
+    def __init__(self, nodename="color_totem_coordinate", assigned):
+        """ assigned is a np.array:
+        np.array[[color_id, is_ccw]], e.g.
+        assigned = np.array([[2, False], [0, True], [1, False]])
+        """
         rospy.init_node(nodename)
         rospy.on_shutdown(self.shutdown)
 
@@ -25,6 +29,7 @@ class ColorTotemPlanner(object):
         # Subscribe to marker array publisher
         rospy.Subscriber("color_totem", MarkerArray, self.markerarray_callback, queue_size=10)
 
+        self.assigned = assigned
         self.visited_dict = {"red": False, "green": False, "blue": False, "yellow": False}
         self.requested_dict =  {"red": False, "green": False, "blue": False, "yellow": False}
         self.hold_moveto = False # by default, let moveto to work

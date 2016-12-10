@@ -71,3 +71,11 @@ X2 = StandardScaler().fit_transform(data)
 dbscan.fit(X1)
 print dbscan.labels_
 # plt.show()
+
+""" subscribe to 'break' with std_msgs.msg Float64MultiArray,
+msg.data[0] x
+msg.data[1] y
+msg.data[2] h
+msg.data[3] # blob
+msg.data[4] % area
+"""
