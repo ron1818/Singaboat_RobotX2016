@@ -31,13 +31,13 @@ from move_base_util import MoveBaseUtil
 class Loiter(MoveBaseUtil):
     # initialize boat pose param
 
-    def __init__(self, nodename, is_newnode=True, target=[10,0,0], radius=5, polygon=6, is_ccw=True, is_relative=True):
+    def __init__(self, nodename, is_newnode=True, target=[10,0,0], radius=5, polygon=6, is_ccw=True, is_relative=True, mode=1, mode_param=2):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         self.loiter = {}
 
-        self.loiter["mode"] = rospy.get_param("~mode", 1)
-        self.loiter["mode_param"] = rospy.get_param("~mode_param", 2)
+        self.loiter["mode"] = rospy.get_param("~mode", mode)
+        self.loiter["mode_param"] = rospy.get_param("~mode_param", mode_param)
 
         if target is not None:
             self.loiter["target"] = Point(rospy.get_param("~target_x", target[0]), rospy.get_param("~target_y", target[1]), 0)
@@ -68,6 +68,8 @@ class Loiter(MoveBaseUtil):
         if target is not None:
             self.loiter["target"] = Point(target[0], target[1], 0)
 
+        if polygon is not None:
+            self.loiter["polygon"] = polygon
         if radius is not None:
             self.loiter["radius"] = radius
         if is_ccw is not None:
@@ -128,7 +130,10 @@ class Loiter(MoveBaseUtil):
             goal.target_pose.pose = waypoints[i]
 
             # Start the robot moving toward the goal
-            self.move(goal, self.loiter["mode"], self.loiter["mode_param"])
+            if self.loiter["mode"] == 1:  # cancel before
+                self.move(goal, 1, self.loiter["mode_param"])
+            else:  # move to a specific heading, target to center
+                self.move(goal, 0, self.loiter["mode_param"])
 
             i += 1
         else:  # escape loiter and continue to the next waypoint
@@ -139,22 +144,43 @@ class Loiter(MoveBaseUtil):
         # Create a list to hold the target quaternions (orientations)
         quaternions = list()
 
-        # First define the corner orientations as Euler angles
-        # then calculate the position wrt to the center
-        # need polar to catersian transform
-        # print self.loiter["heading"]
         if self.loiter["is_ccw"]:  # counterclockwise
-            # position theta related to center point with heading,
-            # - pi is looking back from buoy to boat
-            position_theta = [2 * pi * i / self.loiter["polygon"] - pi +
-                              self.loiter["heading"]
+            print "ccw"
+            position_theta = [self.loiter["heading"] + 2 * pi / self.loiter["polygon"] * i
                               for i in range(self.loiter["polygon"])]
-            euler_angles = [i + pi / 2 for i in position_theta]
         else:  # clockwise
-            position_theta = [2 * pi * i / self.loiter["polygon"] - pi -
-                              self.loiter["heading"]
-                              for i in reversed(range(self.loiter["polygon"]))]
-            euler_angles = [i - pi / 2 for i in position_theta]
+            print "cw"
+            position_theta = [self.loiter["heading"] - 2 * pi / self.loiter["polygon"] * i
+                              for i in range(self.loiter["polygon"])]
+
+
+        if self.loiter["mode"] == 2:  # stop and look at the center
+            euler_angles = position_theta
+        else:  # continuous
+            if self.loiter["is_ccw"]:  # counterclockwise
+                euler_angles = [i - 2 * pi / self.loiter["polygon"]
+                                  for i in position_theta]
+            else:  # clockwise
+                euler_angles = [i + 2 * pi / self.loiter["polygon"]
+                                  for i in position_theta]
+
+
+        # # First define the corner orientations as Euler angles
+        # # then calculate the position wrt to the center
+        # # need polar to catersian transform
+        # # print self.loiter["heading"]
+        # if self.loiter["is_ccw"]:  # counterclockwise
+        #     # position theta related to center point with heading,
+        #     # - pi is looking back from buoy to boat
+        #     position_theta = [2 * pi * i / self.loiter["polygon"] - pi +
+        #                       self.loiter["heading"]
+        #                       for i in range(self.loiter["polygon"])]
+        #     euler_angles = [i + pi / 2 for i in position_theta]
+        # else:  # clockwise
+        #     position_theta = [2 * pi * i / self.loiter["polygon"] - pi -
+        #                       self.loiter["heading"]
+        #                       for i in reversed(range(self.loiter["polygon"]))]
+        #     euler_angles = [i - pi / 2 for i in position_theta]
 
         # Then convert the angles to quaternions
         for angle in euler_angles:
@@ -164,9 +190,9 @@ class Loiter(MoveBaseUtil):
 
         # Create a list to hold the waypoint poses
         waypoints = list()
-        catersian_x = [self.loiter["radius"] * cos(theta) + self.loiter["center"][0]
+        catersian_x = [self.loiter["center"][0] - self.loiter["radius"] * cos(theta)
                        for theta in position_theta]
-        catersian_y = [self.loiter["radius"] * sin(theta) + self.loiter["center"][1]
+        catersian_y = [self.loiter["center"][1] - self.loiter["radius"] * sin(theta)
                        for theta in position_theta]
 
         # close the loiter by append the quaternion/catersians' start to end
@@ -186,8 +212,8 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=False)
-        loiter_test.respawn(target=[10, 5, 0])
+        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=False, mode=1)
+        loiter_test.respawn(target=[-15, 15, 0], polygon=5, is_ccw=True)
 
 
     except rospy.ROSInterruptException:
