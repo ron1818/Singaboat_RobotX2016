@@ -113,13 +113,13 @@ class ColorSequence(ROS2OpenCV2):
     #             cv2.inRange(hsv, self.lower_yellow, self.upper_yellow)
     #     return mask
 
-    def depth_masking(self, frame):
+    def depth_masking(self):
         self.depth_array = np.array(self.depth_image, dtype=np.float32)
         # self.depth_image
-        depth_mask = np.zeros((self.height, self.width))
+        depth_mask = np.zeros((self.frame_height, self.frame_width))
 
-        for x in range(self.heigth):
-            for y in range(self.width):
+        for x in range(self.frame_height):
+            for y in range(self.frame_width):
                 try:
                     # Get a depth value in meters
                     z = self.depth_array[y, x]
