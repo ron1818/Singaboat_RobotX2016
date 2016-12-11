@@ -92,19 +92,17 @@ class PassGates(object):
 	termination_displacement=60
 
 	def __init__(self):
-	print("starting task 1")
+		print("starting task 1")
 		rospy.init_node('task_1', anonymous=True)
 		rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False
-		#rospy.wait_for_message("/odom", Odometry)
-		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
 		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
 		while not self.odom_received:
 			rospy.sleep(1)
-	print("odom received")
+		print("odom received")
 
 		init_position =np.array([self.x0, self.y0, 0])
 		prev_target=np.array([self.x0, self.y0, 0])
@@ -113,37 +111,35 @@ class PassGates(object):
 		while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
 			#wait for data bucket to fill up
 			time.sleep(1)
-	print("bucket full")
 
-		
+		print("bucket full")
 
 		while not rospy.is_shutdown():
 			self.matrix_reorder()
-		print("reorder complete")
+			print("reorder complete")
 			target = self.plan_waypoint()
 			print(target)
-
 
 			if self.euclid_distance(target, prev_target)>self.replan_min:
 				#replan
 				#force cancel
 				self.pool.apply(cancel_forward)
 				#plan new constant heading
-			print("replan")
+				print("replan")
 				self.pool.apply_async(constant_heading, args = (target, ))
 				prev_target=target
 			else:
 				pass
 			#termination condition
 			if self.euclid_distance(np.array([self.x0, self.y0, 0]), init_position)>self.termination_displacement:
-		self.pool.apply(cancel_forward)
+				self.pool.apply(cancel_forward)
 				print("Task 1 Completed")
 				break
 
 			time.sleep(1)
 
-	self.pool.close()
-	self.pool.join()
+		self.pool.close()
+		self.pool.join()
 
 
 	def plan_waypoint(self):

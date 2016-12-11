@@ -32,6 +32,7 @@ from visualization_msgs.msg import MarkerArray, Marker
 from move_base_forward import Forward
 from move_base_zigzag import Zigzag
 from move_base_force_cancel import ForceCancel
+from move_base_waypoint import MoveTo
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 
@@ -57,8 +58,6 @@ class CoralSurvey(object):
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False
-		#rospy.wait_for_message("/odom", Odometry)
-		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
 		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
 		while not self.odom_received:
@@ -66,55 +65,60 @@ class CoralSurvey(object):
 		print("odom received")
 
 
-	self.zigzag_obj = Zigzag("zigzag", is_newnode=False, quadrant=None, map_length=40, map_width=40, half_period=2, half_amplitude=10, offset=3)
+		self.zigzag_obj = Zigzag("zigzag", is_newnode=False, quadrant=None, map_length=40, map_width=40, half_period=2, half_amplitude=10, offset=3)
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
 
+		zigzag_half_period=4
+		zigzag_half_amplitude=9
 
 		self.quadrant_visited=list()
-	self.doing_zigzag=list()
+		self.doing_zigzag=list()
 
 		for i in range(len(quadrant_list)):
 			self.quadrant_visited.append(0) #not visited
-		self.doing_zigzag.append(0)
+			self.doing_zigzag.append(0)
 
 		while not rospy.is_shutdown():
 			#main loop
-
 			#visit quadrant that is not yet visited
 			for i in range(len(quadrant_list)):
 				if self.quadrant_visited[i]==0:
 					self.current_quadrant=i
-			break
+					break
 						
-		if self.doing_zigzag[self.current_quadrant]==0:
-			zigzag_obj.respawn(quadrant_list[self.current_quadrant])
-			self.doing_zigzag[self.current_quadrant]=1
-			
+			if self.doing_zigzag[self.current_quadrant]==0:
+				self.zigzag_obj.respawn(quadrant_list[self.current_quadrant], zigzag_half_period, zigzag_half_amplitude) #zigzag only once
+				if self.quadrant_visited[self.current_quadrant]==0 and zigzag_half_period>1:
+					zigzag_half_period-=1
+
 		
 			time.sleep(1)
 
 		self.pool.close()
 		self.pool.join()
 
-	def is_complete(self):
-		pass
 
 	def marker_callback(self, msg):
 
 
 		if len(msg.markers)>0:
+			#find black totem
 
+			#find underwater shapes during zigzag
 			if msg.markers[0].type == 0 and self.shape_found[0]==0:
 				#triangle
 
 				if self.shape_counter==0:
-					   rospy.set_param("/gui/shape1", "TRI")
-					   self.shape_counter+=1
+					rospy.set_param("/gui/shape1", "TRI")
+					self.shape_counter+=1
 				elif self.shape_counter==1:
 					rospy.set_param("/gui/shape2", "TRI")
+				
 				self.shape_found[0]=1
 				self.quadrant_visited[self.current_quadrant]=1
-		print("found Triangle")
+				self.doing_zigzag[self.current_quadrant]=1
+				print("found Triangle")
+				
 
 			elif msg.markers[0].type == 1 and self.shape_found[1]==0:
 				#cruciform
@@ -126,7 +130,9 @@ class CoralSurvey(object):
 
 				self.shape_found[1]=1
 				self.quadrant_visited[self.current_quadrant]=1
-		print("found Crux")
+				self.doing_zigzag[self.current_quadrant]=1
+				print("found Crux")
+				
 
 			elif msg.markers[0].type == 2 and self.shape_found[2]==0:
 				#circle
@@ -138,7 +144,9 @@ class CoralSurvey(object):
 
 				self.shape_found[2]=1
 				self.quadrant_visited[self.current_quadrant]=1
-		print("found Circle")
+				self.doing_zigzag[self.current_quadrant]=1
+				print("found Circle")
+
 
 
 	def odom_callback(self, msg):
@@ -155,6 +163,8 @@ class CoralSurvey(object):
 		self.odom_received = True
 
 
+	def is_complete(self):
+		pass
 
 if __name__ == '__main__':
 	try:

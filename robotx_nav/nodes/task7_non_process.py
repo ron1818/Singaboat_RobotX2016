@@ -50,36 +50,35 @@ class DetectDeliver(object):
 
 	shape_counter=0
 
-
+	distance_to_box=3
 
 	def __init__(self, symbol_list):
 		print("starting task 7")
 		rospy.init_node('task_7', anonymous=True)
 
-		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
-		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
-		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
-		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
-
-
-		self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, is_relative=False)
-		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
-		self.aiming_obj = Aiming("aiming", is_newnode=False, target=None, radius=2, duration=30, angle_tolerance=10*math.pi/180.0, box=[0,0,0])
-
-
-		self.odom_received = False
-		rospy.wait_for_message("/odometry/filtered/global", Odometry)
-		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
-		while not self.odom_received:
-			rospy.sleep(1)
-
-		print("odom received")
 		self.symbol=symbol_list
 		self.symbol_visited=0	
 		self.symbol_seen=False
 		self.symbol_position=[0, 0, 0] 
 		self.station_seen=False #station here is cluster center of any face
 		self.station_position=[0, 0]
+
+		self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, is_relative=False)
+		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
+		self.aiming_obj = Aiming("aiming", is_newnode=False, target=None, radius=2, duration=30, angle_tolerance=10*math.pi/180.0, box=[0,0,0])
+
+		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
+		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
+		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
+		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
+
+		self.odom_received = False
+		rospy.wait_for_message("/odometry/filtered/global", Odometry)
+		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+		while not self.odom_received:
+			rospy.sleep(1)
+		print("odom received")
+
 		print(self.symbol)
 		while not rospy.is_shutdown() and not self.station_seen:
 			self.moveto_obj.respawn(self.random_walk(), )
@@ -127,7 +126,7 @@ class DetectDeliver(object):
 				self.moveto_obj.respawn(target, )
 				counter+=1
 
-			if d<3:
+			if d<self.distance_to_box:
 				break
 			time.sleep(1)	
 		
@@ -138,7 +137,6 @@ class DetectDeliver(object):
 		print("aiming to box")
 		print("start shooting module")
 		self.shooting_pub.publish(1)
-
 
 		station=[self.x0, self.y0, -self.symbol_position[2]]
 		radius=2
@@ -206,16 +204,16 @@ class DetectDeliver(object):
 		
 				if msg.markers[i].type==self.symbol[0] and msg.markers[i].id==self.symbol[1]:
 					#set position_list (not sure)
-				self.symbol_position[0]=msg.markers[i].pose.position.x
-				self.symbol_position[1]=msg.markers[i].pose.position.y
-				x = msg.markers[i].pose.orientation.x
-				y = msg.markers[i].pose.orientation.y
-				z = msg.markers[i].pose.orientation.z
-				w = msg.markers[i].pose.orientation.w
-				_, _, self.symbol_position[2] = euler_from_quaternion((x, y, z, w))
+					self.symbol_position[0]=msg.markers[i].pose.position.x
+					self.symbol_position[1]=msg.markers[i].pose.position.y
+					x = msg.markers[i].pose.orientation.x
+					y = msg.markers[i].pose.orientation.y
+					z = msg.markers[i].pose.orientation.z
+					w = msg.markers[i].pose.orientation.w
+					_, _, self.symbol_position[2] = euler_from_quaternion((x, y, z, w))
 
-				self.symbol_location[self.shape_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
-				self.shape_counter+=1
+					self.symbol_location[self.shape_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
+					self.shape_counter+=1
 		
 				if self.station_seen and self.shape_counter>self.MAX_DATA:
 					symbol_kmeans = KMeans(n_clusters=1).fit(self.symbol_location)
@@ -226,7 +224,6 @@ class DetectDeliver(object):
 					self.symbol_seen=True
 
 			#self.pool.apply(cancel_loiter)
-
 
 	def odom_callback(self, msg):
 		""" call back to subscribe, get odometry data:
@@ -240,8 +237,6 @@ class DetectDeliver(object):
 		w = msg.pose.pose.orientation.w
 		_, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
 		self.odom_received = True
-
-
 
 if __name__ == '__main__':
 	try:

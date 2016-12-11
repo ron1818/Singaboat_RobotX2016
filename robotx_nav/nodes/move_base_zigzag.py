@@ -26,7 +26,7 @@ class Zigzag(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, is_newnode=True, quadrant=1, map_length=10, map_width=10, half_period=10, half_amplitude=10, offset=0):
+    def __init__(self, nodename, is_newnode=True, quadrant=3, map_length=10, map_width=10, half_period=2, half_amplitude=10, offset=0):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
 
@@ -43,11 +43,13 @@ class Zigzag(MoveBaseUtil):
 
 
 	if quadrant is not None:
-	    self.respawn()
+	    self.respawn(self.quadrant, self.map_half_period, self.map_half_amplitude)
 
 
-    def respawn(self, quadrant)
+    def respawn(self, quadrant, half_period, half_amplitude):
     	self.quadrant=quadrant
+        self.map_half_period=half_period
+        self.map_half_amplitude=half_amplitude
 
         # assumption point 0,0 is the left-bottom of map
         if self.quadrant == 1:

@@ -56,8 +56,6 @@ class FindBreak(object):
 		rospy.Subscriber("/stop_find_break", Int8, self.stop_find_callback, queue_size = 5)
 		self.shooting_pub= rospy.Publisher('/start_find_break', Int8, queue_size=5)
 
-
-
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
 
 		init_position =np.array([self.x0, self.y0, 0])
@@ -65,10 +63,12 @@ class FindBreak(object):
 		while(self.counter<=self.MAX_DATA or self.distance_between_two_totems<5):
 		#walk around to fill the bucket
 			self.moveto_obj.respawn(self.random_walk(), )
-
 			if self.counter>self.MAX_DATA:
 				self.matrix_reorder()
-		time.sleep(1)
+
+			time.sleep(1)
+
+
 		print("totem position is kinda found")
 		self.matrix_reorder()
 		print(self.totem_position)
@@ -77,6 +77,7 @@ class FindBreak(object):
 			index=0
 		else:
 			index=1
+		
 		print(self.totem_position[index])
 
 		while not rospy.is_shutdown(): #while not reach goal
@@ -85,13 +86,15 @@ class FindBreak(object):
 			if self.distance_from_boat(self.totem_position[index])<2:
 				break
 
+			time.sleep(0.1)
+
 
 		while not rospy.is_shutdown(): #to be changed, while tuananh not satisfy
 			self.back_and_forth()
 			if self.tuananh_satisfied:
 				break
 
-		time.sleep(1)
+			time.sleep(1)
 
 	def move_to_goal(self, goal):
 		print("move to point")
