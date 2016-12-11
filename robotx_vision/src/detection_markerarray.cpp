@@ -2,7 +2,7 @@
   + Detect symbols: red/green/blue circle/triangle/cruciform
   + Detect markers: red/green/blue/yellow/white (totem) markers
   + Detect obstacles
-  + And also give the distance to the object using zed camera
+  + And also give an approximate distance to the object
   + Publish marker array, with the addition of base_link and camera_link
 */
 //ROS libs
@@ -69,12 +69,18 @@ cv::RotatedRect mr;
 int height, width;
 int min_area = 300;
 double area, r_area, mr_area;
+double true_width; //real-size width of the object, in meters
 const double eps = 0.15;
 //Functions
 void reduce_noise(cv::Mat* dst)
 {
   cv::morphologyEx(*dst, *dst, cv::MORPH_CLOSE, str_el);
   cv::morphologyEx(*dst, *dst, cv::MORPH_OPEN, str_el);
+}
+
+double estimate_dist(double true_width, double ROI_width)
+{
+  return true_width * 140.1690566 * pow(ROI_width, -1.029);
 }
 
 visualization_msgs::Marker object_return()
@@ -88,23 +94,11 @@ visualization_msgs::Marker object_return()
   obj_holder.color.b = 0;
   obj_holder.color.a = 1;
   //Calculate pose in zed_camera frame
-  	//orientation
+    //orientation
   obj_holder.pose.orientation = def_orientation;
-  	//position
+    //position
   double object_angle = -atan(tan(0.95993) * ((double)2*rect.tl().x + rect.width - width) / width); //angle of zed camera is 110 -> 55 deg -> 0.95993 rad
-  int n = 0;
-  double sum = 0;
-  for (int x = rect.tl().x; x < (rect.tl().x + rect.width); x++)
-    for (int y = rect.tl().y; y < (rect.tl().y + rect.height); y++)
-      {
-        double pixel_depth = depth_mat.at<float>(y, x); 
-        if(!isnan(pixel_depth) && (pixel_depth > near_dist) && (pixel_depth < far_dist))
-        {
-          n++;
-          sum += pixel_depth;
-        }
-      }
-  double distance = sum/n;
+  double distance = estimate_dist(true_width, rect.width);
   //Transform data from zed_camera frame into base frame (world)
   tf::StampedTransform tf_transform;
   tf_listener->lookupTransform(base_link, camera_link, ros::Time(0), tf_transform);
@@ -295,21 +289,6 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   }
 }
 
-void depthCb(const sensor_msgs::ImageConstPtr& depth_msg)
-{
-	try
-	{
-		depth_ptr = cv_bridge::toCvCopy(depth_msg, "32FC1");
-	  //refresh depth image
-	  depth_mat = depth_ptr->image;
-	}
-	catch(cv_bridge::Exception& e)
-  {
-    ROS_ERROR("cv_bridge exception: %s", e.what());
-    return;
-  }
-}
-
 void dynamic_configCb(robotx_vision::detectionConfig &config, uint32_t level) 
 {
   min_area = config.min_area;
@@ -353,9 +332,10 @@ void dynamic_configCb(robotx_vision::detectionConfig &config, uint32_t level)
 int main(int argc, char** argv)
 {
   //Initiate node
-  ros::init(argc, argv, "depth_detection");
+  ros::init(argc, argv, "detection_markerarray");
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
+  pnh.getParam("camera_link", camera_link);
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
   pnh.getParam("subscribed_depth_topic", subscribed_depth_topic);
   pnh.getParam("object_shape", object_shape);
@@ -367,18 +347,24 @@ int main(int argc, char** argv)
   def_orientation.y = 0;
   def_orientation.z = 0;
   def_orientation.w = 0;
-  	//type:
-  if(object_shape == "triangle") 				object_type = 0;
-  else if(object_shape == "cruciform") 	object_type = 1;
-  else if(object_shape == "circle") 		object_type = 2;
-  else if(object_shape == "totem") 			object_type = 3;
-  else if(object_shape == "rectangle") 	object_type = 4;
-  	//id:
-  if(object_color == "red") 				object_id = 0;
-  else if(object_color == "green") 	object_id = 1;
-  else if(object_color == "blue") 	object_id = 2;
-  else if(object_color == "black") 	object_id = 3;
-  else if(object_color == "white") 	object_id = 4;
+    //type:
+  if(object_shape == "triangle")        object_type = 0;
+  else if(object_shape == "cruciform")  object_type = 1;
+  else if(object_shape == "circle")     object_type = 2;
+  else if(object_shape == "totem")      object_type = 3;
+  else if(object_shape == "rectangle")  object_type = 4;
+    //true_width
+  if(object_shape == "triangle")        true_width = 0.8;
+  else if(object_shape == "cruciform")  true_width = 0.8;
+  else if(object_shape == "circle")     true_width = 0.8;
+  else if(object_shape == "totem")      true_width = 0.26;
+  else if(object_shape == "rectangle")  true_width = 0.8;
+    //id:
+  if(object_color == "red")         object_id = 0;
+  else if(object_color == "green")  object_id = 1;
+  else if(object_color == "blue")   object_id = 2;
+  else if(object_color == "black")  object_id = 3;
+  else if(object_color == "white")  object_id = 4;
   else if(object_color == "yellow") object_id = 5;
   else if(object_color == "orange") object_id = 6;
   //Dynamic reconfigure
@@ -398,7 +384,6 @@ int main(int argc, char** argv)
   //Start ROS subscriber...
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber image_sub = it.subscribe(subscribed_image_topic, 1, imageCb);
-  image_transport::Subscriber depth_sub = it.subscribe(subscribed_depth_topic, 1, depthCb);
   //...and ROS publisher
   ros::Publisher pub = nh.advertise<visualization_msgs::MarkerArray>(published_topic, 1000);
   ros::Rate r(30);
@@ -406,8 +391,8 @@ int main(int argc, char** argv)
   tf_listener = new tf::TransformListener();
   while (nh.ok())
   {
-  	//Do callbacks
-  	ros::spinOnce();
+    //Do callbacks
+    ros::spinOnce();
     //Publish every object detected
     pub.publish(object);
     //Reinitialize the object counting vars
