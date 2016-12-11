@@ -3,23 +3,18 @@
   + Detect markers: red/green/blue/yellow/white (totem) markers
   + Detect obstacles
   + And also give the distance to the object using zed camera
-  + Publish marker array
 */
 //ROS libs
 #include <ros/ros.h>
 #include <ros/console.h>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/Image.h>
+#include <image_transport/image_transport.h>
+#include "sensor_msgs/RegionOfInterest.h"
+#include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <robotx_vision/detectionConfig.h>
-#include <visualization_msgs/MarkerArray.h>
-#include <visualization_msgs/Marker.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/Quaternion.h>
-#include <tf/transform_listener.h>
-#include <tf/transform_datatypes.h>
+#include <std_msgs/Float64.h>
 //OpenCV libs
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
@@ -40,21 +35,14 @@ using namespace std;
 std::string subscribed_image_topic, subscribed_depth_topic;
 std::string object_shape, object_color;
 std::string published_roi_topic, published_distance_topic;
-std::string published_topic = "filtered_marker_array";
-double far_dist = 20; //in meters
+double far_dist = 20;
 double near_dist = 0.5;
 bool debug;
-int object_type;
-int object_id;
-tf::TransformListener *tf_listener;
-std::string camera_link = "/camera_link";
-std::string base_link = "/base_link";
-//default quaternion is 0:
-geometry_msgs::Quaternion def_orientation;
 //Image transport vars
 cv_bridge::CvImagePtr cv_ptr, depth_ptr;
-//ROS to-be-published var
-visualization_msgs::MarkerArray object;
+//ROS var
+vector<sensor_msgs::RegionOfInterest> object;
+vector<std_msgs::Float64> dist;
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
@@ -63,7 +51,7 @@ cv::Scalar up_lim, low_lim, up_lim_wrap, low_lim_wrap;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
 cv::Mat color;
-cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4,4));
+cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(2,2));
 cv::Rect rect;
 cv::RotatedRect mr;
 int height, width;
@@ -77,49 +65,20 @@ void reduce_noise(cv::Mat* dst)
   cv::morphologyEx(*dst, *dst, cv::MORPH_OPEN, str_el);
 }
 
-visualization_msgs::Marker object_return()
+sensor_msgs::RegionOfInterest object_return()
 {
-  visualization_msgs::Marker obj_holder;
-  obj_holder.type = object_type;
-  obj_holder.id = object_id;
-  //set RGBAColor to yellow, rviz, not too important
-  obj_holder.color.r = 255;
-  obj_holder.color.g = 255;
-  obj_holder.color.b = 0;
-  obj_holder.color.a = 1;
-  //Calculate pose in zed_camera frame
-  	//orientation
-  obj_holder.pose.orientation = def_orientation;
-  	//position
-  double object_angle = -atan(tan(0.95993) * ((double)2*rect.tl().x + rect.width - width) / width); //angle of zed camera is 110 -> 55 deg -> 0.95993 rad
-  int n = 0;
-  double sum = 0;
-  for (int x = rect.tl().x; x < (rect.tl().x + rect.width); x++)
-    for (int y = rect.tl().y; y < (rect.tl().y + rect.height); y++)
-      {
-        cv::Scalar intensity = depth_mat.at<float>(y, x); 
-        double pixel_depth = intensity.val[0];
-        if(!isnan(pixel_depth) && (pixel_depth > near_dist) && (pixel_depth < far_dist))
-        {
-          n++;
-          sum += pixel_depth;
-        }
-      }
-  double distance = sum/n;
-  //Transform data from zed_camera frame into base frame (world)
-  tf::StampedTransform tf_transform;
-  tf_listener->lookupTransform(base_link, camera_link, ros::Time(0), tf_transform);
-  double del_x = tf_transform.getOrigin().x();
-  double del_y = tf_transform.getOrigin().y();
-  obj_holder.pose.position.x = del_x + distance * cos(object_angle);
-  obj_holder.pose.position.y = del_y + distance * sin(object_angle);
-  obj_holder.pose.position.z = 0;
-  return obj_holder;
+  sensor_msgs::RegionOfInterest obj;
+  obj.x_offset = (rect.tl()).x;
+  obj.y_offset = (rect.tl()).y;
+  obj.height = rect.height;
+  obj.width = rect.width;
+  obj.do_rectify = true;
+  return obj;
 }
 
 void object_found()
 {
-  object.markers.push_back(object_return());         //Push the object to the vector
+  object.push_back(object_return());         //Push the object to the vector
   if(debug) cv::rectangle(src, rect.tl(), rect.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
 }
 
@@ -154,16 +113,15 @@ void detect_marker()
     area = cv::contourArea(contours[i]);
     r_area = rect.height*rect.width;
     mr_area = (mr.size).height*(mr.size).width;
-
-    vector<Point> hull;
-    convexHull(contours[i], hull, 0, 1);
-    double hull_area = contourArea(hull);
     //Detect
     if(object_color != "red")
-      if((rect.height/rect.width > 1.2) && (area/hull_area > (0.95-eps)))
+      if(((float)rect.height/rect.width > 1.2) && (area/mr_area > (0.95-eps)))
         object_found();
     else 
     {
+      vector<Point> hull;
+      convexHull(contours[i], hull, 0, 1);
+      double hull_area = contourArea(hull);
       /*ROS_INFO("Object %d", i);
       cout << "H/W = " << (float)rect.height/rect.width << endl;
       cout << "area/min_rect_area = " << (float)area/mr_area << endl;
@@ -191,6 +149,8 @@ void detect_obstacle()
   //Detect shape for each contour
   for (int i = 0; i < contours.size(); i++)
   {
+    // Approximate contour with accura cy proportional to the contour perimeter
+    //cv::approxPolyDP(cv::Mat(contours[i]), approx, cv::arcLength(cv::Mat(contours[i]), true)*0.02, true);
     // Skip small or non-convex objects 
     if ((std::fabs(cv::contourArea(contours[i])) < min_area) /*|| (!cv::isContourConvex(approx))*/) continue;
     //Find black buoys
@@ -270,41 +230,65 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    //Get the image in OpenCV format
+    src = cv_ptr->image;
+    if (src.empty() || depth_mat.empty()) return;
+    //Start the shape detection code
+    cv::blur(src,src,Size(1,1));
+    cv::cvtColor(src,hsv,COLOR_BGR2HSV);
+    width = src.cols;
+    height = src.rows;
+    //Detect stuffs
+    if(object_shape == "marker" || object_shape == "totem") detect_marker();
+    else if(object_shape == "obstacle") detect_obstacle();
+    else detect_symbol();
+    //Show output on screen in debug mode
+    if(debug) 
+    {
+      cv::imshow("src", src);
+      cv::imshow("color", color);
+    }
+    src.release();
+    hsv.release();
+    color.release();
+    //Find distance to every detected object
+    //by getting the avarage depth value to the ROI
+    for(vector<sensor_msgs::RegionOfInterest>::iterator it = object.begin(); it != object.end(); it++)
+    {
+      int n = 0;
+      double sum = 0;
+      for(int x = it->x_offset; x <= (it->x_offset + it->width); x++)
+        for(int y = it->y_offset; y <= (it->y_offset + it->height); y++)
+          {
+            double pixel_depth = depth_mat.at<float>(y,x);
+            if(!isnan(pixel_depth) && (pixel_depth > near_dist) && (pixel_depth < far_dist))       
+            {
+              n++;
+              sum += pixel_depth;
+            }
+          }
+      std_msgs::Float64 distance_msg;
+      distance_msg.data = sum/n;
+      dist.push_back(distance_msg);
+    }
   }
   catch(cv_bridge::Exception& e)
   {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
   }
-  //Get the image in OpenCV format
-  src = cv_ptr->image;
-  if (src.empty() || depth_mat.empty()) return;
-  //Start the shape detection code
-  cv::blur(src,src,Size(1,1));
-  cv::cvtColor(src,hsv,COLOR_BGR2HSV);
-  width = src.cols;
-  height = src.rows;
-  //Detect stuffs
-  if(object_shape == "marker" || object_shape == "totem") detect_marker();
-  else if(object_shape == "obstacle") detect_obstacle();
-  else detect_symbol();
-  //Show output on screen in debug mode
-  if(debug) 
-  {
-    cv::imshow("src", src);
-    cv::imshow("color", color);
-  }
 }
 
 void depthCb(const sensor_msgs::ImageConstPtr& depth_msg)
 {
-	try
-	{
-		depth_ptr = cv_bridge::toCvCopy(depth_msg, "32FC1");
-	  //refresh depth image
-	  depth_mat = depth_ptr->image;
-	}
-	catch(cv_bridge::Exception& e)
+  try
+  {
+    depth_ptr = cv_bridge::toCvCopy(depth_msg, "32FC1");
+    //refresh depth image
+    depth_mat = depth_ptr->image;
+    /*cout << depth_mat.at<float>(360,640) << endl;*/
+  }
+  catch(cv_bridge::Exception& e)
   {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
@@ -361,27 +345,9 @@ int main(int argc, char** argv)
   pnh.getParam("subscribed_depth_topic", subscribed_depth_topic);
   pnh.getParam("object_shape", object_shape);
   pnh.getParam("object_color", object_color);
-  pnh.getParam("published_topic", published_topic);
+  pnh.getParam("published_roi_topic", published_roi_topic);
+  pnh.getParam("published_distance_topic", published_distance_topic);
   pnh.getParam("debug", debug);
-  //Processing object parameters for MarkerArray
-  def_orientation.x = 0;
-  def_orientation.y = 0;
-  def_orientation.z = 0;
-  def_orientation.w = 0;
-  	//type:
-  if(object_shape == "triangle") 				object_type = 0;
-  else if(object_shape == "cruciform") 	object_type = 1;
-  else if(object_shape == "circle") 		object_type = 2;
-  else if(object_shape == "totem") 			object_type = 3;
-  else if(object_shape == "rectangle") 	object_type = 4;
-  	//id:
-  if(object_color == "red") 				object_id = 0;
-  else if(object_color == "green") 	object_id = 1;
-  else if(object_color == "blue") 	object_id = 2;
-  else if(object_color == "black") 	object_id = 3;
-  else if(object_color == "white") 	object_id = 4;
-  else if(object_color == "yellow") object_id = 5;
-  else if(object_color == "orange") object_id = 6;
   //Dynamic reconfigure
   dynamic_reconfigure::Server<robotx_vision::detectionConfig> server;
   dynamic_reconfigure::Server<robotx_vision::detectionConfig>::CallbackType f;
@@ -401,18 +367,24 @@ int main(int argc, char** argv)
   image_transport::Subscriber image_sub = it.subscribe(subscribed_image_topic, 1, imageCb);
   image_transport::Subscriber depth_sub = it.subscribe(subscribed_depth_topic, 1, depthCb);
   //...and ROS publisher
-  ros::Publisher pub = nh.advertise<visualization_msgs::MarkerArray>(published_topic, 1000);
+  ros::Publisher roi_pub = nh.advertise<sensor_msgs::RegionOfInterest>(published_roi_topic, 1000);
+  ros::Publisher dist_pub = nh.advertise<std_msgs::Float64>(published_distance_topic, 1000);
   ros::Rate r(30);
-  //...and ROS transform listener
-  tf_listener = new tf::TransformListener();
   while (nh.ok())
   {
-  	//Do callbacks
-  	ros::spinOnce();
+    //Do callbacks
+    ros::spinOnce();
     //Publish every object detected
-    pub.publish(object);
+    if(object.size() == dist.size())
+      for(int i = 0; i < object.size(); i++)
+      {
+        roi_pub.publish(object[i]);
+        dist_pub.publish(dist[i]);
+      }
+    else ROS_WARN("Unmatched numbers of objects & distances!");
     //Reinitialize the object counting vars
-    object.markers.clear();
+    object.clear();
+    dist.clear();
     //Loop
     r.sleep();
   }

@@ -7,13 +7,14 @@
 //ROS libs
 #include <ros/ros.h>
 #include <ros/console.h>
-#include <cv_bridge/cv_bridge.h>
-#include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
 #include <sensor_msgs/Image.h>
-#include <sensor_msgs/RegionOfInterest.h>
+#include "sensor_msgs/RegionOfInterest.h"
+#include <cv_bridge/cv_bridge.h>
 #include <dynamic_reconfigure/server.h>
 #include <robotx_vision/detectionConfig.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
 #include <std_msgs/Float64.h>
 //OpenCV libs
 #include <opencv2/opencv.hpp>
@@ -31,6 +32,8 @@
 using namespace ros;
 using namespace cv;
 using namespace std;
+using namespace sensor_msgs;
+using namespace message_filters;
 //ROS params
 std::string subscribed_image_topic, subscribed_depth_topic;
 std::string object_shape, object_color;
@@ -218,13 +221,14 @@ void detect_symbol()
   }
 }
 
-void imageCb(const sensor_msgs::ImageConstPtr& msg)
+void imageCb(const sensor_msgs::ImageConstPtr& msg, const sensor_msgs::ImageConstPtr& depth_msg)
 {
   try
   {
     cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+    depth_ptr = cv_bridge::toCvCopy(depth_msg, "32FC1");
   }
-  catch(cv_bridge::Exception& e)
+  catch (cv_bridge::Exception& e)
   {
     ROS_ERROR("cv_bridge exception: %s", e.what());
     return;
@@ -249,6 +253,7 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   }
   //Find distance to every detected object
   //by getting the avarage depth value to the ROI
+  depth_mat = depth_ptr->image;
   for(vector<sensor_msgs::RegionOfInterest>::iterator it = object.begin(); it != object.end(); it++)
   {
     int n = 0;
@@ -268,21 +273,6 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     distance_msg.data = sum/n;
     dist.push_back(distance_msg);
   }
-}
-
-void depthCb(const sensor_msgs::ImageConstPtr& depth_msg)
-{
-	try
-	{
-		depth_ptr = cv_bridge::toCvCopy(depth_msg, "32FC1");
-	}
-	catch(cv_bridge::Exception& e)
-  {
-    ROS_ERROR("cv_bridge exception: %s", e.what());
-    return;
-  }
-  //refresh depth image
-  depth_mat = depth_ptr->image;
 }
 
 void dynamic_configCb(robotx_vision::detectionConfig &config, uint32_t level) 
@@ -338,11 +328,11 @@ int main(int argc, char** argv)
   pnh.getParam("published_roi_topic", published_roi_topic);
   pnh.getParam("published_distance_topic", published_distance_topic);
   pnh.getParam("debug", debug);
-  //Dynamic reconfigure
   dynamic_reconfigure::Server<robotx_vision::detectionConfig> server;
   dynamic_reconfigure::Server<robotx_vision::detectionConfig>::CallbackType f;
   f = boost::bind(&dynamic_configCb, _1, _2);
   server.setCallback(f);
+  
   //Initiate windows
   if(debug)
   { 
@@ -353,29 +343,28 @@ int main(int argc, char** argv)
     cv::startWindowThread();
   }
   //Start ROS subscriber...
-  image_transport::ImageTransport it(nh);
-  image_transport::Subscriber image_sub = it.subscribe(subscribed_image_topic, 1, imageCb);
-  image_transport::Subscriber depth_sub = it.subscribe(subscribed_depth_topic, 1, depthCb);
+  message_filters::Subscriber<sensor_msgs::Image> image_sub(nh, subscribed_image_topic, 1);
+  message_filters::Subscriber<sensor_msgs::Image> depth_sub(nh, subscribed_depth_topic, 1);
+  TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_sub, depth_sub, 10);
+  sync.registerCallback(boost::bind(&imageCb, _1, _2));
   //...and ROS publisher
   ros::Publisher roi_pub = nh.advertise<sensor_msgs::RegionOfInterest>(published_roi_topic, 1000);
   ros::Publisher dist_pub = nh.advertise<std_msgs::Float64>(published_distance_topic, 1000);
   ros::Rate r(30);
   while (nh.ok())
   {
-  	//Do callbacks
-  	ros::spinOnce();
     //Publish every object detected
-    if(object.size() == dist.size())
-    	for(int i = 0; i < object.size(); i++)
-	    {
-	      roi_pub.publish(object[i]);
-	      dist_pub.publish(dist[i]);
-	    }
-	 	else ROS_WARN("Unmatched numbers of objects & distances!");
+    if(object.size() != dist.size()) ROS_INFO("Unmatched numbers of objects & distances!");
+    else for(int i = 0; i < object.size(); i++)
+    {
+      roi_pub.publish(object[i]);
+      dist_pub.publish(dist[i]);
+    }
     //Reinitialize the object counting vars
     object.clear();
     dist.clear();
-    //Loop
+    //Spin
+    ros::spinOnce();
     r.sleep();
   }
   cv::destroyAllWindows();
