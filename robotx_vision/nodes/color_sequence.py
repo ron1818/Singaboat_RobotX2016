@@ -231,6 +231,7 @@ class ColorSequence(ROS2OpenCV2):
                 self.hist = self.hist.reshape(-1)
                 # print self.hist
                 self.hist_prob = np.argmax(self.hist)
+                print self.hist_prob
                 self.show_hist()
 
             # if self.detect_box is not None:
@@ -464,7 +465,7 @@ class ColorSequence(ROS2OpenCV2):
 
 if __name__ == '__main__':
     try:
-        node_name = "camshift"
+        node_name = "color_sequence"
         ColorSequence(node_name)
         try:
             rospy.init_node(node_name)

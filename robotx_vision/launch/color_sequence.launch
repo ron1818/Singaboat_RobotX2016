@@ -5,7 +5,7 @@
     <arg name="namespace" default="bow" />
     <arg name="objectname" default="totem" />
     <arg name="color_under_detect" default="red" />
-    <node pkg="robotx_vision" name="camshift_break" type="camshift_break.py" output="screen" ns="$(arg namespace)" >
+    <node pkg="robotx_vision" name="color_sequence_pub" type="color_sequence.py" output="screen" ns="$(arg namespace)" >
         <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
         <remap from="input_depth_image" to="$(arg input_depth_image)" />
         <rosparam>
