@@ -7,9 +7,8 @@ import numpy as np
 import os
 from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Point, Pose
+from geometry_msgs.msg import Point, Pose, Twist, Vector3
 from visualization_msgs.msg import MarkerArray, Marker
-from move_base_rotation import rotation
 from move_base_forward import Forward
 from move_base_force_cancel import ForceCancel
 from tf.transformations import euler_from_quaternion
@@ -18,7 +17,7 @@ from nav_msgs.msg import Odometry
 
 class PassGates(object):
 	MAX_DATA=30 #stash data size of marker array for clustering
-	mid_point_counter_max=50
+	mid_point_counter_max=20
 
 	distance=20 #distance to offset from center of gates
 	replan_min=5 #replan waypoints if changes is more than this
@@ -29,20 +28,21 @@ class PassGates(object):
 	red_totem=np.zeros((MAX_DATA, 2)) #unordered list
 	green_totem=np.zeros((MAX_DATA, 2))
 
-	red_centers=np.zeros((2, 2)) #ordered list of centers x, y
-	green_centers=np.zeros((2, 2))
+	red_centers=np.zeros((1, 2)) #ordered list of centers x, y
+	green_centers=np.zeros((1, 2))
 
-	red_position=np.zeros((2, 2)) #ordered list of centers x, y
-	green_position=np.zeros((2, 2))
 
 	red_counter=0
 	green_counter=0
 	mid_point_counter=0
 
+	mid_point_x=list()
+	mid_point_y=list()
+
 	termination_displacement=50
 
 	m=0
-	d=5
+	d=10
 
 	def __init__(self):
 		print("starting task 1")
@@ -51,31 +51,33 @@ class PassGates(object):
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False
-		#rospy.wait_for_message("/odom", Odometry)
-		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
 		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
 		while not self.odom_received:
 			rospy.sleep(1)
 
+		self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
+		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
+
 		init_position =np.array([self.x0, self.y0, 0])
 
-		while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
-			#wait for data bucket to fill up
-			rotation(math.pi/4)
+		while(self.red_counter<self.MAX_DATA or self.green_counter<self.MAX_DATA):
+			#wait for data bucket to fill up, rotate around
+			self.rotation(math.pi/4)
 			time.sleep(3)
-			rotation(-math.pi/2)
+			self.rotation(-math.pi/2)
 			time.sleep(1)
 		print("bucket is full")
 
 		while not rospy.is_shutdown():
 			#go to mid target
-			if self.mid_point_counter > self.mid_point_counter_max:
-				angle=math.atan2(m)
-				move_to_goal(init_position[0]+d*math.sin(angle), init_position[1]+d*math.cos(angle))
 
-			elif self.red_counter>self.MAX_DATA and self.green_counter>self.MAX_DATA:
-				move_to_goal([mid_point_x,mid_point_y, ])
+			if self.mid_point_counter<self.mid_point_counter_max: #at first move to mid point
+				self.move_to_goal([self.mid_point_x[0], self.mid_point_y[0], math.pi/2+math.atan2(self.red_centers[0][1]-self.green_centers[0][1],self.red_centers[0][0]-self.green_centers[0][0])])
+
+			elif self.mid_point_counter > self.mid_point_counter_max: # later go along the direction of midpoint line
+				angle=math.atan(self.m)
+				self.move_to_goal([self.x0+self.d*math.sin(angle), self.y0+self.d*math.cos(angle), angle])
 
 			#pass all of the pool, stop
 			if self.euclid_distance(np.array([self.x0, self.y0, 0]), init_position)>self.termination_displacement:
@@ -105,11 +107,11 @@ class PassGates(object):
 			self.green_centers=green_kmeans.cluster_centers_
 
 		#updating the mid point
-		if(self.red_counter%self.MAX_DATA==0 or self.green_counter%self.MAX_DATA==0)
-			mid_point_x[mid_point_counter]=(self.red_centers[0]+self.green_centers[0])/2
-			mid_point_y[mid_point_counter]=(self.red_centers[1]+self.green_centers[1])/2
-			self.mid_point_counter=self.mid_point_counter+1
-			self.m,b = np.polyfit(mid_point_x, mid_point_y, 1)
+		if(self.red_counter>self.MAX_DATA and self.green_counter>self.MAX_DATA):
+			self.mid_point_x.append((self.red_centers[0][0]+self.green_centers[0][0])/2)
+			self.mid_point_y.append((self.red_centers[0][1]+self.green_centers[0][1])/2)
+			self.mid_point_counter+=1
+			self.m, self.b = np.polyfit(self.mid_point_x, self.mid_point_y, 1)
 
 	def move_to_goal(self, goal):
 		print("move to point")
@@ -131,6 +133,25 @@ class PassGates(object):
 		_, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
 		self.odom_received = True
 
+	def rotation(self, ang):
+
+		rate = rospy.Rate(10)
+		an_vel = 0.1
+		duration = ang / an_vel
+		msg = Twist(Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, an_vel))
+
+		rate.sleep()
+		start_time = rospy.get_time()
+
+		while not rospy.is_shutdown():
+			current_time = rospy.get_time()
+			if (current_time - start_time) > duration:
+				self.cmd_vel_pub.publish(Twist(Vector3(0, 0.0, 0.0), Vector3(0.0, 0.0, -2 * an_vel)))
+				self.cmd_vel_pub.publish(Twist())
+				break
+			else:
+				self.cmd_vel_pub.publish(msg)
+			rate.sleep()
 
 
 if __name__ == '__main__':

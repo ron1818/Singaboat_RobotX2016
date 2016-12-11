@@ -15,15 +15,19 @@ from move_base_force_cancel import ForceCancel
 from tf.transformations import euler_from_quaternion
 from move_base_waypoint import MoveTo
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Int8
 
 class FindBreak(object):
-	pool=mp.Pool(5)
-	x0,y0,yaw0=0,0,0
+
+	termination_displacement=60
 	MAX_DATA=30
 
+
+
+	pool=mp.Pool(5)
+	x0,y0,yaw0=0,0,0
 	x_offset, y_offset = random.random() * 20 - 10, random.random() * 30 - 15
 	map_dim = [[0, 40], [0, 40]]
-
 	totem=np.zeros((MAX_DATA,2)) #all position
 	totem_centers=np.zeros((2,2)) #filtered position
 	totem_position=np.zeros((2,2)) #reordered position
@@ -31,30 +35,28 @@ class FindBreak(object):
 	is_collect_position_totem=1
 	new_stack_totem_0=np.zeros((MAX_DATA,2))
 	new_stack_totem_1=np.zeros((MAX_DATA,2))
-
-
-
 	stash_counter_0=0
 	stash_counter_1=0
 	distance_between_two_totems=0
-	termination_displacement=60
 	tuananh_satisfied=False
 
 	def __init__(self):
 		print("starting task 6")
 		rospy.init_node('task_6', anonymous=True)
-		rospy.Subscriber("/find_break", MarkerArray, self.marker_callback, queue_size = 50)
+		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
 		#self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False
-		#rospy.wait_for_message("/odom", Odometry)
-		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
 		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
 		while not self.odom_received:
 			rospy.sleep(1)
 		print("odom received")
 		
+		rospy.Subscriber("/stop_find_break", Int8, self.stop_find_callback, queue_size = 5)
+		self.shooting_pub= rospy.Publisher('/start_find_break', Int8, queue_size=5)
+
+
 
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
 
@@ -120,6 +122,11 @@ class FindBreak(object):
 		else:
 			y = y
 		return [x, y, 0]
+
+	def stop_find_break(self, msg):
+		if msg.data==1:
+			self.tuananh_satisfied=True
+
 
 	def back_and_forth(self):
 		while self.distance_from_boat(self.totem_position[0])>2 and not rospy.is_shutdown():

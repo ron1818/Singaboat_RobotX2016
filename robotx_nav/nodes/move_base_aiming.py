@@ -25,18 +25,25 @@ class Aiming(MoveBaseUtil):
     # initialize boat pose param
     # x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, is_newnode=True, target=None, radius=2, duration=200, angle_tolerance=1*pi/180.0, box=[5,0,0]):
+    def __init__(self, nodename, is_newnode=True, target=None, radius=2, duration=0, angle_tolerance=10*pi/180.0, box=[0,0,0]):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         if target is not None:  # shooting range's position
-            self.target = Twist(Point(rospy.get_param("~station_x", target[0]), rospy.get_param("~station_y", target[1]), 0),
-                                    Point(0, 0, rospy.get_param("~station_yaw", target[2])))
+            self.target = Twist(Point(rospy.get_param("~station_x", target[0]), rospy.get_param("~station_y", target[1]), 0), Point(0, 0, rospy.get_param("~station_yaw", target[2])))
         else:  # use boat's current position as the shooting range's position
             self.target = Twist(Point(self.x0, self.y0, 0), Point(0, 0, self.yaw0))
-        self.radius = rospy.get_param("~radius", radius)
-        self.duration = rospy.get_param("~duration", duration)
-        self.angle_tolerance = rospy.get_param("~angle_tolerance", angle_tolerance)
-        self.box = Point(rospy.get_param("~box_x", box[0]), rospy.get_param("~box_y", box[1]), 0)
+        self.radius = radius
+        self.duration = duration
+        self.angle_tolerance = angle_tolerance
+        self.box = box
+
+        if self.target is not None: # onetime job
+            self.respawn()
+
+    def respawn(self, duration, box, target):
+        self.box=box
+        self.duration=duration
+        self.target=target
 
         q_angle = quaternion_from_euler(0, 0, self.target.angular.z)
         angle = Quaternion(*q_angle)
@@ -109,7 +116,7 @@ class Aiming(MoveBaseUtil):
 
 
     def pid_angular(self, target):
-    	#angular PID
+        #angular PID
         angle_error=math.atan2(target[1]-self.y0, target[0]-self.x0)-self.yaw0
 
         self.error_angular=atan2(sin(angle_error), cos(angle_error)) #trick to remap to -pi -
@@ -122,33 +129,33 @@ class Aiming(MoveBaseUtil):
         self.Integrator_angular=self.Integrator_angular +self.error_angular
 
         if self.Integrator_angular > self.Integrator_max_angular:
-        	self.Integrator_angular=self.Integrator_max_angular
+            self.Integrator_angular=self.Integrator_max_angular
         elif self.Integrator_angular < self.Integrator_min_angular:
-        	self.Integrator_angular=self.Integrator_min_angular
+            self.Integrator_angular=self.Integrator_min_angular
 
         self.I_value_angular=self.Integrator_angular*self.angular_ki
 
 
-    	pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular
+        pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular
 
         if pid_angular_z>self.angular_velocity_threshold:
-        	pid_angular_z=self.angular_velocity_threshold
+            pid_angular_z=self.angular_velocity_threshold
         elif pid_angular_z<-self.angular_velocity_threshold:
-        	pid_angular_z=-self.angular_velocity_threshold
+            pid_angular_z=-self.angular_velocity_threshold
 
         return (pid_angular_z)
 
 
     def dynamic_callback(self, config, level):
         rospy.loginfo("""Reconfigure Request: \
-         \
-        {aim_angular_kp}, {aim_angular_ki}, {aim_angular_kd}, {aim_angular_velocity_threshold}  """.format(**config))
+         \ 
+         {aim_angular_kp}, {aim_angular_ki}, {aim_angular_kd}, {aim_angular_velocity_threshold}  """.format(**config))
 
         self.angular_kp = config["aim_angular_kp"]
         self.angular_ki = config["aim_angular_ki"]
         self.angular_kd = config["aim_angular_kd"]
 
-    	self.angular_velocity_threshold=config["aim_angular_velocity_threshold"]
+        self.angular_velocity_threshold=config["aim_angular_velocity_threshold"]
         return config
 
 
@@ -159,3 +166,4 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
         pass
+y`

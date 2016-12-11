@@ -47,7 +47,7 @@ class Zigzag(MoveBaseUtil):
 
 
     def respawn(self, quadrant)
-	self.quadrant=quadrant
+    	self.quadrant=quadrant
 
         # assumption point 0,0 is the left-bottom of map
         if self.quadrant == 1:
