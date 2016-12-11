@@ -1,0 +1,26 @@
+<launch>
+	<arg name="namespace" default="bow"/>
+	<arg name="camera_link" default="camera_link"/>
+	<arg name="object" default="circle"/>
+	<arg name="color" default="red"/>
+	<arg name="debug" default="true"/>
+
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="detection_markerarray"
+			name="detection_markerarray"
+			required="true"
+			output="screen"
+		>
+		<param name="camera_link" value="camera_link"/>
+		<param name="subscribed_image_topic" value="rgb/image_rect_color"/>
+		<param name="subscribed_depth_topic" value="depth/image_rect_color"/>
+		<param name="object_shape" value="$(arg object)"/>
+		<param name="object_color" value="$(arg color)"/>
+		<param name="published_topic" value="object"/>
+		<param name="debug" value="$(arg debug)"/>
+
+		</node>
+	</group>
+</launch>
