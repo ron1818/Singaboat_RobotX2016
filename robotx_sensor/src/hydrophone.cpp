@@ -1,9 +1,6 @@
 #include <ros/ros.h>
-#include "std_msgs/String.h"
-#include "std_msgs/Float64.h"
 #include "serial/serial.h"
-#include "geometry_msgs/Vector3.h"
-//#include "sensor_msgs/Imu.msg"
+#include "std_msgs/Int8.h"
 #include <tf/transform_broadcaster.h>
 #include <cmath>
 
@@ -22,13 +19,19 @@ int main(int argc, char **argv)
   size_t pos=0;
   double s[2]={};
   int i=0;
+  double frequency=0;
+  int amplitude=0;
+
+
+  double given_frequency;
+  int threshold_amp;
+  n.getParam("/hydrophone/threshold_amp", threshold_amp);
+  n.getParam("/hydrophone/frequency", given_frequency);
 
 
   ros::Rate loop_rate(20);
   ser=new Serial("/dev/USBdue", 115200, serial::Timeout::simpleTimeout(250));
-
-
-  ros::Publisher hydro_pub = n.advertise<geometry_msgs::Vector3> ("hydrophone/data_raw", 1000);
+  ros::Publisher hydro_pub = n.advertise<std_msgs::Int8> ("hydrophone", 1000);
 
   while (ros::ok())
   {
@@ -36,7 +39,7 @@ int main(int argc, char **argv)
     pos=0;
     msg=ser->readline();
     ROS_INFO("%s",msg.c_str());
-    geometry_msgs::Vector3 raw_msg;
+    std_msgs::Int8 is_detected;
 
 
     while((pos=msg.find(delimiter))!=std::string::npos){
@@ -46,19 +49,19 @@ int main(int argc, char **argv)
       i++;
     }
    
-   
     s[1]=::atof(msg.c_str());
 
-    if (s[1]==0){
-      s[0]=0;
+    if (s[1]!=0){
+      amplitude=s[0];
+      frequency=s[1];
+      if((frequency<given_frequency+1000 && frequency > given_frequency-1000) && amplitude < threshold_amp){
+        is_detected.data=1;
+        hydro_pub.publish(is_detected);  
+      }
+    }
+    else{
+      is_detected.data=0;
     }   
-
-
-    raw_msg.x=s[0];
-    raw_msg.y=s[1];
-   
-    hydro_pub.publish(raw_msg);
-
     
     ros::spinOnce();
     loop_rate.sleep();

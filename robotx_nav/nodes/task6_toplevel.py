@@ -21,12 +21,8 @@ class FindBreak(object):
 
 	termination_displacement=60
 	MAX_DATA=30
-
-
-
-	pool=mp.Pool(5)
 	x0,y0,yaw0=0,0,0
-	x_offset, y_offset = random.random() * 20 - 10, random.random() * 30 - 15
+	x_offset, y_offset = random.random() * 10 - 5, random.random() * 10 - 5
 	map_dim = [[0, 40], [0, 40]]
 	totem=np.zeros((MAX_DATA,2)) #all position
 	totem_centers=np.zeros((2,2)) #filtered position
@@ -38,7 +34,9 @@ class FindBreak(object):
 	stash_counter_0=0
 	stash_counter_1=0
 	distance_between_two_totems=0
+	gauss_counter=0
 	tuananh_satisfied=False
+
 
 	def __init__(self):
 		print("starting task 6")
@@ -61,7 +59,7 @@ class FindBreak(object):
 		init_position =np.array([self.x0, self.y0, 0])
 
 		while(self.counter<=self.MAX_DATA or self.distance_between_two_totems<5):
-		#walk around to fill the bucket
+			#walk around to fill the bucket
 			self.moveto_obj.respawn(self.random_walk(), )
 			if self.counter>self.MAX_DATA:
 				self.matrix_reorder()
@@ -105,9 +103,12 @@ class FindBreak(object):
 
 	def random_walk(self):
 		""" create random walk points and more favor towards center """
-		x = random.gauss(np.mean(self.map_dim[0]) + self.x_offset, 0.25 * np.ptp(self.map_dim[0]))
+		if self.gauss_counter%2==1:
+			x = random.gauss((self.map_dim[0][1]-self.map_dim[0][0])/4 + self.x_offset, 0.25 * np.ptp(self.map_dim[0]))
+		else:
+			x = random.gauss((self.map_dim[0][1]-self.map_dim[0][0])*3/4 + self.x_offset, 0.25 * np.ptp(self.map_dim[0]))
 		y = random.gauss(np.mean(self.map_dim[1]) + self.y_offset, 0.25 * np.ptp(self.map_dim[1]))
-
+		self.gauss_counter+=1
 		return self.map_constrain(x, y)
 
 	def map_constrain(self, x, y):

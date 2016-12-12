@@ -76,6 +76,7 @@ class Loiter(MoveBaseUtil):
             # heading from boat to center
             self.loiter["heading"] = atan2(self.loiter["target"].y - self.y0, self.loiter["target"].x - self.x0)
 
+
         # create waypoints
         waypoints = self.create_waypoints()
 
@@ -145,7 +146,7 @@ class Loiter(MoveBaseUtil):
 
 
         if self.loiter["mode"] == 2:  # stop and look at the center
-            euler_angles = position_theta
+            euler_angles = atan2(sin(position_theta), cos(position_theta))
         else:  # continuous
             if self.loiter["is_ccw"]:  # counterclockwise
                 euler_angles = [i - 2 * pi / self.loiter["polygon"]
