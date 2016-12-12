@@ -37,10 +37,10 @@
     reinaldo's approach:
     1. fill bucket of markers array until full
     2. do k-means clustering to differentiate monocolor totems
-    3. get closest pairs 
+    3. get closest pairs
     4. plan based on pairs, replan if new plan is far from old plan
-    5. loop to 2. 
-    6. terminate if displacement from start to end > termination_distance 
+    5. loop to 2.
+    6. terminate if displacement from start to end > termination_distance
 
 
 """
@@ -94,7 +94,7 @@ class PassGates(object):
     def __init__(self):
 	print("starting task 1")
         rospy.init_node('task_1', anonymous=True)
-        rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
+        rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
         self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
         self.odom_received = False
@@ -115,7 +115,7 @@ class PassGates(object):
             time.sleep(1)
 	print("bucket full")
 
-	    
+
 
         while not rospy.is_shutdown():
             self.matrix_reorder()
