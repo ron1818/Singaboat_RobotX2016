@@ -11,7 +11,7 @@ import rospy
 import cv2
 from cv2 import cv as cv
 from robotx_vision.ros2opencv2 import ROS2OpenCV2
-from std_msgs.msg import String, UInt16MultiArray, MultiArrayDimension
+from std_msgs.msg import String, Float64MultiArray, MultiArrayDimension
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import Image
 import numpy as np
@@ -30,11 +30,11 @@ class CamShiftBreak(ROS2OpenCV2):
 
     def __init__(self, node_name):
         ROS2OpenCV2.__init__(self, node_name)
-        self.break_pub = rospy.Publisher("break", UInt16MultiArray, queue_size=50)
-        # self.odom_received = False
-        # rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
-        # while not self.odom_received:
-        #     pass
+        self.break_pub = rospy.Publisher("break", Float64MultiArray, queue_size=50)
+        self.odom_received = False
+        rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        while not self.odom_received:
+            pass
         self.node_name = node_name
         # The minimum saturation of the tracked color in HSV space,
         # as well as the min and max value (the V in HSV) and a
@@ -124,6 +124,14 @@ class CamShiftBreak(ROS2OpenCV2):
         else:
             # print "more than one blobs"
             self.number_blob = 2
+
+        if len(area) > 1:  # more than one blob, find the ratio of the 1st and 2nd largest
+            area_rev_sorted = np.sort(area)[::-1]
+            self.area_ratio = area_rev_sorted[0] / area_rev_sorted[1]
+        else:  # only one blob found
+            self.area_ratio = 0
+
+        print self.area_ratio
 
 
     def morphological(self, mask):
@@ -220,7 +228,7 @@ class CamShiftBreak(ROS2OpenCV2):
         bin_count = self.hist.shape[0]
         bin_w = 24
         img = np.zeros((256, bin_count*bin_w, 3), np.uint8)
-        # print np.argmax(self.hist)
+        print np.argmax(self.hist)
         self.hist_prob = np.argmax(self.hist)
         for i in xrange(bin_count):
             h = int(self.hist[i])

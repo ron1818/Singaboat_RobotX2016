@@ -145,7 +145,7 @@ class FindBreak(object):
 			#print("hello")
 			for i in range(len(msg.markers)):
 				# updating totem position
-				if msg.markers[i].type == 3 and msg.markers[i].id==4:
+				if msg.markers[i].type == 5: #no need care of the color, white color anw. horizontal totem
 					self.totem[self.counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
 					self.counter+=1
 				else:

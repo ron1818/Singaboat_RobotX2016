@@ -166,4 +166,3 @@ if __name__ == '__main__':
     except rospy.ROSInterruptException:
         rospy.loginfo("Navigation test finished.")
         pass
-y`

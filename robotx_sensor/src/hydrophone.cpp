@@ -24,8 +24,8 @@ int main(int argc, char **argv)
   int i=0;
 
 
-  ros::Rate loop_rate(50);
-  ser=new Serial("/dev/ttyACM0", 57600, serial::Timeout::simpleTimeout(250));
+  ros::Rate loop_rate(20);
+  ser=new Serial("/dev/USBdue", 115200, serial::Timeout::simpleTimeout(250));
 
 
   ros::Publisher hydro_pub = n.advertise<geometry_msgs::Vector3> ("hydrophone/data_raw", 1000);
@@ -36,7 +36,6 @@ int main(int argc, char **argv)
     pos=0;
     msg=ser->readline();
     ROS_INFO("%s",msg.c_str());
-    msg.erase(0,5);
     geometry_msgs::Vector3 raw_msg;
 
 
@@ -47,17 +46,22 @@ int main(int argc, char **argv)
       i++;
     }
    
-   s[1]=::atof(msg.c_str());
+   
+    s[1]=::atof(msg.c_str());
 
-   raw_msg.x=s[0];
-   raw_msg.y=s[1];
+    if (s[1]==0){
+      s[0]=0;
+    }   
 
 
-   hydro_pub.publish(raw_msg);
+    raw_msg.x=s[0];
+    raw_msg.y=s[1];
+   
+    hydro_pub.publish(raw_msg);
 
-
-   ros::spinOnce();
-   loop_rate.sleep();
+    
+    ros::spinOnce();
+    loop_rate.sleep();
   }
 
   return 0;
