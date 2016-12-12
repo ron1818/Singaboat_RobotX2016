@@ -229,7 +229,7 @@ class ColorSequence(ROS2OpenCV2):
                 self.hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
                 cv2.normalize(self.hist, self.hist, 0, 255, cv2.NORM_MINMAX)
                 self.hist = self.hist.reshape(-1)
-                # print self.hist
+                print self.hist
                 self.hist_prob = np.argmax(self.hist)
                 self.show_hist()
 
@@ -458,7 +458,7 @@ class ColorSequence(ROS2OpenCV2):
             print sequence.data
             self.sequence_pub.publish(sequence)
         except:
-            rospy.loginfo("Publishing break failed")
+            rospy.loginfo("Publishing sequence failed")
 
 
 

@@ -29,8 +29,8 @@ def loiter_worker(res_q, data_q):
         if target[2] < -1e6: # unless send a -inf z by waypoint pub: terminating
             break
         else:
-            loiter_obj.respawn(target, polygon, radius, is_ccw)
-            res_q.put(False, cid)  # hold_loiter, id of assignment
+            loiter_obj.respawn(target=target, radius=radius, is_ccw=is_ccw)
+            res_q.put(False)  # hold_loiter, id of assignment
     print p.name, p.pid, 'Exiting'
 
 
@@ -40,10 +40,9 @@ def moveto_worker(res_q, data_q):
     p = mp.current_process()
     print p.name, p.pid, 'Starting'
     # get the waypoints, loop wait for updates
-    moveto_obj = MoveTo("moveto", is_newnode=True, target=None, is_relative=False)
+    moveto_obj = MoveTo("moveto", is_newnode=True, target=None, mode=1, mode_param=1, is_relative=False)
     while True:
         target = data_q.get()
-        print target
         if target[2] < -1e6: # unless send a -inf z by waypoint pub: terminating
             break
         else:
@@ -83,7 +82,9 @@ def planner_worker(loiter_res_q, loiter_data_q, moveto_res_q, moveto_data_q):
     planner_obj = ColorTotemPlanner("color_planner")
     while True:
         if not loiter_res_q.empty(): # get update from loiter
-            planner_obj.update_loiter(loiter_res_q.get())  # update loiter and visit
+            # hold_loiter, visit_id = loiter_res_q.get()
+            hold_loiter = loiter_res_q.get()
+            planner_obj.update_loiter(hold_loiter)  # update loiter and visit
         if not moveto_res_q.empty(): # get update from moveto on success
             planner_obj.update_hold_moveto(moveto_res_q.get())
 
@@ -91,7 +92,7 @@ def planner_worker(loiter_res_q, loiter_data_q, moveto_res_q, moveto_data_q):
         # print isready
         if allvisited:  # all visited, kill all worker and exit
             poison_pill = [0, 0, -float("inf")]
-            loiter_data_q.put([None, poison_pill, None, None, None])
+            loiter_data_q.put([None, poison_pill, None, None])
             # need an exit target
             if moveto_target != []:
                 moveto_data_q.put(moveto_target)
