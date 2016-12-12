@@ -55,6 +55,7 @@ from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
+from move_base_rotate import rotation
 from move_base_forward import Forward
 from move_base_force_cancel import ForceCancel
 from tf.transformations import euler_from_quaternion
@@ -69,9 +70,11 @@ def cancel_forward():
 class PassGates(object):
 	pool = mp.Pool()
 
-	x0, y0, yaw0= 0, 0, 0
-	MAX_DATA=30
+	MAX_DATA=30 #stash data size of marker array for clustering
+	distance=20 #distance to offset from center of gates
+	replan_min=5 #replan waypoints if changes is more than this
 
+	x0, y0, yaw0= 0, 0, 0
 	markers_array=MarkerArray()
 
 	red_totem=np.zeros((MAX_DATA, 2)) #unordered list
@@ -87,7 +90,6 @@ class PassGates(object):
 	green_counter=0
 
 
-	replan_min=5
 
 	termination_displacement=60
 
@@ -98,6 +100,8 @@ class PassGates(object):
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False
+		#rospy.wait_for_message("/odom", Odometry)
+		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
 		rospy.Subscriber("/odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
 		while not self.odom_received:
@@ -110,9 +114,15 @@ class PassGates(object):
 
 		while(self.red_counter<self.MAX_DATA and self.green_counter<self.MAX_DATA):
 			#wait for data bucket to fill up
+			rotation(math.pi/4)
+			time.sleep(3)
+			rotation(-math.pi/2)
 			time.sleep(1)
 
-		print("bucket full")
+		print("bucket is full")
+
+		#find correct direction to go
+		
 
 		while not rospy.is_shutdown():
 			self.matrix_reorder()
@@ -120,30 +130,31 @@ class PassGates(object):
 			target = self.plan_waypoint()
 			print(target)
 
+
 			if self.euclid_distance(target, prev_target)>self.replan_min:
 				#replan
 				#force cancel
 				self.pool.apply(cancel_forward)
 				#plan new constant heading
-				print("replan")
+			print("replan")
 				self.pool.apply_async(constant_heading, args = (target, ))
 				prev_target=target
 			else:
 				pass
 			#termination condition
 			if self.euclid_distance(np.array([self.x0, self.y0, 0]), init_position)>self.termination_displacement:
-				self.pool.apply(cancel_forward)
+		self.pool.apply(cancel_forward)
 				print("Task 1 Completed")
 				break
 
 			time.sleep(1)
 
-		self.pool.close()
-		self.pool.join()
+	self.pool.close()
+	self.pool.join()
 
 
 	def plan_waypoint(self):
-		distance=20
+		
 		dis_red=1000
 		dis_green=1000
 			#find closest available totem pairs
@@ -167,7 +178,7 @@ class PassGates(object):
 		else:
 			theta = math.atan2(nearest_green[1]-nearest_red[1], nearest_green[0]-nearest_red[0])+math.atan2(10,30)
 
-		return np.array([x_center+distance*math.cos(theta), y_center+distance*math.sin(theta), theta])
+		return np.array([x_center+self.distance*math.cos(theta), y_center+self.distance*math.sin(theta), theta])
 
 
 	def distance_from_boat(self, target):

@@ -135,14 +135,15 @@ include_directories(
 
 ## Declare a C++ executable
 ## Declare a C++ executable
-add_executable(imu_node src/imu.cpp)
+add_executable(hydrophone_node src/hydrophone.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 #add_dependencies(imu_node imu_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(imu_node
+
+target_link_libraries(hydrophone_node
  ${catkin_LIBRARIES}
 )
 
