@@ -47,7 +47,7 @@ class PassGates(object):
 	def __init__(self):
 		print("starting task 1")
 		rospy.init_node('task_1', anonymous=True)
-		rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
+		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False

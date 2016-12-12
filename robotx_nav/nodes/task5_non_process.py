@@ -54,7 +54,7 @@ class CoralSurvey(object):
 	def __init__(self, quadrant_list):
 		print("starting task 5")
 		rospy.init_node('task_5', anonymous=True)
-		rospy.Subscriber("/coral", MarkerArray, self.marker_callback, queue_size = 50)
+		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
 		self.odom_received = False
