@@ -46,7 +46,7 @@ class Docking(object):
         rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=None)
         while not self.odom_received:
             pass
-        rospy.Subscriber("dock", MarkerArray, self.markerarray_callback, queue_size=10)
+        rospy.Subscriber("filtered_marker_array", MarkerArray, self.markerarray_callback, queue_size=10)
 
         self.docker_find = False
         self.symbols_find = False

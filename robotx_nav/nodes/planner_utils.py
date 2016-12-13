@@ -6,6 +6,18 @@ import random
 import time
 import itertools
 
+def map_rotation(map_corners, offset, theta):
+    rotated_point = [[0,0], [0,0], [0,0], [0,0]]
+    count = 0
+    for p in map_corners:
+        op[0] = p[0] + offset[0]
+        op[1] = p[1] + offset[1]
+        rotated_op[count] = [math.cos(theta) * op[0] - math.sin(theta) * op[1],
+                         math.sin(theta) * op[0] + math.cos(theta) * op[1]]
+
+        count += 1
+    return rotated_point
+
 
 
 def random_walk(map_corners, style, *args, **kwargs):

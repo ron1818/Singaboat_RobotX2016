@@ -4,7 +4,7 @@ import itertools
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Quaternion
-from std_msgs.msg import String, Float64
+from std_msgs.msg import UInt8, Float64
 import numpy as np
 import math
 from sklearn.cluster import KMeans, DBSCAN
@@ -42,8 +42,9 @@ class Pinger(object):
         rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=None)
         while not self.odom_received:
             pass
-        rospy.Subscriber("gate_totem", MarkerArray, self.markerarray_callback, queue_size=10)
-        rospy.Subscriber("pinger", Float64, self.pinger_callback, queue_size=10)
+        rospy.Subscriber("filtered_marker_array", MarkerArray, self.markerarray_callback, queue_size=10)
+        # rospy.Subscriber("pinger", Float64, self.pinger_callback, queue_size=10)
+        rospy.Subscriber("pinger", UInt8, self.pinger_callback, queue_size=10)
 
 
         self.pinger_threshold = 65
@@ -122,7 +123,8 @@ class Pinger(object):
 
     def pinger_callback(self, msg):
         """ get pinger information """
-        if msg.data > self.pinger_threshold
+        # if msg.data > self.pinger_threshold
+        if msg.data == 1:
             self.pinger_list.append([self.x0, self.y0])
 
         self.find_pinger_center()

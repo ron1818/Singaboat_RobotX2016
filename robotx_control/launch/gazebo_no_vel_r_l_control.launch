@@ -20,6 +20,6 @@
         <remap from="odometry/filtered" to="odometry/filtered/global" />
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 /map /odom 100" />
+    <!--node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 /map /odom 100" /-->
 
 </launch>

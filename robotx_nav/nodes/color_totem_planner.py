@@ -33,7 +33,7 @@ class ColorTotemPlanner(object):
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
 
         # Subscribe to marker array publisher
-        rospy.Subscriber("color_totem", MarkerArray, self.markerarray_callback, queue_size=10)
+        rospy.Subscriber("filtered_marker_array", MarkerArray, self.markerarray_callback, queue_size=10)
 
         self.allvisited = False # is all totems visited?
         self.assigned = assigned # n * 2 array
