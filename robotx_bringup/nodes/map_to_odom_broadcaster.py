@@ -12,13 +12,14 @@ class MapOdomTF():
     def __init__(self, nodename, map_lat, map_lon, rotation):
         rospy.init_node(nodename)
         map_lat = rospy.get_param("~map_lat", map_lat)
-        mat_lon = rospy.get_param("~map_lon", map_lon)
+        map_lon = rospy.get_param("~map_lon", map_lon)
         rotation = rospy.get_param("~rotation", rotation)
         rate = rospy.Rate(10)
         br = tf.TransformBroadcaster()
         rospy.wait_for_message("navsat/fix", NavSatFix)
         rospy.Subscriber("navsat/fix", NavSatFix, self.navsat_fix_callback, queue_size=10)
-        rospy.sleep(5)
+        rospy.sleep(10)
+        print map_lat, map_lon
         print self.lat0, self.lon0
         initial_gps = [self.lat0, self.lon0]
 
@@ -28,6 +29,7 @@ class MapOdomTF():
         theta = pi / 2 - azi
 
         xyz = [r * cos(theta), r * sin(theta), 0]
+        print xyz
         rpy = [0, 0, rotation]
 
         while not rospy.is_shutdown():

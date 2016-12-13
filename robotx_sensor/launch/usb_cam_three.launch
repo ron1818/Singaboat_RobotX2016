@@ -1,0 +1,22 @@
+<launch>
+    <include file="$(find robotx_sensor)/launch/usb_cam_image_proc.launch" >
+        <arg name="video_device" value="/dev/video0" />
+        <arg name="namespace" value="port" />
+        <arg name="camera_frame_id" value="port/camera_link" />
+        <arg name="camera_model" value="logitech_c170_port" />
+    </include>
+
+    <include file="$(find robotx_sensor)/launch/usb_cam_image_proc.launch" >
+        <arg name="video_device" value="/dev/video1" />
+        <arg name="namespace" value="bow/left" />
+        <arg name="camera_frame_id" value="bow/left/camera_link" />
+        <arg name="camera_model" value="logitech_c170_bow" />
+    </include>
+
+    <include file="$(find robotx_sensor)/launch/usb_cam_image_proc.launch" >
+        <arg name="video_device" value="/dev/video2" />
+        <arg name="namespace" value="starboard" />
+        <arg name="camera_frame_id" value="starboard/camera_link" />
+        <arg name="camera_model" value="logitech_c170_starboard" />
+    </include>
+</launch>

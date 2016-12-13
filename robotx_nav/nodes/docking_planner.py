@@ -14,7 +14,9 @@ from move_base_loiter import Loiter
 from move_base_waypoint import MoveTo
 from move_base_reverse import Reversing
 from nav_msgs.msg import Odometry
-from tf.transformations import euler_from_quaternion
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+import tf
+
 
 
 class Docking(object):
@@ -34,6 +36,7 @@ class Docking(object):
 
         self.rate = rospy.get_param("~rate", 1)
         self.assigned = assigned
+        self.tf_listener = tf.TransformListener()
 
         self.kmeans = KMeans(n_clusters=2)
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
@@ -95,9 +98,29 @@ class Docking(object):
         """ call back to subscribe, get odometry data:
         pose and orientation of the current boat,
         suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
+        # self.x0 = msg.pose.pose.position.x
+        # self.y0 = msg.pose.pose.position.y
+        trans, rot = self.get_tf("map", "base_link")
+        self.x0 = trans.x
+        self.y0 = trans.y
+        _, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
         self.odom_received = True
+
+    def get_tf(self, fixed_frame, base_frame):
+        """ transform from base_link to map """
+        trans_received = False
+        while not trans_received:
+            try:
+                (trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+                                                                base_frame,
+                                                                rospy.Time(0))
+                trans_received = True
+                return (Point(*trans), Quaternion(*rot))
+            except (tf.LookupException,
+                    tf.ConnectivityException,
+                    tf.ExtrapolationException):
+                pass
+
 
     def markerarray_callback(self, msg):
         """ determine docker and symbols """
