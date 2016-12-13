@@ -1,6 +1,6 @@
 ## USB port
-port: /dev/ttyUSB0
-#port: /dev/USBimu
+# port: /dev/ttyUSB0
+port: /dev/USBimu
 
 
 ##### Calibration ####
