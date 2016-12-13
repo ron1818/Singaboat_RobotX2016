@@ -166,6 +166,10 @@ add_executable(sequence_scanner src/sequence_scanner.cpp)
 target_link_libraries(sequence_scanner ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(sequence_scanner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_executable(LED_screen_detection src/LED_screen_detection.cpp)
+target_link_libraries(LED_screen_detection ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(LED_screen_detection ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 #utility nodes:
 add_executable(image_publisher src/image_publisher.cpp)
 target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})

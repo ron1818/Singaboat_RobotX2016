@@ -1,0 +1,19 @@
+<launch>
+	<arg name="namespace" default="fixed_cam"/>
+	<arg name="debug" default="true"/>
+
+	<group ns="$(arg namespace)">
+		<node
+			pkg="robotx_vision"
+			type="LED_screen_detection"
+			name="LED_screen_detection"
+			required="true"
+			output="screen"
+		>
+		<param name="subscribed_image_topic" value="image_rect_color"/>
+		<param name="published_topic" value="LED_screen/roi"/>
+		<param name="debug" value="$(arg debug)"/>
+
+		</node>
+	</group>
+</launch>
