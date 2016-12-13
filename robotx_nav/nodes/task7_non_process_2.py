@@ -22,6 +22,7 @@ import math
 import time
 import numpy as np
 import os
+import tf
 import random
 from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
@@ -71,6 +72,11 @@ class DetectDeliver(object):
 		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
 		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
 		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
+
+		self.base_frame = rospy.get_param("~base_frame", "base_link")
+		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
+		# tf_listener
+		self.tf_listener = tf.TransformListener()
 
 		self.odom_received = False
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
@@ -226,17 +232,26 @@ class DetectDeliver(object):
 
 			#self.pool.apply(cancel_loiter)
 
+	def get_tf(self, fixed_frame, base_frame):
+		""" transform from base_link to map """
+		trans_received = False
+		while not trans_received:
+			try:
+				(trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+																base_frame,
+																rospy.Time(0))
+				trans_received = True
+				return (Point(*trans), Quaternion(*rot))
+			except (tf.LookupException,
+					tf.ConnectivityException,
+					tf.ExtrapolationException):
+				pass
+
 	def odom_callback(self, msg):
-		""" call back to subscribe, get odometry data:
-		pose and orientation of the current boat,
-		suffix 0 is for origin """
-		self.x0 = msg.pose.pose.position.x
-		self.y0 = msg.pose.pose.position.y
-		x = msg.pose.pose.orientation.x
-		y = msg.pose.pose.orientation.y
-		z = msg.pose.pose.orientation.z
-		w = msg.pose.pose.orientation.w
-		_, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
+		trans, rot = self.get_tf("map", "base_link")
+		self.x0 = trans.x
+		self.y0 = trans.y
+		_, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
 		self.odom_received = True
 
 if __name__ == '__main__':
