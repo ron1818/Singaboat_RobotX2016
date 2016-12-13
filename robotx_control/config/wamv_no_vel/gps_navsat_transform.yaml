@@ -1,7 +1,8 @@
 frequency: 30
 delay: 3
 zero_altitude: false
-magnetic_declination_radians: 0.0043
+magnetic_declination_radians: 0.1660197
+# magnetic_declination_radians: 0.0043
 # mag north of razor is towards -x axis of accelometer
 yaw_offset: 1.5707
 broadcast_utm_transform: false
