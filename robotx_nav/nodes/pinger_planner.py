@@ -13,6 +13,8 @@ from sklearn.linear_model import LinearRegression
 from move_base_loiter import Loiter
 from move_base_waypoint import MoveTo
 from nav_msgs.msg import Odometry
+import tf
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
 
 class Pinger(object):
@@ -31,6 +33,7 @@ class Pinger(object):
         rospy.on_shutdown(self.shutdown)
 
         self.rate = rospy.get_param("~rate", 1)
+        self.tf_listener = tf.TransformListener()
 
         self.kmeans = KMeans(n_clusters=2)
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
@@ -113,12 +116,31 @@ class Pinger(object):
                     # exit complete
                     print "complete"
 
+    def get_tf(self, fixed_frame, base_frame):
+        """ transform from base_link to map """
+        trans_received = False
+        while not trans_received:
+            try:
+                (trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+                                                                base_frame,
+                                                                rospy.Time(0))
+                trans_received = True
+                return (Point(*trans), Quaternion(*rot))
+            except (tf.LookupException,
+                    tf.ConnectivityException,
+                    tf.ExtrapolationException):
+                pass
+
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
         pose and orientation of the current boat,
         suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
+        # self.x0 = msg.pose.pose.position.x
+        # self.y0 = msg.pose.pose.position.y
+        trans, rot = self.get_tf("map", "base_link")
+        self.x0 = trans.x
+        self.y0 = trans.y
+        _, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
         self.odom_received = True
 
     def pinger_callback(self, msg):
