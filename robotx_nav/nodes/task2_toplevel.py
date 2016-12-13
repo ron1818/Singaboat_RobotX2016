@@ -15,6 +15,7 @@ from color_totem_planner import ColorTotemPlanner
 import time
 
 
+
 def loiter_worker(res_q, data_q):
     """ go to gps point """
     p = mp.current_process()
@@ -48,28 +49,30 @@ def moveto_worker(res_q, data_q):
             moveto_obj.respawn(target)
             res_q.put(False)
     print p.name, p.pid, 'Exiting'
+>>>>>>> ca922447663b0d1c6f5d0a4059b7a7e404984b99
 
 
 # not required
 # def cancel_goal_worker(conn, repetition):
-#     """ asynchronously cancel goals"""
-#     p = mp.current_process()
-#     print p.name, p.pid, 'Starting'
-#     while True:
-#         command = conn.recv()
-#         print 'child: ', command
-#         if command == 'cancel': # cancel goal
-#             print 'doing cancelling'
-#             force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
-#             conn.send('cancelled')
-#         elif command == 'exit': # complete
-#             print "cancel goal complete, exit"
-#             break
-#         else:  # conn.recv() == 0, idle, wait for command
-#             pass
-#         time.sleep()
+#	 """ asynchronously cancel goals"""
+#	 p = mp.current_process()
+#	 print p.name, p.pid, 'Starting'
+#	 while True:
+#		 command = conn.recv()
+#		 print 'child: ', command
+#		 if command == 'cancel': # cancel goal
+#			 print 'doing cancelling'
+#			 force_cancel = ForceCancel(nodename="forcecancel", repetition=repetition)
+#			 conn.send('cancelled')
+#		 elif command == 'exit': # complete
+#			 print "cancel goal complete, exit"
+#			 break
+#		 else:  # conn.recv() == 0, idle, wait for command
+#			 pass
+#		 time.sleep()
 #
-#     print p.name, p.pid, 'Exiting'
+#	 print p.name, p.pid, 'Exiting'
+
 
 
 def planner_worker(loiter_res_q, loiter_data_q, moveto_res_q, moveto_data_q):
@@ -107,10 +110,12 @@ def planner_worker(loiter_res_q, loiter_data_q, moveto_res_q, moveto_data_q):
 
         time.sleep(1)
 
-    print p.name, p.pid, 'Exiting'
+
+	print p.name, p.pid, 'Exiting'
 
 
 if __name__ == "__main__":
+
     moveto_data_q = mp.Queue()
     moveto_res_q = mp.Queue()
     loiter_data_q = mp.Queue()
@@ -123,11 +128,12 @@ if __name__ == "__main__":
     moveto_mp = mp.Process(name="mvt", target=moveto_worker, args=(moveto_res_q, moveto_data_q,))
     planner_mp = mp.Process(name="pln", target=planner_worker, args=(loiter_res_q, loiter_data_q, moveto_res_q, moveto_data_q,))
 
-    loiter_mp.start()
-    moveto_mp.start()
-    # cancel_goal_mp.start()
-    planner_mp.start()
-    # close
-    loiter_mp.join()
-    moveto_mp.join()
-    planner_mp.join()
+
+	loiter_mp.start()
+	moveto_mp.start()
+	# cancel_goal_mp.start()
+	planner_mp.start()
+	# close
+	loiter_mp.join()
+	moveto_mp.join()
+	planner_mp.join()

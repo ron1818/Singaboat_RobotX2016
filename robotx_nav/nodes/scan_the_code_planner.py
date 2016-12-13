@@ -42,7 +42,7 @@ class ScanTheCode(object):
         # print("starting task 4")
         rospy.init_node(nodename, anonymous=False)
         self.rate = rospy.get_param("~rate", 1)
-        rospy.Subscriber("/totem_lamp", MarkerArray, self.marker_callback, queue_size = 10)
+        rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 10)
         rospy.Subscriber("/led_sequence", String, self.led_callback, queue_size = 10)
         self.marker_pub = rospy.Publisher('waypoint_markers', Marker, queue_size=5)
         self.map_corners = np.array([[0,0], [0,40], [40,40], [40,0]])
