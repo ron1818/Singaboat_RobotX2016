@@ -20,14 +20,10 @@ def random_walk(map_corners, style, *args, **kwargs):
         x_range = range(np.min(map_corners[:,0]), np.max(map_corners[:,0]), 5)
         y_range = range(np.min(map_corners[:,1]), np.max(map_corners[:,1]), 5)
         grid = list(itertools.product(x_range, y_range))
-        print grid
         # filter out those who is before the gate line
         while not target:
             candidate_target = random.choice(grid)
-            print candidate_target
             for center in centers:  # too close to the center
-                print center
-                print center[0:2]
                 if center != []:
                     if distance(candidate_target, center[0:2]) < threshold:
                         target = None
