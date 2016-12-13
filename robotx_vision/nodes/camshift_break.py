@@ -31,10 +31,10 @@ class CamShiftBreak(ROS2OpenCV2):
     def __init__(self, node_name):
         ROS2OpenCV2.__init__(self, node_name)
         self.break_pub = rospy.Publisher("break", Float64MultiArray, queue_size=50)
-        # self.odom_received = False
-        # rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
-        # while not self.odom_received:
-        #     pass
+        self.odom_received = False
+        rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        while not self.odom_received:
+            pass
         self.node_name = node_name
         # The minimum saturation of the tracked color in HSV space,
         # as well as the min and max value (the V in HSV) and a

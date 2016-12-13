@@ -31,7 +31,7 @@ from visualization_msgs.msg import MarkerArray, Marker
 from move_base_forward import Forward
 from move_base_waypoint import MoveTo
 from move_base_loiter import Loiter
-from move_base_aiming import Aiming
+from move_base_stationkeeping import StationKeeping
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from std_msgs.msg import Int8
 
@@ -64,15 +64,15 @@ class DetectDeliver(object):
 		self.station_seen=False #station here is cluster center of any face
 		self.station_position=[0, 0]
 
-		self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, is_relative=False)
-		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
-		self.aiming_obj = Aiming("aiming", is_newnode=False, target=None, radius=2, duration=30, angle_tolerance=10*math.pi/180.0, box=[0,0,0])
+		self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, radius=5, polygon=4, mode=2, mode_param=1, is_relative=False)
+		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, is_relative=False)
+		self.stationkeep_obj = StationKeeping("station_keeping", is_newnode=False, target=None, radius=2, duration=30)
 
 		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
 		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
 		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
 		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
-		
+
 		self.base_frame = rospy.get_param("~base_frame", "base_link")
 		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
 		# tf_listener
@@ -125,7 +125,7 @@ class DetectDeliver(object):
 			d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)
 			perpendicular_d=0.6*d*math.cos(theta)
 
-			if counter ==0 or theta>self.angle_threshold or d>3:
+			if counter ==0 or theta>self.angle_threshold or d>self.distance_to_box:
 				print("replan")
 				target=[self.symbol_position[0]+perpendicular_d*math.cos(self.symbol_position[2]),self.symbol_position[1]+perpendicular_d*math.sin(self.symbol_position[2]), -self.symbol_position[2]]
 
@@ -146,13 +146,14 @@ class DetectDeliver(object):
 
 		station=[self.x0, self.y0, -self.symbol_position[2]]
 		radius=2
-
+		duration=30
+		print(self.symbol_position)
+		print(station)
 		while not rospy.is_shutdown():
 			self.shooting_pub.publish(1)
-			box=[self.symbol_position[0], self.symbol_position[1], self.symbol_position[2]]
 			#duration 0 is forever
 			if not self.is_aiming:			
-				self.aiming_obj.respawn(30, box, station)
+				self.stationkeep_obj.respawn(station, radius, duration)
 				#make aiming respawn
 			
 			if self.shooting_complete:
@@ -230,6 +231,7 @@ class DetectDeliver(object):
 					self.symbol_seen=True
 
 			#self.pool.apply(cancel_loiter)
+
 	def get_tf(self, fixed_frame, base_frame):
 		""" transform from base_link to map """
 		trans_received = False

@@ -75,13 +75,13 @@ class MoveBaseUtil():
 
         # * Cycle through the four waypoints
 
-    def get_tf(self):
+    def get_tf(self, fixed_frame, base_frame):
         """ transform from base_link to map """
         trans_received = False
         while not trans_received:
             try:
-                (trans, rot) = self.tf_listener.lookupTransform(self.fixed_frame,
-                                                                self.base_frame,
+                (trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+                                                                base_frame,
                                                                 rospy.Time(0))
                 trans_received = True
                 return (Point(*trans), Quaternion(*rot))
@@ -89,6 +89,22 @@ class MoveBaseUtil():
                     tf.ConnectivityException,
                     tf.ExtrapolationException):
                 pass
+
+    def transform_tf(self, x_target_base, y_target_base, yaw_target_base, fixed_frame, base_frame):
+        """ get the (x, y) wrt fixed frame from (x, y) wrt base frame"""
+        # (x, y, yaw) of the base frame wrt fixed frame
+        (trans, rot) = self.get_tf(fixed_frame, base_frame)
+        x_base_fixed, y_base_fixed = trans.x, trans.y
+        _, _, yaw_base_fixed = tf.transformations.euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
+        # get the point wrt fixed
+        # final vector = fixed vector + rot_mat * base vector
+        x_target_fixed, y_target_fixed = x_base_fixed + \
+            cos(yaw_base_fixed) * x_target_base - sin(yaw_base_fixed) * y_target_base, \
+                y_base_fixed + \
+                    sin(yaw_base_fixed) * x_target_base + cos(yaw_base_fixed) * y_target_base
+        yaw_target_fixed = yaw_target_base + rot
+
+        return [x_target_fixed, y_target_fixed, yaw_target_fixed]
 
     def convert_gps_to_absolute(self, lat, lon):
         """ get current gps point of the boat,
@@ -113,17 +129,27 @@ class MoveBaseUtil():
         self.fix_received = True
 
     def odom_callback(self, msg):
-        """ call back to subscribe, get odometry data:
-        pose and orientation of the current boat,
-        suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
-        x = msg.pose.pose.orientation.x
-        y = msg.pose.pose.orientation.y
-        z = msg.pose.pose.orientation.z
-        w = msg.pose.pose.orientation.w
-        _, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
-        self.odom_received = True
+        trans, rot = self.get_tf("map", "base_link")
+        self.x0 = trans.x
+        self.y0 = trans.y
+        _, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
+        self.odom_received=True
+        # """ call back to subscribe, get odometry data:
+        # pose and orientation of the current boat,
+        # suffix 0 is for origin """
+        # x0 = msg.pose.pose.position.x
+        # y0 = msg.pose.pose.position.y
+        # # self.x0 = msg.pose.pose.position.x
+        # # self.y0 = msg.pose.pose.position.y
+        # x = msg.pose.pose.orientation.x
+        # y = msg.pose.pose.orientation.y
+        # z = msg.pose.pose.orientation.z
+        # w = msg.pose.pose.orientation.w
+        # # _, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
+        # _, _, yaw0 = euler_from_quaternion((x, y, z, w))
+        # # get odom to map transform
+        # self.x0, self.y0, self.yaw0 = self.transform_tf(x0, y0, yaw0, "map", "odom")
+
         # rospy.loginfo([self.x0, self.y0, self.yaw0])
 
     def cancel_callback(self, msg):

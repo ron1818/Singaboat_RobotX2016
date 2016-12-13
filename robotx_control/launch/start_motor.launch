@@ -9,6 +9,6 @@
 
     <node pkg="robotx_control" type="robotx_control_node" name="motor_node" />
     
-    <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="dynamic_reconfigure"/>
+    <!--node pkg="rqt_reconfigure" type="rqt_reconfigure" name="dynamic_reconfigure"/-->
 
 </launch>

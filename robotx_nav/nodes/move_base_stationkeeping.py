@@ -66,7 +66,7 @@ class StationKeeping(MoveBaseUtil):
         while ((rospy.get_time()-start_time < self.sk["duration"]) or not self.sk["duration"]) and not rospy.is_shutdown():
             if (sqrt((self.sk["target"].linear.x-self.x0)**2 + (self.sk["target"].linear.y-self.y0)**2) < self.sk["radius"]):
                 self.cmd_vel_pub.publish(Twist())
-                rospy.loginfo("inside inner radius, no action")
+                #rospy.loginfo("inside inner radius, no action")
             else:
                 rospy.loginfo("outside radius")
                 # Intialize the waypoint goal

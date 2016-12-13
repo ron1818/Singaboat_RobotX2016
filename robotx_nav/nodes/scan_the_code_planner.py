@@ -20,13 +20,15 @@ from visualization_msgs.msg import MarkerArray, Marker
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 from std_msgs.msg import String
+import planner_utils
 
 
 class ScanTheCode(object):
     # pool = mp.Pool(2, maxtasksperchild=1)
 
     x_offset, y_offset = random.random() * 20 - 10, random.random() * 30 - 15
-    map_dim = [[0, 40], [0, 40]]
+    # map_dim = [[0, 40], [0, 40]]
+
     exit_coordinate = [20, 40, 0]
     x0, y0, yaw0= 0, 0, 0
     totem_center = np.array([0, 0])
@@ -40,9 +42,10 @@ class ScanTheCode(object):
         # print("starting task 4")
         rospy.init_node(nodename, anonymous=False)
         self.rate = rospy.get_param("~rate", 1)
-        rospy.Subscriber("/totem_lamp", MarkerArray, self.marker_callback, queue_size = 10)
+        rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 10)
         rospy.Subscriber("/led_sequence", String, self.led_callback, queue_size = 10)
         self.marker_pub = rospy.Publisher('waypoint_markers', Marker, queue_size=5)
+        self.map_corners = np.array([[0,0], [0,40], [40,40], [40,0]])
 
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
 
@@ -66,7 +69,8 @@ class ScanTheCode(object):
                 self.stationkeep_target = self.totem_center
                 self.onhold_stationkeep = True
             elif not self.totem_find and not self.onhold_moveto:  # random walk
-                self.moveto_target = self.random_walk()
+                kwargs = {"sigma": 5}
+                self.moveto_target = planner_utils.random_walk(self.map_corners, "gaussian", **kwargs)
                 self.onhold_moveto = True
 
         return self.led_valid, self.totem_find, self.stationkeep_target, self.moveto_target

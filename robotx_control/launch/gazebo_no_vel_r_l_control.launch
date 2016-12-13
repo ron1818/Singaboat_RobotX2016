@@ -20,6 +20,8 @@
         <remap from="odometry/filtered" to="odometry/filtered/global" />
     </node>
 
-    <node pkg="tf" type="static_transform_publisher" name="map_odom_broadcaster" args="0 0 0 0 0 0 /map /odom 100" />
+    <node pkg="robotx_bringup" type="map_to_odom_broadcaster.py" name="map_to_odom_br" >
+        <param name="rotation" value="1.57" />
+    </node>
 
 </launch>

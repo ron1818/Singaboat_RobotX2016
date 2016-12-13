@@ -24,7 +24,7 @@ ORANGE=6
 """
 
 class CoralPublisher():
-     0, y0 = 0, 0
+    x0, y0 = 0, 0
     x, y = [0, 0], [0, 0]
     map_dim = np.array([[0, 40], [0, 40]])
     radius = 2.5
@@ -43,7 +43,7 @@ class CoralPublisher():
         count = 0
         MARKERS_MAX = 1
         while not rospy.is_shutdown():
-            if(count > MARKERS_MAX):
+            if(count > MARKERS_MAX) and len(markerArray.markers)>1:
                 markerArray.markers.pop(0)
             if self.within_range(self.x[0], self.y[0]):
                 markerArray.markers.append(self.create_marker(self.x[0], self.y[0], "triangle"))

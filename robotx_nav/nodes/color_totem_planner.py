@@ -13,6 +13,7 @@ class ColorTotemPlanner(object):
     """ find coordinate of totem for task1 """
     isready=False
     red_list, green_list, yellow_list, blue_list = list(), list(), list(), list()
+    red_center, green_center, yellow_center, blue_center = list(), list(), list(), list()
     MAX_LENS = 20 # actually 21
 
     def __init__(self, nodename="color_totem_coordinate", assigned=np.array([[2,False],[0,True],[1,False]])):
@@ -23,6 +24,7 @@ class ColorTotemPlanner(object):
         rospy.init_node(nodename)
         rospy.on_shutdown(self.shutdown)
 
+        self.id_counter = 0
         self.threshold = 5
         self.map_corners = np.array([[0,0], [0,40], [40,40], [40,0]])
         self.rate = rospy.get_param("~rate", 1)
@@ -31,8 +33,9 @@ class ColorTotemPlanner(object):
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
 
         # Subscribe to marker array publisher
-        rospy.Subscriber("color_totem", MarkerArray, self.markerarray_callback, queue_size=10)
+        rospy.Subscriber("filtered_marker_array", MarkerArray, self.markerarray_callback, queue_size=10)
 
+        self.allvisited = False # is all totems visited?
         self.assigned = assigned # n * 2 array
         self.visited = np.array([False] * len(self.assigned)) # n*1 array
         self.totem_find = np.array([False] * len(self.assigned)) # n*1 array
@@ -51,7 +54,6 @@ class ColorTotemPlanner(object):
     def planner(self):
         r = rospy.Rate(self.rate)
         # while not rospy.is_shutdown():
-        self.allvisited = False # is all totems visited?
         self.loiter_target = list()
         self.moveto_target = list()
 
@@ -59,89 +61,37 @@ class ColorTotemPlanner(object):
         #     self.moveto_target = planner_utils.random_walk(self.map_corners, style="unif", kwargs={"center": self.center})  # need to find centers
         # else:
         for i in range(len(self.assigned)):  # visit the totems in range
+            # print "totem", i
             if not self.totem_find[i]:  # did not find the totem
+                # print "totem", i, "not find"
                 if not self.hold_moveto:
+                    print "can move"
                     kwargs = {"center": self.center, "threshold": self.threshold}
                     self.moveto_target = planner_utils.random_walk(self.map_corners, style="unif", **kwargs)  # need to find centers
                     self.hold_moveto = True
             else:  # find the totem
-                if not all(self.visited[range(i+1)]):  # previous totem not visited
-                    kwargs = {"center": self.center, "threshold": self.threshold}
-                    self.moveto_target = planner_utils.random_walk(self.map_corners, style="unif", **kwargs)  # need to find centers
-                    self.hold_moveto = True
-                elif not self.hold_loiter:
-                    # which totem, center, radius, ccw
-                    self.loiter_target = [i, self.center[i], self.radius[i], self.assigned[i,1]]
-                    self.hold_loiter = True
+                # print "find totem", i
+                # print self.visited
+                print "hold loiter?", self.hold_loiter
+                print "visited", i, self.visited[i], self.visited[0:i], all(self.visited[0:i])
+                if not self.visited[i] and all(self.visited[0:i]):  # previously all visited:
+                    print "can loiter?"
+                    if not self.hold_loiter:
+                        print "can loiter"
+                        # which totem, center, radius, ccw
+                        self.loiter_target = [i, self.center[i], self.radius[i], self.assigned[i,1]]
+                        self.hold_loiter = True
+                        self.hold_moveto = True
+                # else:
+                #     if not self.hold_moveto:
+                #         kwargs = {"center": self.center, "threshold": self.threshold}
+                #         self.moveto_target = planner_utils.random_walk(self.map_corners, style="unif", **kwargs)  # need to find centers
+                #         self.hold_moveto = True
 
         if all(self.visited):
             self.allvisited = True
 
         return self.totem_find, self.loiter_target, self.moveto_target, self.allvisited
-
-#         # # k means clustering for both redlist and greenlist
-#         if len(self.red_list) > self.MAX_LENS:  # have red totem info
-#             red_centers = self.one_class_svm(self.red_list)
-#         if len(self.green_list) > self.MAX_LENS:  # have green totem info
-#             green_centers = self.one_class_svm(self.green_list)
-#         if len(self.blue_list) > self.MAX_LENS:  # have blue totem info
-#             blue_centers = self.one_class_svm(self.blue_list)
-#         if len(self.yellow_list) > self.MAX_LENS:  # have yellow totem info
-#             yellow_centers = self.one_class_svm(self.yellow_list)
-#
-#             # print "r", red_centers, "g", green_centers, "b", blue_centers, "y", yellow_centers
-#
-#         # sequence: green blue yellow red
-#         if green_centers != [] and not self.visited_dict["green"] and not self.requested_dict["green"]:
-#             # loiter counterclockwise
-#             print "start green"
-#             self.isready = True  # go for loiter
-#             self.hold_moveto = True # not go for moveto
-#             self.loiter_target = ["green", green_centers, 2.5, 6, True]
-#             self.requested_dict["green"] = True # request to go for loiter, on hold for loiter
-#
-#         if blue_centers != [] and not self.visited_dict["blue"] and self.visited_dict["green"] and not self.requested_dict["blue"]:
-#             # loiter clockwise
-#             print "start blue"
-#             self.isready = True
-#             self.hold_moveto = True
-#             self.loiter_target = ["blue", blue_centers, 2.5, 6, False]
-#             self.requested_dict["blue"] = True
-#         if red_centers != [] and not self.visited_dict["red"] and self.visited_dict["blue"] and self.visited_dict["green"] and not self.requested_dict["red"]:
-#             # loiter clockwise
-#             print "start red"
-#             self.isready = True
-#             self.hold_moveto = True
-#             self.loiter_target = ["red", red_centers, 2.5, 6, False]
-#             self.requested_dict["red"] = True
-#         if yellow_centers != [] and not self.visited_dict["yellow"] and self.visited_dict["red"] and self.visited_dict["blue"] and self.visited_dict["green"] and not self.requested_dict["yellow"]:
-#             # loiter counterclockwise
-#             print "start yellow"
-#             self.isready = True
-#             self.hold_moveto = True
-#             self.loiter_target = ["yellow", yellow_centers, 2.5, 6, True]
-#             self.requested_dict["yellow"] = True
-#
-#         if all(self.visited_dict.values()):  # all visited
-#             # exit the region
-#             self.allvisited = True
-#             self.moveto_target = self.exit_target
-#             print "all visited"
-#
-#         # moveto not hold, not ready for loiter, still did not finish, go for moveto
-#         if not self.isready and not all(self.visited_dict.values()):
-#             if not self.hold_moveto:
-#                 self.moveto_target = list(self.random_walk([red_centers, green_centers, blue_centers, yellow_centers])) + [0]
-#                 self.hold_moveto = True  # executing moveto, hold ongoing moveto task
-#                 self.requested_moveto = False
-#                 # hold_moveto = False  # executing moveto, hold the next
-#             else:  # moveto not hold, not ready for loiter, still did not finish, go for moveto
-#                 self.requested_moveto = True
-#
-#         return self.isready, self.loiter_target, self.moveto_target, self.allvisited, self.requested_moveto
-#
-#         # if cannot make all visited, random walk move to
-#         #   r.sleep()
 
     def markerarray_callback(self, msg):
         """ calculate average over accumulate """
@@ -167,27 +117,27 @@ class ColorTotemPlanner(object):
 
     def find_totem_center(self):
         # k means clustering for all color
-        if len(self.red_list) > self.MAX_LENS:  # have red totem info
-            red_center = self.one_class_svm(self.red_list)
-        if len(self.green_list) > self.MAX_LENS:  # have green totem info
-            green_center = self.one_class_svm(self.green_list)
-        if len(self.blue_list) > self.MAX_LENS:  # have blue totem info
-            blue_center = self.one_class_svm(self.blue_list)
-        if len(self.yellow_list) > self.MAX_LENS:  # have yellow totem info
-            yellow_center = self.one_class_svm(self.yellow_list)
+        if len(self.red_list) >= self.MAX_LENS:  # have red totem info
+            self.red_center = self.one_class_svm(self.red_list)
+        if len(self.green_list) >= self.MAX_LENS:  # have green totem info
+            self.green_center = self.one_class_svm(self.green_list)
+        if len(self.blue_list) >= self.MAX_LENS:  # have blue totem info
+            self.blue_center = self.one_class_svm(self.blue_list)
+        if len(self.yellow_list) >= self.MAX_LENS:  # have yellow totem info
+            self.yellow_center = self.one_class_svm(self.yellow_list)
 
         for i in range(len(self.assigned)):  # for each color
             if self.assigned[i,0] == 0 and self.red_center != []:  # red
-                self.center[i,:] = self.red_center + [0]
+                self.center[i,:] = self.red_center
                 self.totem_find[i] = True
             elif self.assigned[i,0] == 1 and self.green_center != []:  # green
-                self.center[i,:] = self.green_center + [0]
+                self.center[i,:] = self.green_center
                 self.totem_find[i] = True
             elif self.assigned[i,0] == 2 and self.blue_center != []:  # blue
-                self.center[i,:] = self.blue_center + [0]
+                self.center[i,:] = self.blue_center
                 self.totem_find[i] = True
             elif self.assigned[i,0] == 5 and self.yellow_center != []:  # yellow
-                self.center[i,:] = self.yellow_center + [0]
+                self.center[i,:] = self.yellow_center
                 self.totem_find[i] = True
 
     def one_class_svm(self, data_list):
@@ -199,10 +149,16 @@ class ColorTotemPlanner(object):
         return (np.mean(sv[:,0]), np.mean(sv[:,1]), 0)
         # return (np.median(sv[:,0]), np.median(sv[:,1]))
 
-    def update_loiter(self, hold_loiter, visit_id):
+    def update_loiter(self, hold_loiter):
         """ update from external process"""
+        # hold_loiter, visit_id = res
         self.hold_loiter = hold_loiter
-        self.visited[visit_id, 1] = True
+        self.hold_moveto = hold_loiter
+        # print "visit id", visit_id
+        print "hold_loiter???? ????", self.hold_loiter
+        self.visited[self.id_counter] = True
+        print self.visited
+        self.id_counter += 1
 
     def update_hold_moveto(self, hold_moveto):
         """ update from external process"""
