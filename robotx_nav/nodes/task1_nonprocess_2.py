@@ -6,6 +6,7 @@ import math
 import time
 import numpy as np
 import os
+import tf
 from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose, Twist, Vector3
@@ -47,6 +48,12 @@ class PassGates(object):
 		rospy.Subscriber("/fake_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
 		self.marker_pub= rospy.Publisher('waypoint_markers', Marker, queue_size=5)
 
+		self.cmd_vel_pub = rospy.Publisher('move_base_cmd_vel', Twist, queue_size=5)
+
+		self.base_frame = rospy.get_param("~base_frame", "base_link")
+		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
+		# tf_listener
+		self.tf_listener = tf.TransformListener()		
 		self.odom_received = False
 		#rospy.wait_for_message("/odom", Odometry)
 		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)
@@ -55,7 +62,9 @@ class PassGates(object):
 		while not self.odom_received:
 			rospy.sleep(1)
 
-		self.cmd_vel_pub = rospy.Publisher('cmd_vel', Twist, queue_size=5)
+
+
+
 
 		init_position =np.array([self.x0, self.y0, 0])
 
@@ -121,19 +130,6 @@ class PassGates(object):
 		print("move to point")
 		self.moveto_obj.respawn(goal, )
 
-	def odom_callback(self, msg):
-		""" call back to subscribe, get odometry data:
-		pose and orientation of the current boat,
-		suffix 0 is for origin """
-		self.x0 = msg.pose.pose.position.x
-		self.y0 = msg.pose.pose.position.y
-		x = msg.pose.pose.orientation.x
-		y = msg.pose.pose.orientation.y
-		z = msg.pose.pose.orientation.z
-		w = msg.pose.pose.orientation.w
-		_, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
-		self.odom_received = True
-
 	def euclid_distance(self, target1, target2):
 		return math.sqrt((target1[0]-target2[0])**2+(target1[1]-target2[1])**2)
 
@@ -157,6 +153,30 @@ class PassGates(object):
 			else:
 				self.cmd_vel_pub.publish(msg)
 			rate.sleep()
+
+
+
+	def get_tf(self, fixed_frame, base_frame):
+		""" transform from base_link to map """
+		trans_received = False
+		while not trans_received:
+			try:
+				(trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+																base_frame,
+																rospy.Time(0))
+				trans_received = True
+				return (Point(*trans), Quaternion(*rot))
+			except (tf.LookupException,
+					tf.ConnectivityException,
+					tf.ExtrapolationException):
+				pass
+
+	def odom_callback(self, msg):
+		trans, rot = self.get_tf("map", "base_link")
+		self.x0 = trans.x
+		self.y0 = trans.y
+		_, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
+		self.odom_received = True
 
 
 if __name__ == '__main__':

@@ -133,6 +133,7 @@ class MoveBaseUtil():
         self.x0 = trans.x
         self.y0 = trans.y
         _, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
+        self.odom_received=True
         # """ call back to subscribe, get odometry data:
         # pose and orientation of the current boat,
         # suffix 0 is for origin """
