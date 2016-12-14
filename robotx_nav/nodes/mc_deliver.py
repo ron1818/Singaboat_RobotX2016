@@ -26,7 +26,7 @@ import tf
 import random
 from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Point, Pose
+from geometry_msgs.msg import Point, Pose, Quaternion
 from visualization_msgs.msg import MarkerArray, Marker
 from move_base_forward import Forward
 from move_base_waypoint import MoveTo
@@ -64,11 +64,12 @@ class DetectDeliver(object):
 		self.station_seen=False #station here is cluster center of any face
 		self.station_position=[0, 0]
 
-		self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, radius=5, polygon=4, mode=2, mode_param=1, is_relative=False)
+		self.loiter_obj = Loiter("loiter", is_newnode=False, target=None, radius=5, polygon=4, mode=1, mode_param=1, is_relative=False)
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, is_relative=False)
 		self.stationkeep_obj = StationKeeping("station_keeping", is_newnode=False, target=None, radius=2, duration=30)
 
-		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
+		#rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
+		rospy.Subscriber("/shoot", MarkerArray, self.symbol_callback, queue_size = 50)
 		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
 		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
 		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
@@ -115,8 +116,8 @@ class DetectDeliver(object):
 
 		while not rospy.is_shutdown():
 			print(loiter_radius)
-			self.loiter_obj.respawn(self.station_position, loiter_radius, )
-
+			self.loiter_obj.respawn(self.station_position, 4, loiter_radius, )
+			self.shooting_pub.publish(1)
 			if loiter_radius>3:
 				loiter_radius-=1
 
@@ -139,7 +140,7 @@ class DetectDeliver(object):
 
 		#moveto an offset, replan in the way
 		while not rospy.is_shutdown():
-
+			self.shooting_pub.publish(1)
 			alpha=self.yaw0-self.symbol_position[2]
 			theta=math.atan2(math.fabs(math.sin(alpha)), math.fabs(math.cos(alpha))) #always +ve and 0-pi/2
 			d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)

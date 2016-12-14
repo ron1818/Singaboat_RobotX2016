@@ -21,6 +21,9 @@ int turn=1500;
 int forwardROS=1500;
 int turnROS=1500;
 
+int prevforwardROS=1500;
+int prevturnROS=1500;
+
 double right_calib=1;
 double left_calib=1.1;
 
@@ -61,11 +64,11 @@ void loop() {
     turnROS     = pulseIn(steering_input, HIGH, 25000);
 
     if (forwardROS==0){
-      forwardROS=1500;
+      forwardROS=prevforwardROS;
     }
 
     if (turnROS==0){
-      turnROS=1500;
+      turnROS=prevturnROS;
     }
 
     if((mode>1000) && (mode<=1500)){
@@ -98,6 +101,8 @@ void loop() {
     unicycleRun(forward, turn);
     printValue();
     delay(50);
+    prevforwardROS=forwardROS;
+    prevturnROS=turnROS;
 
 }
 
