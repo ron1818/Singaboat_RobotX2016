@@ -68,8 +68,8 @@ class DetectDeliver(object):
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, is_relative=False)
 		self.stationkeep_obj = StationKeeping("station_keeping", is_newnode=False, target=None, radius=2, duration=30)
 
-		#rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
-		rospy.Subscriber("/shoot", MarkerArray, self.symbol_callback, queue_size = 50)
+		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.symbol_callback, queue_size = 50)
+		#rospy.Subscriber("/shoot", MarkerArray, self.symbol_callback, queue_size = 50)
 		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
 		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
 		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
