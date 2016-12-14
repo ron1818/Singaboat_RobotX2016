@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-#use the perpendicular 
+#use the perpendicular
 
 import rospy
 import math
@@ -16,7 +16,8 @@ from move_base_waypoint import MoveTo
 from nav_msgs.msg import Odometry
 
 class PassGates(object):
-	MAX_DATA=30 #stash data size of marker array for clustering
+	# MAX_DATA=100 #stash data size of marker array for clustering
+	MAX_DATA=5 #stash data size of marker array for clustering
 	mid_point_counter_max=50
 
 	distance=20 #distance to offset from center of gates
@@ -53,7 +54,7 @@ class PassGates(object):
 		self.base_frame = rospy.get_param("~base_frame", "base_link")
 		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
 		# tf_listener
-		self.tf_listener = tf.TransformListener()		
+		self.tf_listener = tf.TransformListener()
 		self.odom_received = False
 		#rospy.wait_for_message("/odom", Odometry)
 		#rospy.Subscriber("/odom", Odometry, self.odom_callback, queue_size=50)

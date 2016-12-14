@@ -4,7 +4,7 @@ import itertools
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Quaternion
-from std_msgs.msg import UInt8, Float64
+from std_msgs.msg import Int8, Float64
 import numpy as np
 import math
 from sklearn.cluster import KMeans, DBSCAN
@@ -20,7 +20,8 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 class Pinger(object):
     """ find coordinate of totem for task1 """
     red_list, green_list, white_list, black_list = list(), list(), list(), list()
-    MAX_LENS = 20 # actually 21
+    MIN_LENS = 5 # actually 21
+    MAX_LENS = 50 # actually 21
     map_dim = [[0, 40], [0, 40]]
     pinger_list = list()
     pinger_center = list()
@@ -47,7 +48,7 @@ class Pinger(object):
             pass
         rospy.Subscriber("filtered_marker_array", MarkerArray, self.markerarray_callback, queue_size=10)
         # rospy.Subscriber("pinger", Float64, self.pinger_callback, queue_size=10)
-        rospy.Subscriber("pinger", UInt8, self.pinger_callback, queue_size=10)
+        rospy.Subscriber("hydrophone", Int8, self.pinger_callback, queue_size=10)
 
 
         self.pinger_threshold = 65
@@ -187,14 +188,14 @@ class Pinger(object):
     def find_gateline(self):
         # define regions for before, after and along the line
         # find the center
-        if len(self.red_list) >= self.MAX_LENS:
+        if len(self.red_list) >= self.MIN_LENS:
             self.red_center = self.one_class_svm(self.red_list)
-        if len(self.green_list) >= self.MAX_LENS:
+        if len(self.green_list) >= self.MIN_LENS:
             self.green_center = self.one_class_svm(self.green_list)
-        if len(self.black_list) >= self.MAX_LENS:
+        if len(self.black_list) >= self.MIN_LENS:
             self.black_center = self.one_class_svm(self.black_list)
             self.black_totem_find = True  # for planner
-        if len(self.white_list) >= 2 * self.MAX_LENS:
+        if len(self.white_list) >= 2 * self.MIN_LENS:
             self.kmeans.fit(self.white_list)
             self.white_center = self.kmeans.cluster_centers_
 

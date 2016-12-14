@@ -37,7 +37,7 @@ from robotx_vision.ros2opencv2 import ROS2OpenCV2
 from std_msgs.msg import String, Float64MultiArray, MultiArrayDimension
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Vector3
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, RegionOfInterest
 import numpy as np
 
 class ColorSequence(ROS2OpenCV2):
@@ -53,7 +53,7 @@ class ColorSequence(ROS2OpenCV2):
         while not self.odom_received:
             pass
 
-        rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        rospy.Subscriber("led_sequence_roi", RegionOfInterest, self.roi_callback, queue_size=50)
 
         self.node_name = node_name
         # The minimum saturation of the tracked color in HSV space,
