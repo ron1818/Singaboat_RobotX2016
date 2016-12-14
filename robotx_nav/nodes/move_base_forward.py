@@ -130,7 +130,7 @@ class Forward(MoveBaseUtil):
 
         # Create a list to hold the waypoint poses
         waypoints = list()
-        (trans, rot) = self.get_tf()
+        (trans, rot) = self.get_tf("map", "base_link")
         catersian_x = [(N - i) * trans.x / N + i * self.forward["translation"][0] / N
                        for i in range(N+1)]
         catersian_y = [(N - i) * trans.y / N + i * self.forward["translation"][1] / N
