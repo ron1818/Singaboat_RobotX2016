@@ -7,7 +7,7 @@
 //given cmd_vel, publish motor_val. do base_controller with PID 	
 
 double linear, angular;
-double forward_ratio=375, angular_ratio=200;
+double forward_ratio=700, angular_ratio=300;
 
 void cmdCallback(const geometry_msgs::Twist& msg)
 {

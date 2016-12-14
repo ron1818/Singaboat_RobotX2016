@@ -40,7 +40,7 @@ class DetectDeliver(object):
 
 	map_dim = [[0, 40], [0, 40]]
 
-	MAX_DATA=10
+	MAX_DATA=3
 	x0, y0, yaw0= 0, 0, 0
 	symbol=[0 , 0]
 	symbols=np.zeros((MAX_DATA, 2)) #unordered list
@@ -51,7 +51,7 @@ class DetectDeliver(object):
 
 	shape_counter=0
 
-	distance_to_box=3
+	distance_to_box=2
 
 	def __init__(self, symbol_list):
 		print("starting task 7")
@@ -86,27 +86,47 @@ class DetectDeliver(object):
 		print("odom received")
 
 		print(self.symbol)
+		d=1
 		while not rospy.is_shutdown() and not self.station_seen:
-			self.moveto_obj.respawn(self.random_walk(), )#forward 
+			target=[self.x0+d*math.cos(self.yaw0), self.y0+d*math.sin(self.yaw0), self.yaw0]
+
+			self.moveto_obj.respawn(target, )#forward 
 
 		print("station: ")
 		print(self.station_position)
+		#aiming to the box
+		self.shooting_complete=False
+		self.is_aiming=False
+
 		#loiter around station until symbol's face seen
+
+		while not rospy.is_shutdown():
+			theta=math.atan2(self.station_position[1]-self.y0, self.station_position[0]-self.x0)
+			target=[self.station_position[0], self.station_position[1], theta]
+			self.move_to_goal(target, )
+			if self.distance_from_boat(target)<6:
+				self.shooting_pub.publish(1)
+				break
+
 		loiter_radius=math.sqrt((self.x0-self.station_position[0])**2+(self.y0-self.station_position[1])**2)
 
-		if loiter_radius>10:
-			loiter_radius=10	
+		if loiter_radius>5:
+			loiter_radius=3	
 
 		while not rospy.is_shutdown():
 			print(loiter_radius)
 			self.loiter_obj.respawn(self.station_position, loiter_radius, )
 
-			if loiter_radius>4:
-				loiter_radius-=2
+			if loiter_radius>3:
+				loiter_radius-=1
 
 			if self.symbol_seen:
 				print(self.symbol_position)
 				print("symbol's position acquired, exit loitering")
+				break
+
+			if self.shooting_complete:
+				print("shooting done, return to base")		
 				break
 
 			time.sleep(1)
@@ -135,14 +155,13 @@ class DetectDeliver(object):
 			if d<self.distance_to_box:
 				break
 			time.sleep(1)	
+
+			if self.shooting_complete:
+				print("shooting done, return to base")		
+				break
 		
 		
-		#aiming to the box
-		self.shooting_complete=False
-		self.is_aiming=False
-		print("aiming to box")
-		print("start shooting module")
-		self.shooting_pub.publish(1)
+
 
 		station=[self.x0, self.y0, -self.symbol_position[2]]
 		radius=2
@@ -161,6 +180,16 @@ class DetectDeliver(object):
 				break
 
 			time.sleep(1)
+
+	def distance_from_boat(self, target):
+		return math.sqrt((target[0]-self.x0)**2+(target[1]-self.y0)**2)
+
+	def move_to_goal(self, goal):
+		print("move to point")
+		one_third_goal=[2*self.x0/3+goal[0]/3, 2*self.y0/3+goal[1]/3, math.atan2(goal[1]-self.y0, goal[0]-self.x0)]
+		print(one_third_goal)
+		self.moveto_obj.respawn(one_third_goal, )
+
 
 	def stop_shoot_callback(self, msg):
 		if msg.data==1:
