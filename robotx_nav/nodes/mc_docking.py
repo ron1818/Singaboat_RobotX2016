@@ -29,7 +29,7 @@ class Docking(object):
 		#rospy.Subscriber("/dock", MarkerArray, self.marker_callback, queue_size = 50)
 		self.base_frame = rospy.get_param("~base_frame", "base_link")
 		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
-		self.tf_listener = tf.TransformListener()		
+		self.tf_listener = tf.TransformListener()
 
 		self.odom_received = False
 		rospy.wait_for_message("/odometry/filtered/global", Odometry)
@@ -37,13 +37,13 @@ class Docking(object):
 		while not self.odom_received:
 			rospy.sleep(1)
 		print("odom received")
-		
+
 
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
 		self.reverse_obj= Reversing("reverse", is_newnode=False, mode="timed", speed=-2, duration=15, distance=5)
 
 		self.shape_type=shape_type
-		
+
 
 		#for i in range(len(shape_type)):
 			#self.shape_position.append([0, 0, 0])
@@ -79,7 +79,7 @@ class Docking(object):
 		return math.sqrt((target[0]-self.x0)**2+(target[1]-self.y0)**2)
 
 	def marker_callback(self, msg):#find white totem
-		
+
 		for i in range(len(msg.markers)):
 			# get current shape's position
 			if msg.markers[i].type == self.shape_type[self.current_shape]: #check if shape is what we want
@@ -98,9 +98,7 @@ class Docking(object):
 		trans_received = False
 		while not trans_received:
 			try:
-				(trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
-																base_frame,
-																rospy.Time(0))
+				(trans, rot) = self.tf_listener.lookupTransform(fixed_frame, base_frame, rospy.Time(0))
 				trans_received = True
 				return (Point(*trans), Quaternion(*rot))
 			except (tf.LookupException,

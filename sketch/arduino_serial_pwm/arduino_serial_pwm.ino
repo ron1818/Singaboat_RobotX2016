@@ -73,8 +73,8 @@ void loop() {
   steering.writeMicroseconds(turnROS);
   movement.x=forwardROS; //0=>fastest forward, 255 =>fastest backwards, 120 =>stops
   movement.y=turnROS;
-  //chatter.publish(&movement);
+  chatter.publish(&movement);
   nh.spinOnce();
-  //delay(10);
+  delay(10);
 }
 

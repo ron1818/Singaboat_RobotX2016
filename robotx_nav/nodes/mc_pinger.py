@@ -56,7 +56,7 @@ class Pinger(object):
 
         self.loiter_obj.respawn(black_buoy, 5, self.loiter_radius, )
 
-        
+
         self.moveto_obj.respawn(init_position, )
 
     def get_tf(self, fixed_frame, base_frame):

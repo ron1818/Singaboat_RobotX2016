@@ -1,0 +1,20 @@
+<launch>
+	<arg name="camera_link" default="camera_link"/>
+	<arg name="debug" default="true"/>
+
+	<group ns="bow/left">
+		<node
+			pkg="robotx_vision"
+			type="detection_markerarray"
+			name="detection_markerarray"
+			required="true"
+			output="screen"
+		>
+		<param name="camera_link" value="$(arg camera_link)"/>
+		<param name="subscribed_image_topic" value="image_rect_color"/>
+		<param name="debug" value="$(arg debug)"/>
+
+		</node>
+	</group>
+
+</launch>

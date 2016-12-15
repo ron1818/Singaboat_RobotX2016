@@ -2,7 +2,7 @@
 
 """ Mission 7-Detect and Deliver
 
-	
+
 	1. Random walk with gaussian at center of map until station position is acquired
 	2. loiter around until correct face seen
 	3. if symbol seen, move towards symbol perpendicularly
@@ -58,9 +58,9 @@ class DetectDeliver(object):
 		rospy.init_node('task_7', anonymous=True)
 
 		self.symbol=symbol_list
-		self.symbol_visited=0	
+		self.symbol_visited=0
 		self.symbol_seen=False
-		self.symbol_position=[0, 0, 0] 
+		self.symbol_position=[0, 0, 0]
 		self.station_seen=False #station here is cluster center of any face
 		self.station_position=[0, 0]
 
@@ -72,7 +72,7 @@ class DetectDeliver(object):
 		rospy.Subscriber("/finished_search_and_shoot", Int8, self.stop_shoot_callback, queue_size = 5)
 		self.shooting_pub= rospy.Publisher('/start_search_and_shoot', Int8, queue_size=5)
 		self.marker_pub= rospy.Publisher('/waypoint_markers', Marker, queue_size=5)
-		
+
 		self.base_frame = rospy.get_param("~base_frame", "base_link")
 		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
 		# tf_listener
@@ -95,7 +95,7 @@ class DetectDeliver(object):
 		loiter_radius=math.sqrt((self.x0-self.station_position[0])**2+(self.y0-self.station_position[1])**2)
 
 		if loiter_radius>10:
-			loiter_radius=10	
+			loiter_radius=10
 
 		while not rospy.is_shutdown():
 			print(loiter_radius)
@@ -110,7 +110,7 @@ class DetectDeliver(object):
 				break
 
 			time.sleep(1)
-	
+
 
 		print(self.symbol_position)
 		d=math.sqrt((self.x0-self.symbol_position[0])**2+(self.y0-self.symbol_position[1])**2)
@@ -134,9 +134,9 @@ class DetectDeliver(object):
 
 			if d<self.distance_to_box:
 				break
-			time.sleep(1)	
-		
-		
+			time.sleep(1)
+
+
 		#aiming to the box
 		self.shooting_complete=False
 		self.is_aiming=False
@@ -151,12 +151,12 @@ class DetectDeliver(object):
 			self.shooting_pub.publish(1)
 			box=[self.symbol_position[0], self.symbol_position[1], self.symbol_position[2]]
 			#duration 0 is forever
-			if not self.is_aiming:			
+			if not self.is_aiming:
 				self.aiming_obj.respawn(30, box, station)
 				#make aiming respawn
-			
+
 			if self.shooting_complete:
-				print("shooting done, return to base")		
+				print("shooting done, return to base")
 				break
 
 			time.sleep(1)
@@ -165,7 +165,7 @@ class DetectDeliver(object):
 		if msg.data==1:
 			#stop aiming station
 			self.shooting_complete=True
-		
+
 
 	def random_walk(self):
 		""" create random walk points and more favor towards center """
@@ -194,20 +194,20 @@ class DetectDeliver(object):
 	def symbol_callback(self, msg):
 		if len(msg.markers)>0:
 			if self.symbols_counter>self.MAX_DATA:
-				   
+
 				station_kmeans = KMeans(n_clusters=1).fit(self.symbols)
 				self.station_center=station_kmeans.cluster_centers_
 
 				self.station_position[0]=self.station_center[0][0]
 				self.station_position[1]=self.station_center[0][1]
 				self.station_seen=True
-	
+
 
 			for i in range(len(msg.markers)):
 
 				self.symbols[self.symbols_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
 				self.symbols_counter+=1
-		
+
 				if msg.markers[i].type==self.symbol[0] and msg.markers[i].id==self.symbol[1]:
 					#set position_list (not sure)
 					self.symbol_position[0]=msg.markers[i].pose.position.x
@@ -220,7 +220,7 @@ class DetectDeliver(object):
 
 					self.symbol_location[self.shape_counter%self.MAX_DATA]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y]
 					self.shape_counter+=1
-		
+
 				if self.station_seen and self.shape_counter>self.MAX_DATA:
 					symbol_kmeans = KMeans(n_clusters=1).fit(self.symbol_location)
 					self.symbol_center=symbol_kmeans.cluster_centers_
