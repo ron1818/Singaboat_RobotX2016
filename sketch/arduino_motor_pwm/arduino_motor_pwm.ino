@@ -71,14 +71,14 @@ void loop() {
       turnROS=prevturnROS;
     }
 
-    if((mode>1000) && (mode<=1500)){
+    if((mode>1000) && (mode<1400)){
         //manual mode
         forward   = map(throttle, 1100, 1900, -500, 500); //map values from RC
         turn      = map(steering, 1100, 1900,-500, 500);
         digitalWrite(modePin, HIGH);
         digitalWrite(estopPin, LOW);
     }
-    else if((mode>1500) && (mode<2000)){
+    else if((mode>1400) && (mode<2000)){
       
         //autonomous mode
         forward   = map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
