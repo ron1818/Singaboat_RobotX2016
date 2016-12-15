@@ -8,7 +8,7 @@ from geometry_msgs.msg import Point, Pose, Twist
 from move_base_forward import Forward
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
-class MoveAccordingFirstOdom(object):	
+class MoveAccordingFirstOdom(object):
 	x0, y0, yaw0= 0, 0, 0
 	distance=20
 
@@ -24,7 +24,7 @@ class MoveAccordingFirstOdom(object):
 		while not self.odom_received:
 			rospy.sleep(1)
 		print("odom received")
-		
+
 		#remember the first pose of boat
 		init_position =[self.x0, self.y0, self.yaw0]
 		final_position=[self.x0+self.distance*math.sin(self.yaw0), self.y0+self.distance*math.cos(self.yaw0), self.yaw0]

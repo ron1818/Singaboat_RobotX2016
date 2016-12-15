@@ -75,6 +75,6 @@ void loop() {
   movement.y=turnROS;
   chatter.publish(&movement);
   nh.spinOnce();
-  delay(50);
+  //delay(50);
 }
 

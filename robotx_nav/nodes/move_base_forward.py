@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-""" 
+"""
 base constant heading
 
     Command a robot to move forward to a goal
@@ -47,18 +47,18 @@ class Forward(MoveBaseUtil):
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 
         if target is not None:  # one time job
-            self.respawn(None)
+            self.respawn(target=target)
 
     def respawn(self, target=None):
         # new target
         if target is not None:
             self.forward["target"] = Point(target[0], target[1], target[2])
-        print self.forward["target"]
+        # print self.forward["target"]
 
         if self.forward["is_relative"]:
             self.forward["translation"], self.forward["heading"] = self.convert_relative_to_absolute([self.forward["target"].x, self.forward["target"].y])
             # print self.forward["translation"], self.forward["heading"]
-            self.forward["goal_distance"] = self.forward["target"].x
+            self.forward["goal_distance"] = sqrt(target[0] ** 2 + target[1] ** 2)
         else:
             # obtained from vision nodes, absolute catersian
             # but may be updated later, so need to callback
@@ -66,6 +66,9 @@ class Forward(MoveBaseUtil):
             self.forward["goal_distance"] = sqrt((self.forward["target"].x - self.x0) ** 2 + (self.forward["target"].y - self.y0) ** 2)
             # heading from boat to center
             self.forward["heading"] = atan2(self.forward["target"].y - self.y0, self.forward["target"].x - self.x0)
+
+        # print "distance", self.forward["goal_distance"]
+        # print self.forward["heading"]
 
         # create waypoints
         waypoints = self.create_waypoints()
@@ -120,7 +123,7 @@ class Forward(MoveBaseUtil):
         # print self.forward["translation"]
         N = ceil(self.forward["goal_distance"] / self.forward["waypoint_separation"])
         N = int(N)
-        # print N
+        print N
 
         # Then convert the angles to quaternions, all have the same heading angles
         for i in range(N+1):
@@ -131,6 +134,8 @@ class Forward(MoveBaseUtil):
         # Create a list to hold the waypoint poses
         waypoints = list()
         (trans, rot) = self.get_tf("map", "base_link")
+        print trans
+        print self.forward["translation"]
         catersian_x = [(N - i) * trans.x / N + i * self.forward["translation"][0] / N
                        for i in range(N+1)]
         catersian_y = [(N - i) * trans.y / N + i * self.forward["translation"][1] / N
@@ -148,10 +153,10 @@ class Forward(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        constant_heading = Forward(nodename="constantheading_test", target=None, is_relative=False)
-        constant_heading.respawn([0,10,0])
+        constant_heading = Forward(nodename="constantheading_test", target=None, is_relative=True)
+        constant_heading.respawn([20,0,0])
         time.sleep(5)
-        constant_heading.respawn([-5,5,0])
+        constant_heading.respawn([10,1.57,0])
         #time.sleep(10)
         #constant_heading.respawn([4,5,0])
 

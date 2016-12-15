@@ -15,7 +15,8 @@ from sensor_msgs.msg import Imu
 from nav_msgs.msg import Odometry
 # from actionlib_msgs.msg import GoalID
 from move_base_msgs.msg import MoveBaseActionGoal  # , MoveBaseGoal
-from tf.transformations import euler_from_quaternion
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+import tf
 from dynamic_reconfigure.server import Server
 from robotx_control.cfg import CmdVelPIDConfig
 
@@ -44,6 +45,7 @@ class Cmd_Vel_Repub(object):
         cmd_vel_repub = rospy.Publisher("cmd_vel", Twist, queue_size=10)
         pid_cmd_vel_msg = Twist()
 
+        self.tf_listener = tf.TransformListener()
 
         #initialise pid variables
         #linear
@@ -182,13 +184,33 @@ class Cmd_Vel_Repub(object):
 
     def odom_callback(self, msg):
         """ callback the subscribe, get pose data """
-        self.odom_x = msg.pose.pose.position.x
-        self.odom_y = msg.pose.pose.position.y
-        x = msg.pose.pose.orientation.x
-        y = msg.pose.pose.orientation.y
-        z = msg.pose.pose.orientation.z
-        w = msg.pose.pose.orientation.w
-        _, _, self.odom_yaw = euler_from_quaternion((x, y, z, w))
+        trans, rot = self.get_tf("map", "base_link")
+        self.odom_x = trans.x
+        self.odom_y = trans.y
+        _, _, self.odom_yaw = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
+        # self.odom_x = msg.pose.pose.position.x
+        # self.odom_y = msg.pose.pose.position.y
+        # x = msg.pose.pose.orientation.x
+        # y = msg.pose.pose.orientation.y
+        # z = msg.pose.pose.orientation.z
+        # w = msg.pose.pose.orientation.w
+        # _, _, self.odom_yaw = euler_from_quaternion((x, y, z, w))
+
+
+    def get_tf(self, fixed_frame, base_frame):
+        """ transform from base_link to map """
+        trans_received = False
+        while not trans_received:
+            try:
+                (trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+                                                                base_frame,
+                                                                rospy.Time(0))
+                trans_received = True
+                return (Point(*trans), Quaternion(*rot))
+            except (tf.LookupException,
+                    tf.ConnectivityException,
+                    tf.ExtrapolationException):
+                pass
 
     def goal_callback(self, msg):
         self.goal_x = msg.goal.target_pose.pose.position.x

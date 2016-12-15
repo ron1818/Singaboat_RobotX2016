@@ -39,14 +39,17 @@ from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Vector3
 from sensor_msgs.msg import Image, RegionOfInterest
 import numpy as np
+from sklearn.cluster import KMeans
 
 class ColorSequence(ROS2OpenCV2):
     # taken from robotx_vision.find_shapes.Color_Detection
 
     x0, y0 = 0, 0
+    hist_list = list()
+    counter = 0
 
-    def __init__(self, node_name):
-        ROS2OpenCV2.__init__(self, node_name)
+    def __init__(self, node_name, debug=False):
+        ROS2OpenCV2.__init__(self, node_name, debug)
         self.sequence_pub = rospy.Publisher("color_sequence", Vector3, queue_size=10)
         self.odom_received = False
         rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
@@ -72,20 +75,21 @@ class ColorSequence(ROS2OpenCV2):
 
         # Create a number of windows for displaying the histogram,
         # parameters controls, and backprojection image
-        cv.NamedWindow("Histogram", cv.CV_WINDOW_NORMAL)
-        cv.MoveWindow("Histogram", 300, 50)
-        cv.NamedWindow("Parameters", 0)
-        cv.MoveWindow("Parameters", 700, 50)
-        cv.NamedWindow("Backproject", 0)
-        cv.MoveWindow("Backproject", 700, 325)
-        # cv.NamedWindow("Tracked_obj", 0)
-        # cv.MoveWindow("Tracked_obj", 700, 900)
+        if self.debug:
+            cv.NamedWindow("Histogram", cv.CV_WINDOW_NORMAL)
+            cv.MoveWindow("Histogram", 300, 50)
+            cv.NamedWindow("Parameters", 0)
+            cv.MoveWindow("Parameters", 700, 50)
+            cv.NamedWindow("Backproject", 0)
+            cv.MoveWindow("Backproject", 700, 325)
+            # cv.NamedWindow("Tracked_obj", 0)
+            # cv.MoveWindow("Tracked_obj", 700, 900)
 
-        # Create the slider controls for saturation, value and threshold
-        cv.CreateTrackbar("Saturation", "Parameters", self.smin, 255, self.set_smin)
-        cv.CreateTrackbar("Min Value", "Parameters", self.vmin, 255, self.set_vmin)
-        cv.CreateTrackbar("Max Value", "Parameters", self.vmax, 255, self.set_vmax)
-        cv.CreateTrackbar("Threshold", "Parameters", self.threshold, 255, self.set_threshold)
+            # Create the slider controls for saturation, value and threshold
+            cv.CreateTrackbar("Saturation", "Parameters", self.smin, 255, self.set_smin)
+            cv.CreateTrackbar("Min Value", "Parameters", self.vmin, 255, self.set_vmin)
+            cv.CreateTrackbar("Max Value", "Parameters", self.vmax, 255, self.set_vmax)
+            cv.CreateTrackbar("Threshold", "Parameters", self.threshold, 255, self.set_threshold)
 
         # Initialize a number of variables
         self.hist = None
@@ -113,30 +117,30 @@ class ColorSequence(ROS2OpenCV2):
     #             cv2.inRange(hsv, self.lower_yellow, self.upper_yellow)
     #     return mask
 
-    def depth_masking(self):
-        self.depth_array = np.array(self.depth_image, dtype=np.float32)
-        # self.depth_image
-        depth_mask = np.zeros((self.frame_height, self.frame_width))
+    # def depth_masking(self):
+    #     self.depth_array = np.array(self.depth_image, dtype=np.float32)
+    #     # self.depth_image
+    #     depth_mask = np.zeros((self.frame_height, self.frame_width))
 
-        for x in range(self.frame_height):
-            for y in range(self.frame_width):
-                try:
-                    # Get a depth value in meters
-                    z = self.depth_array[y, x]
+    #     for x in range(self.frame_height):
+    #         for y in range(self.frame_width):
+    #             try:
+    #                 # Get a depth value in meters
+    #                 z = self.depth_array[y, x]
 
-                    # Check for NaN values returned by the camera driver
-                    if isnan(z):
-                        continue
+    #                 # Check for NaN values returned by the camera driver
+    #                 if isnan(z):
+    #                     continue
 
-                except:
-                    # It seems to work best if we convert exceptions to big value
-                    z = 255
+    #             except:
+    #                 # It seems to work best if we convert exceptions to big value
+    #                 z = 255
 
-                if z < self.depth_threshold:
-                    depth_mask[y, x] = 255  # white
-                else:
-                    depth_mask[y, x] = 0
-        return depth_mask
+    #             if z < self.depth_threshold:
+    #                 depth_mask[y, x] = 255  # white
+    #             else:
+    #                 depth_mask[y, x] = 0
+    #     return depth_mask
 
     def find_max_contour(self, mask):
         # find contours
@@ -181,7 +185,6 @@ class ColorSequence(ROS2OpenCV2):
 
         print self.area_ratio
 
-
     def morphological(self, mask):
         """ tune the mask """
         # morphological openning (remove small objects from the foreground)
@@ -192,7 +195,6 @@ class ColorSequence(ROS2OpenCV2):
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
         return mask
-
 
     # The main processing function computes the histogram and backprojection
     def process_image(self, cv_image):
@@ -210,10 +212,10 @@ class ColorSequence(ROS2OpenCV2):
             # not select any region, do automatic color rectangle
             if self.selection is None:
                 # obtain the color mask
-                depth_mask = self.depth_masking()
-                # print color_mask
+                edge_roi = self.edge_masking()
+                # print "edge mask", edge_mask
                 # create bounding box from the maximum mask
-                self.selection = self.find_max_contour(depth_mask)
+                self.selection = edge_roi  # in x y w h
                 self.detect_box = self.selection
                 self.track_box = None
 
@@ -282,7 +284,8 @@ class ColorSequence(ROS2OpenCV2):
             h = int(self.hist[i])
             cv2.rectangle(img, (i*bin_w+2, 255), ((i+1)*bin_w-2, 255-h), (int(180.0*i/bin_count), 255, 255), -1)
         img = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
-        cv2.imshow('Histogram', img)
+        if self.debug:
+            cv2.imshow('Histogram', img)
 
 
     def hue_histogram_as_image(self, hist):
@@ -425,8 +428,9 @@ class ColorSequence(ROS2OpenCV2):
             cv2.putText(self.display_image, "CPS: " + str(self.cps), (10, vstart), font_face, font_scale, cv.RGB(255, 255, 0))
             cv2.putText(self.display_image, "RES: " + str(self.frame_size[0]) + "X" + str(self.frame_size[1]), (10, voffset), font_face, font_scale, cv.RGB(255, 255, 0))
 
-        # Update the image display
-        cv2.imshow(self.node_name, self.display_image)
+        if self.debug:
+            # Update the image display
+            cv2.imshow(self.node_name, self.display_image)
 
         # Process any keyboard commands
         self.keystroke = cv2.waitKey(5)
@@ -450,15 +454,28 @@ class ColorSequence(ROS2OpenCV2):
     def publish_sequence(self):
         # Watch out for negative offsets
 
-        try:
-            sequence = Vector3()
-            sequence.data.x = self.x0
-            sequence.data.y = self.y0
-            sequence.data.z = self.hist_prob
-            print sequence.data
-            self.sequence_pub.publish(sequence)
-        except:
-            rospy.loginfo("Publishing sequence failed")
+        # append all data to hist_list
+        self.his_list.append([self.counter, self.hist_prob])
+        self.counter += 1
+        # find distinct hist_prob
+        kmeans = KMeans(n_clusters=3)
+        kmeans.fit(np.array(self.hist_list))
+        color_sequence = kmeans.cluster_centers
+        order = np.argsort(color_sequence[:,0])[::-1]
+        ordered_sequence = color_sequence[order,1]
+        print ordered_sequence
+
+
+
+        # try:
+        #     sequence = Vector3()
+        #     sequence.data.x = self.x0
+        #     sequence.data.y = self.y0
+        #     sequence.data.z = self.hist_prob
+        #     print sequence.data
+        #     self.sequence_pub.publish(sequence)
+        # except:
+        #     rospy.loginfo("Publishing sequence failed")
 
 
 
