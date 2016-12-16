@@ -40,7 +40,7 @@ class Docking(object):
 
 
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
-		self.reverse_obj= Reversing("reverse", is_newnode=False, mode="odomed", speed=-1, duration=10, distance=5)
+		self.reverse_obj= Reversing("reverse", is_newnode=False, mode="timed", speed=-2, duration=15, distance=5)
 
 		self.shape_type=shape_type
 

@@ -3,8 +3,9 @@
 import rospy
 import math
 import time
+import tf
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Point, Pose, Twist
+from geometry_msgs.msg import Point, Pose, Twist, Quaternion
 from move_base_forward import Forward
 from tf.transformations import quaternion_from_euler, euler_from_quaternion
 
@@ -25,24 +26,40 @@ class MoveAccordingFirstOdom(object):
 			rospy.sleep(1)
 		print("odom received")
 
+		self.base_frame = rospy.get_param("~base_frame", "base_link")
+		self.fixed_frame = rospy.get_param("~fixed_frame", "map")
+		# tf_listener
+		self.tf_listener = tf.TransformListener()
+		
+
 		#remember the first pose of boat
 		init_position =[self.x0, self.y0, self.yaw0]
-		final_position=[self.x0+self.distance*math.sin(self.yaw0), self.y0+self.distance*math.cos(self.yaw0), self.yaw0]
+		final_position=[self.x0+self.distance*math.cos(self.yaw0), self.y0+self.distance*math.sin(self.yaw0), self.yaw0]
 
 		while not rospy.is_shutdown():
 			constant_obj = Forward(nodename="constant_heading", is_newnode=False, target=final_position, waypoint_separation=5, is_relative=False)
 
+
+	def get_tf(self, fixed_frame, base_frame):
+		""" transform from base_link to map """
+		trans_received = False
+		while not trans_received:
+			try:
+				(trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+																base_frame,
+																rospy.Time(0))
+				trans_received = True
+				return (Point(*trans), Quaternion(*rot))
+			except (tf.LookupException,
+					tf.ConnectivityException,
+					tf.ExtrapolationException):
+				pass
+
 	def odom_callback(self, msg):
-		""" call back to subscribe, get odometry data:
-		pose and orientation of the current boat,
-		suffix 0 is for origin """
-		self.x0 = msg.pose.pose.position.x
-		self.y0 = msg.pose.pose.position.y
-		x = msg.pose.pose.orientation.x
-		y = msg.pose.pose.orientation.y
-		z = msg.pose.pose.orientation.z
-		w = msg.pose.pose.orientation.w
-		_, _, self.yaw0 = euler_from_quaternion((x, y, z, w))
+		trans, rot = self.get_tf("map", "base_link")
+		self.x0 = trans.x
+		self.y0 = trans.y
+		_, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
 		self.odom_received = True
 
 if __name__ == '__main__':
