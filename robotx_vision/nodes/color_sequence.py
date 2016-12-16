@@ -46,17 +46,22 @@ class ColorSequence(ROS2OpenCV2):
 
     x0, y0 = 0, 0
     hist_list = list()
+    MAX_LEN = 7 * 5
     counter = 0
+    roi_x_offset, roi_y_offset, roi_width, roi_height = [0, 0, 0, 0]
 
     def __init__(self, node_name, debug=False):
         ROS2OpenCV2.__init__(self, node_name, debug)
         self.sequence_pub = rospy.Publisher("color_sequence", Vector3, queue_size=10)
-        self.odom_received = False
-        rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
-        while not self.odom_received:
-            pass
+        # self.odom_received = False
+        # rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        # while not self.odom_received:
+        #     pass
 
+        # print "waiting for roi"
+        rospy.wait_for_message("led_sequence_roi", RegionOfInterest)
         rospy.Subscriber("led_sequence_roi", RegionOfInterest, self.roi_callback, queue_size=50)
+        # print "roi received"
 
         self.node_name = node_name
         # The minimum saturation of the tracked color in HSV space,
@@ -183,7 +188,7 @@ class ColorSequence(ROS2OpenCV2):
         else:  # only one blob found
             self.area_ratio = 0
 
-        print self.area_ratio
+        # print self.area_ratio
 
     def morphological(self, mask):
         """ tune the mask """
@@ -212,10 +217,11 @@ class ColorSequence(ROS2OpenCV2):
             # not select any region, do automatic color rectangle
             if self.selection is None:
                 # obtain the color mask
-                edge_roi = self.edge_masking()
+                # edge_roi = self.edge_masking()
                 # print "edge mask", edge_mask
                 # create bounding box from the maximum mask
-                self.selection = edge_roi  # in x y w h
+                self.selection = [self.roi_x_offset, self.roi_y_offset, self.roi_width, self.roi_height]  # in x y w h
+                # print "selection", self.selection
                 self.detect_box = self.selection
                 self.track_box = None
 
@@ -231,14 +237,14 @@ class ColorSequence(ROS2OpenCV2):
                 self.hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
                 cv2.normalize(self.hist, self.hist, 0, 255, cv2.NORM_MINMAX)
                 self.hist = self.hist.reshape(-1)
-                print self.hist
                 self.hist_prob = np.argmax(self.hist)
+                # print self.hist_prob
                 self.show_hist()
 
-            # if self.detect_box is not None:
-            #     self.selection = None
+            if self.detect_box is not None:
+                self.selection = None
 
-            # # If we have a histogram, track it with CamShift
+            # If we have a histogram, track it with CamShift
             # if self.hist is not None:
             #     # Compute the backprojection from the histogram
             #     backproject = cv2.calcBackProject([hsv], [0], self.hist, [0, 180], 1)
@@ -278,7 +284,7 @@ class ColorSequence(ROS2OpenCV2):
         bin_count = self.hist.shape[0]
         bin_w = 24
         img = np.zeros((256, bin_count*bin_w, 3), np.uint8)
-        print np.argmax(self.hist)
+        # print np.argmax(self.hist)
         self.hist_prob = np.argmax(self.hist)
         for i in xrange(bin_count):
             h = int(self.hist[i])
@@ -453,18 +459,58 @@ class ColorSequence(ROS2OpenCV2):
 
     def publish_sequence(self):
         # Watch out for negative offsets
-
+        # pass
         # append all data to hist_list
-        self.his_list.append([self.counter, self.hist_prob])
+        if len(self.hist_list) > self.MAX_LEN:
+            self.hist_list.pop(0)
+        try:
+            self.hist_list.append([self.counter, self.hist_prob])
+        except:
+            pass
+#         print self.hist_list
         self.counter += 1
         # find distinct hist_prob
-        kmeans = KMeans(n_clusters=3)
-        kmeans.fit(np.array(self.hist_list))
-        color_sequence = kmeans.cluster_centers
-        order = np.argsort(color_sequence[:,0])[::-1]
-        ordered_sequence = color_sequence[order,1]
-        print ordered_sequence
+        try:
+            kmeans = KMeans(n_clusters=3)
+            kmeans.fit(np.array(self.hist_list))
+            color_sequence = kmeans.cluster_centers_
+            order = np.argsort(color_sequence[:,0])[::-1]
+            ordered_sequence = color_sequence[order,1]
+            # print "ordered seq", ordered_sequence
+            color_seq = ["", "", ""]
+            c = 0
+            for i in ordered_sequence:
+                print i
+                if i< 1 or i > 14:
+                    color_seq[c] = "red"
+                elif 7 < i < 12:
+                    color_seq[c] = "blue"
+                elif 1 < i < 4:
+                    color_seq[c] = "yellow"
+                elif 3 < i < 7:
+                    color_seq[c] = "green"
+                c += 1
 
+            print "color_seq", color_seq
+            a = Vector3()
+            a.x = ordered_sequence[0]
+            a.y = ordered_sequence[1]
+            a.z = ordered_sequence[2]
+            self.sequence_pub.publish(a)
+            rospy.set_param("/gui/color1", color_seq[0])
+            rospy.set_param("/gui/color2", color_seq[1])
+            rospy.set_param("/gui/color3", color_seq[2])
+
+
+        except:
+            print "sequence publish failed"
+
+    def roi_callback(self, msg):
+        # print msg.x_offset
+        self.roi_x_offset = msg.x_offset
+        self.roi_y_offset = msg.y_offset
+        self.roi_width = msg.width
+        self.roi_height = msg.height
 
 
         # try:
@@ -481,8 +527,8 @@ class ColorSequence(ROS2OpenCV2):
 
 if __name__ == '__main__':
     try:
-        node_name = "camshift"
-        ColorSequence(node_name)
+        node_name = "color_sequence"
+        ColorSequence(node_name, debug=True)
         try:
             rospy.init_node(node_name)
         except:
