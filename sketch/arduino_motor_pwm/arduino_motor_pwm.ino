@@ -21,6 +21,9 @@ int turn=1500;
 int forwardROS=1500;
 int turnROS=1500;
 
+int prevforwardROS=1500;
+int prevturnROS=1500;
+
 double right_calib=1;
 double left_calib=1.1;
 
@@ -61,21 +64,21 @@ void loop() {
     turnROS     = pulseIn(steering_input, HIGH, 25000);
 
     if (forwardROS==0){
-      forwardROS=1500;
+      forwardROS=prevforwardROS;
     }
 
     if (turnROS==0){
-      turnROS=1500;
+      turnROS=prevturnROS;
     }
 
-    if((mode>1000) && (mode<=1500)){
+    if((mode>1000) && (mode<1400)){
         //manual mode
         forward   = map(throttle, 1100, 1900, -500, 500); //map values from RC
         turn      = map(steering, 1100, 1900,-500, 500);
         digitalWrite(modePin, HIGH);
         digitalWrite(estopPin, LOW);
     }
-    else if((mode>1500) && (mode<2000)){
+    else if((mode>1400) && (mode<2000)){
       
         //autonomous mode
         forward   = map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
@@ -98,6 +101,8 @@ void loop() {
     unicycleRun(forward, turn);
     printValue();
     delay(50);
+    prevforwardROS=forwardROS;
+    prevturnROS=turnROS;
 
 }
 
