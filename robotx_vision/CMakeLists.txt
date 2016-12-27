@@ -142,6 +142,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 ## Declare a C++ executable
 #mission nodes
+add_executable(shape_roi src/shape_roi.cpp)
+target_link_libraries(shape_roi ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(shape_roi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 add_executable(detection_roi src/detection_roi.cpp)
 target_link_libraries(detection_roi ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(detection_roi ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -189,6 +193,8 @@ add_dependencies(subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTE
 add_dependencies(detection_roi ${PROJECT_NAME}_gencfg)
 add_dependencies(zed_detection ${PROJECT_NAME}_gencfg)
 add_dependencies(detection_markerarray ${PROJECT_NAME}_gencfg)
+add_dependencies(shape_roi ${PROJECT_NAME}_gencfg)
+add_dependencies(LED_screen_detection ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(robotx_vision_node
