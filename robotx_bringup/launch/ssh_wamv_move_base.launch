@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<launch>
+    <machine name="usv" address="192.168.0.110" user="usv" default="true" />
+    <include file="$(find robotx_nav)/launch/move_base_map.launch" >
+        <arg name="iswamv" value="true" />
+
+        <!--arg name="cmd_vel_topic" value="cmd_vel" /-->
+        <arg name="cmd_vel_topic" value="move_base_cmd_vel" />
+        <!--arg name="mapname" value="nanyanglake" /-->
+        <arg name="mapname" value="blank_map" />
+    </include>
+
+    <!--node pkg="robotx_control" type="cmd_vel_repub.py" name="cmd_vel_repub" >
+        <remap from="cmd_vel_raw" to="move_base_cmd_vel" />
+        <remap from="odom" to="odometry/filtered/global" />
+        <remap from="imu/data" to="middle_middle_imu/imu/data" />
+        <remap from="cmd_vel" to="cmd_vel" />
+    </node-->
+
+</launch>

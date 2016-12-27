@@ -39,8 +39,11 @@ class StationKeeping(MoveBaseUtil):
         self.sk["radius"] = rospy.get_param("~radius", radius)
         self.sk["duration"] = rospy.get_param("~duration", duration)
 
-        if target is not None:
-            self.respawn(None)
+        if target is None:
+            # current position
+            # c_p = Twist(Point(self.x0, self.y0, 0), Point(0, 0, self.yaw0))
+            c_p = [self.x0, self.y0, self.yaw0]
+            self.respawn(c_p, None, None)
 
     def respawn(self, target, radius, duration):
         if target is not None:  # a target point to hold the position
@@ -49,6 +52,8 @@ class StationKeeping(MoveBaseUtil):
             self.sk["radius"] = radius
         if duration is not None:
             self.sk["duration"] = duration
+
+        print self.sk["target"]
 
         q_angle = quaternion_from_euler(0, 0, self.sk["target"].angular.z)
         angle = Quaternion(*q_angle)
@@ -85,6 +90,8 @@ class StationKeeping(MoveBaseUtil):
 
                 self.move(goal, 0, 0)
                 rospy.loginfo("goal sent")
+                print "current_pos", self.x0, self.y0, self.yaw0
+                rospy.sleep(0.5)
         else:
             rospy.loginfo("station keep ends")
 

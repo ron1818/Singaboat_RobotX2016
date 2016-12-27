@@ -92,6 +92,7 @@ class MoveTo(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        MoveTo(nodename="moveto_waypoint")
+        mvto = MoveTo(nodename="moveto_waypoint", target=[5,0,0], is_relative=True)
+        # <F2><F3>mvt0.respawn(target=[
     except rospy.ROSInterruptException:
         pass

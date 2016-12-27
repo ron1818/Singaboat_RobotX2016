@@ -19,10 +19,12 @@ def map_rotation(map_corners, offset, theta):
     return rotated_point
 
 
-
-def random_walk(map_corners, style, *args, **kwargs):
+def random_walk(map_corners, offset, style, *args, **kwargs):
     """ create random walk points and avoid valid centers """
     target = None
+    map_corners = np.array(map_corners)
+    offset = np.array([offset])
+    nap_corners += offset
     map_center = [np.mean(map_corners[:,0]), np.mean(map_corners[:,1])]
 
     if style == "unif":
@@ -57,7 +59,7 @@ def random_walk(map_corners, style, *args, **kwargs):
 
     elif style == "near_line":  # gate data partially known, need to go around the line area
         delta_y = kwargs["delta"]
-        x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
+        x_range = range(np.min(self.map_corners[:,0]), np.max(self.map_corners[:,1]), 5)
         y_estimate = [self.roughline.predict(x) - delta_y * self.before_roughline_sign for x in x_range]
         choices_idx = range(len(x_range))
         candidate_target_idx = random.choice(choices_idx)

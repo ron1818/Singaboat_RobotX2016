@@ -170,14 +170,19 @@ class MoveBaseUtil():
 
         # wrt base_link
         # theta is the angle between base_link's x axis and r
+        # print "x0, y0, yaw0", self.x0, self.y0, self.yaw0
         r, theta = coordinate
+        # print r, theta
         x_target_base, y_target_base = r * cos(theta), r * sin(theta)
+
+        # print "target base", x_target_base, y_target_base
 
         x_target_rot, y_target_rot = \
             cos(self.yaw0) * x_target_base - sin(self.yaw0) * y_target_base, \
                 sin(self.yaw0) * x_target_base + cos(self.yaw0) * y_target_base
         heading = theta + self.yaw0
         center = [self.x0 + x_target_rot, self.y0 + y_target_rot, 0]
+        # print "target rot", x_target_rot, y_target_rot
         return [center, heading]
 
     def move(self, goal, mode, mode_param):

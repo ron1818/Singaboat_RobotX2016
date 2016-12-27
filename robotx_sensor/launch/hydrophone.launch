@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!-- obsolete -->
 <launch>
-    <param name="hydrophone/frequency" value="32000" type="double"/>
+    <param name="hydrophone/frequency" value="25000" type="double"/>
     <param name="hydrophone/threshold_amp" value="400" type="int"/>
 
     <node pkg="robotx_sensor" type="hydrophone_node" name="hydrophone" output="screen" >

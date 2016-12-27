@@ -6,7 +6,7 @@
 #define RC3 9
 #define RC4 7
 #define modePin 3
-#define estopPin 1
+#define estopPin 5
 
 #define throttle_input 11
 #define steering_input 12
@@ -21,8 +21,11 @@ int turn=1500;
 int forwardROS=1500;
 int turnROS=1500;
 
+int prevforwardROS=1500;
+int prevturnROS=1500;
+
 double right_calib=1;
-double left_calib=1;
+double left_calib=1.1;
 
 
 
@@ -61,25 +64,27 @@ void loop() {
     turnROS     = pulseIn(steering_input, HIGH, 25000);
 
     if (forwardROS==0){
-      forwardROS=1500;
+      forwardROS=prevforwardROS;
     }
 
     if (turnROS==0){
-      turnROS=1500;
+      turnROS=prevturnROS;
     }
 
-    if((mode>1000) && (mode<=1500)){
+    if((mode>1000) && (mode<1400)){
         //manual mode
         forward   = map(throttle, 1100, 1900, -500, 500); //map values from RC
         turn      = map(steering, 1100, 1900,-500, 500);
         digitalWrite(modePin, HIGH);
+        digitalWrite(estopPin, LOW);
     }
-    else if((mode>1500) && (mode<2000)){
+    else if((mode>1400) && (mode<2000)){
       
         //autonomous mode
         forward   = map(forwardROS, 1100, 1900, -500, 500); //value is -500 to 500
         turn      = map(turnROS, 1100, 1900, -500, 500);
         digitalWrite(modePin, LOW);
+        digitalWrite(estopPin, LOW);
     }
     else{
         //e-stop switch
@@ -95,7 +100,9 @@ void loop() {
 
     unicycleRun(forward, turn);
     printValue();
-    delay(100);
+    delay(50);
+    prevforwardROS=forwardROS;
+    prevturnROS=turnROS;
 
 }
 
@@ -107,17 +114,17 @@ void unicycleRun(int forward, int turn){
     int Ur_out;
     int Ul_out;
 
-    Ur=right_calib*(forward-turn/2); //here turning in cw is positive250
-    Ul=left_calib*(forward+turn/2); //750
+    Ur=right_calib*(forward-turn); //here turning in cw is positive250
+    Ul=left_calib*(forward+turn); //750
     //Ur & Ul ranges from -750 to 750 if right and left calibration factors = 1 
-    Ur=-Ur;
-    Ul=-Ul;
-    Ur=constrain(Ur, -750, 750);
-    Ul=constrain(Ul, -750, 750);
+    //Ur=-Ur;
+    //Ul=-Ul;
+    Ur=constrain(Ur, -1000, 1000);
+    Ul=constrain(Ul, -1000, 1000);
 
     //map Ur and Ul to digital potentiometer values 0-255, map back to 1000-2000
-    Ur_out=map(Ur, -750, 750, 1000, 2000);
-    Ul_out=map(Ul, -750, 750, 1000, 2000);
+    Ur_out=map(Ur, -1000, 1000, 1000, 2000);
+    Ul_out=map(Ul, -1000, 1000, 1000, 2000);
 
     digitalStepRight=mapToResistance(Ur_out);
     digitalStepLeft=mapToResistance(Ul_out);
@@ -139,13 +146,13 @@ int mapToResistance(int input){
     {
         digitalStep = map(input,1551,2000, 80, 0); 
     }
-    else if (input<=1550 && input>1450)
+    if (input<=1550 && input>1450)
     {
         digitalStep =120;
     }
-    else if (input<=1450&&input>=1000)
+    if(input<=1450&&input>=1000)
     {
-        digitalStep = map(input,900,1450,255,180); 
+        digitalStep = map(input,1000,1450,255,180); 
     }
 
     return digitalStep;

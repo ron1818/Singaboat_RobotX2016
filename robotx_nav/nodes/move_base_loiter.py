@@ -203,8 +203,8 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=False, mode=1)
-        loiter_test.respawn(target=[-15, 15, 0], polygon=5, is_ccw=True)
+        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=True, mode=1)
+        loiter_test.respawn(target=[10, 0, 0], polygon=6, radius=5, is_ccw=True)
 
 
     except rospy.ROSInterruptException:
