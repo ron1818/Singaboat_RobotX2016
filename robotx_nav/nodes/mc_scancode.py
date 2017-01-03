@@ -18,9 +18,10 @@ import random
 from geometry_msgs.msg import Point, Pose
 from visualization_msgs.msg import MarkerArray, Marker
 from move_base_loiter import Loiter
-from tf.transformations import euler_from_quaternion
+from move_base_Aiming import Aiming
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from nav_msgs.msg import Odometry
-from std_msgs.msg import String
+from std_msgs.msg import Int8
 import planner_utils
 
 
@@ -29,12 +30,12 @@ class MCScanTheCode(object):
         # print("starting task 4")
         rospy.init_node(nodename, anonymous=False)
         self.rate = rospy.get_param("~rate", 1)
-        self.loiter = Loiter("loiter", is_newnode=False, target=None, mode=2, is_relative=True)
+        self.aiming = Aiming("aiming", is_newnode=False, target=None, radius=3, duration=100, angle_tolerance=5*math.pi/180.0, box=[0,0,0])
 
         self.planner()
 
-    def planner(self):
-        self.loiter.respawn(target=[5, 0, 0], polygon=6, radius=3)
+    def planner(self, target=[-32, 26, 0], box=[-33,27,0], duration=100 ):
+        self.loiter.respawn(target=target, box=box, duration=duration)
 
         color = ["red", "red", "red"]
         for i in range(3):

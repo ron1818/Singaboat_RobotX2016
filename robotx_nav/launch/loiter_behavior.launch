@@ -8,7 +8,7 @@
     <arg name="iswamv" default="false" />  
     <arg name="isfake" default="false" />
     <arg name="cmd_vel_topic" default="cmd_vel" />
-    <arg name="target_x" default="10" />
+    <arg name="target_x" default="30" />
     <arg name="target_y" default="0" /> 
     <!-- if relative: 0: starboard, 1.57: bow, 3.14: port, -1.57: transom -->
 

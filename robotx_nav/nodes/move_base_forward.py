@@ -41,8 +41,8 @@ class Forward(MoveBaseUtil):
         else:  # must be updated in the self.respawn
             self.forward["target"] = Point(0, 0, 0)
 
-        self.forward["mode"] = rospy.get_param("~mode", 0)
-        self.forward["mode_param"] = rospy.get_param("~mode_param", 1)
+        self.forward["mode"] = rospy.get_param("~mode", 1)
+        self.forward["mode_param"] = rospy.get_param("~mode_param", 3)
         self.forward["waypoint_separation"] = rospy.get_param("~waypoint_separation", waypoint_separation)
         self.forward["is_relative"] = rospy.get_param("~is_relative", is_relative)
 

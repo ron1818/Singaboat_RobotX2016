@@ -30,12 +30,12 @@ class Cmd_Vel_Repub(object):
     goal_x, goal_y, goal_yaw = 0, 0, 0
 
     linear_threshold=5.0
-    linear_velocity_threshold=0.5
-    angular_velocity_threshold=0.3
+    linear_velocity_threshold=2
+    angular_velocity_threshold=1.5
 
     def __init__(self):
         rospy.init_node('cmd_vel_repub', anonymous=True)
-        r = rospy.Rate(10)
+        r = rospy.Rate(2)
         rospy.Subscriber("cmd_vel_raw", Twist, callback=self.cmd_vel_callback, queue_size=10)
         rospy.Subscriber("imu/data", Imu, callback=self.imu_callback, queue_size=10)
         rospy.Subscriber("odom", Odometry, callback=self.odom_callback, queue_size=10)
@@ -49,16 +49,16 @@ class Cmd_Vel_Repub(object):
 
         #initialise pid variables
         #linear
-        self.Integrator_max_linear=500
-        self.Integrator_min_linear=-500
+        self.Integrator_max_linear=200
+        self.Integrator_min_linear=-200
 
         self.set_point_linear=0.0 #desired value,
         self.error_linear=0.0
         self.Derivator_linear=0.0
         self.Integrator_linear=0.0
         #angular
-        self.Integrator_max_angular=500
-        self.Integrator_min_angular=-500
+        self.Integrator_max_angular=200
+        self.Integrator_min_angular=-200
 
         self.set_point_angular=0.0
         self.error_angular=0.0
@@ -70,7 +70,7 @@ class Cmd_Vel_Repub(object):
         while not rospy.is_shutdown():
 
             pid_cmd_vel_msg.linear.x = self.pid_linear()
-            pid_cmd_vel_msg.angular.z= self.pid_angular()
+            pid_cmd_vel_msg.angular.z= -self.pid_angular()
 
             cmd_vel_repub.publish(pid_cmd_vel_msg)
             r.sleep()
@@ -220,6 +220,17 @@ class Cmd_Vel_Repub(object):
         z = msg.goal.target_pose.pose.orientation.z
         w = msg.goal.target_pose.pose.orientation.w
         _, _, self.goal_yaw = euler_from_quaternion((x, y, z, w))
+
+        self.set_point_linear=0.0 #desired value,
+        self.error_linear=0.0
+        self.Derivator_linear=0.0
+        self.Integrator_linear=0.0
+
+        self.set_point_angular=0.0
+        self.error_angular=0.0
+        self.Derivator_angular=0.0
+        self.Integrator_angular=0.0
+
 
 
 if __name__ == '__main__':

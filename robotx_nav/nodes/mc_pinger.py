@@ -50,11 +50,11 @@ class Pinger(object):
 
         target=[self.x0+self.d*math.cos(self.yaw0), self.y0+self.d*math.sin(self.yaw0), self.yaw0]
         black_buoy=[self.x0+self.k*math.cos(self.yaw0), self.y0+self.k*math.sin(self.yaw0), self.yaw0]
-        self.moveto_obj.respawn(target, )
+        self.moveto_obj.respawn(target)
 
         #loiter around station until symbol's face seen
 
-        self.loiter_obj.respawn(black_buoy, 5, self.loiter_radius, )
+        self.loiter_obj.respawn(black_buoy, 5, self.loiter_radius)
 
 
         self.moveto_obj.respawn(init_position, )

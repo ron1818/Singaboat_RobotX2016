@@ -1,11 +1,11 @@
-# import the necessary packages
+/# import the necessary packages
 import numpy as np
 import cv2
 import inspect, os
 
 class Masking(object):
     """ detect object based on shape and color,
-    for Robotx challenge"""
+    for Robotx challenge"""ca
 
     MIN_MATCH_COUNT = 3
     K = 2

@@ -4,7 +4,7 @@ import rospy
 from sensor_msgs.msg import Image, RegionOfInterest
 
 rospy.init_node("fake_led_seq")
-pub = rospy.Publisher("led_sequence_roi", RegionOfInterest, queue_size =5)
+pub = rospy.Publisher("/fixed_cam/led_sequence_roi", RegionOfInterest, queue_size =5)
 while not rospy.is_shutdown():
     msg = RegionOfInterest()
     msg.x_offset = 300

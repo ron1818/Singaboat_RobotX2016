@@ -22,6 +22,7 @@ import tf
 class Docking(object):
     """ find coordinate of totem for task1 """
     docker_list, first_dock_list, second_dock_list, facing_list = list(), list(), list(), list()
+    MIN_LENS = 3 # actually 21
     MAX_LENS = 20 # actually 21
     map_dim = [[0, 40], [0, 40]]
     docker_center, first_dock_center, second_dock_center = list(), list(), list()
@@ -30,7 +31,7 @@ class Docking(object):
     x0, y0, yaw0 = 0, 0, 0
     initial_position = list()
 
-    def __init__(self, nodename="docking_planner", assigned=[[0,0], [1,1]]):
+    def __init__(self, nodename="docking_planner", assigned=[[2,0], [2,1]]):
         rospy.init_node(nodename)
         rospy.on_shutdown(self.shutdown)
 
@@ -166,7 +167,7 @@ class Docking(object):
         """ use ocsvm to find the position of 1st, and 2nd docking point,
         average out the yaw to get the facing """
 
-        if len(self.first_dock_list) > self.MAX_LENS and len(self.second_dock_list) > self.MAX_LENS:
+        if len(self.first_dock_list) > self.MIN_LENS and len(self.second_dock_list) > self.MIN_LENS:
             # determine the centers
             self.first_dock_center = self.one_class_svm(self.first_dock_list)
             self.second_dock_center = self.one_class_svm(self.second_dock_list)

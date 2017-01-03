@@ -96,6 +96,7 @@ generate_messages(
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
   cfg/detection.cfg
+  #cfg/shape.cfg
   cfg/symbol.cfg
 )
 
@@ -189,6 +190,7 @@ add_dependencies(subscriber ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTE
 add_dependencies(detection_roi ${PROJECT_NAME}_gencfg)
 add_dependencies(zed_detection ${PROJECT_NAME}_gencfg)
 add_dependencies(detection_markerarray ${PROJECT_NAME}_gencfg)
+#add_dependencies(LED_screen_detection ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(robotx_vision_node

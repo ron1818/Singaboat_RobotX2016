@@ -24,7 +24,9 @@ class Docking(object):
 
 	def __init__(self, shape_type):
 		print("starting docking task 3")
-		rospy.init_node('task_3', anonymous=True)
+		rospy.init_node('task_3', anonymous=False)
+		self.shape_type=shape_type
+		rospy.wait_for_message("/filtered_marker_array", MarkerArray)
 		rospy.Subscriber("/filtered_marker_array", MarkerArray, self.marker_callback, queue_size = 50)
 		#rospy.Subscriber("/dock", MarkerArray, self.marker_callback, queue_size = 50)
 		self.base_frame = rospy.get_param("~base_frame", "base_link")
@@ -42,7 +44,7 @@ class Docking(object):
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
 		self.reverse_obj= Reversing("reverse", is_newnode=False, mode="timed", speed=-2, duration=15, distance=5)
 
-		self.shape_type=shape_type
+
 
 
 		#for i in range(len(shape_type)):
@@ -82,12 +84,14 @@ class Docking(object):
 
 		for i in range(len(msg.markers)):
 			# get current shape's position
-			if msg.markers[i].type == self.shape_type[self.current_shape]: #check if shape is what we want
-				theta=math.atan2(msg.markers[i].pose.position.x-self.x0, msg.markers[i].pose.position.y-self.y0)
-				self.shape_position[self.current_shape]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, theta]
-				print(self.shape_position)
-			else:
-				pass
+                        print self.shape_type
+                        try:
+                            if msg.markers[i].type == self.shape_type[self.current_shape]: #check if shape is what we want
+                                    theta=math.atan2(msg.markers[i].pose.position.x-self.x0, msg.markers[i].pose.position.y-self.y0)
+                                    self.shape_position[self.current_shape]=[msg.markers[i].pose.position.x, msg.markers[i].pose.position.y, theta]
+                                    print(self.shape_position)
+                        except:
+                            pass
 
 
 	def euclid_distance(self, target1, target2):
@@ -116,6 +120,6 @@ class Docking(object):
 
 if __name__ == '__main__':
 	try:
-		docking=Docking([0, 2])
+		docking=Docking([2, 1])
 	except rospy.ROSInterruptException:
 		rospy.loginfo("Task 3 Finished")

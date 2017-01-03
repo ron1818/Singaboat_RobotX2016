@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <launch>
     <arg name="video_device" default="/dev/video0" />
-    <arg name="namespace" default="port" />
-    <arg name="camera_frame_id" default="port/camera_link" />
+    <arg name="namespace" default="fixed_cam" />
+    <arg name="camera_frame_id" default="camera_link" />
     <arg name="camera_info" default="camera_info" />
     <arg name="camera_image_raw" default="image_raw" />
     <arg name="camera_model" default="logitech_c170_port" />

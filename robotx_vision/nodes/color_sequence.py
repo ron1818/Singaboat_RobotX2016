@@ -54,13 +54,13 @@ class ColorSequence(ROS2OpenCV2):
         ROS2OpenCV2.__init__(self, node_name, debug)
         self.sequence_pub = rospy.Publisher("color_sequence", Vector3, queue_size=10)
         # self.odom_received = False
-        # rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)
+        # rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=50)creen
         # while not self.odom_received:
         #     pass
 
         # print "waiting for roi"
-        rospy.wait_for_message("led_sequence_roi", RegionOfInterest)
-        rospy.Subscriber("led_sequence_roi", RegionOfInterest, self.roi_callback, queue_size=50)
+        # rospy.wait_for_message("color_sequence_roi", RegionOfInterest)
+        # rospy.Subscriber("color_sequence_roi", RegionOfInterest, self.roi_callback, queue_size=50)
         # print "roi received"
 
         self.node_name = node_name
@@ -70,6 +70,9 @@ class ColorSequence(ROS2OpenCV2):
         self.smin = rospy.get_param("~smin", 85)
         self.vmin = rospy.get_param("~vmin", 50)
         self.vmax = rospy.get_param("~vmax", 254)
+        self.gmin = 100
+        self.gmax = 180
+        self.kernel = 40
         self.threshold = rospy.get_param("~threshold", 50)
 
 
@@ -85,11 +88,17 @@ class ColorSequence(ROS2OpenCV2):
             cv.MoveWindow("Histogram", 300, 50)
             cv.NamedWindow("Parameters", 0)
             cv.MoveWindow("Parameters", 700, 50)
-            cv.NamedWindow("Backproject", 0)
-            cv.MoveWindow("Backproject", 700, 325)
+            cv.NamedWindow("gray", 0)
+            cv.MoveWindow("gray", 700, 325)
+            # cv.NamedWindow("Backproject", 0)
+            # cv.MoveWindow("Backproject", 700, 325)
             # cv.NamedWindow("Tracked_obj", 0)
             # cv.MoveWindow("Tracked_obj", 700, 900)
 
+            cv.CreateTrackbar("Min Value", "gray", self.gmin, 255, self.set_gmin)
+            cv.CreateTrackbar("Max Value", "gray", self.gmax, 255, self.set_gmax)
+            cv.CreateTrackbar("Morp kernel", "gray", self.kernel, 100, self.set_kernel)
+            cv.CreateTrackbar("Threshold", "Parameters", self.threshold, 255, self.set_threshold)
             # Create the slider controls for saturation, value and threshold
             cv.CreateTrackbar("Saturation", "Parameters", self.smin, 255, self.set_smin)
             cv.CreateTrackbar("Min Value", "Parameters", self.vmin, 255, self.set_vmin)
@@ -104,6 +113,15 @@ class ColorSequence(ROS2OpenCV2):
     # These are the callbacks for the slider controls
     def set_smin(self, pos):
         self.smin = pos
+
+    def set_kernel(self, pos):
+        self.kernel = pos
+
+    def set_gmin(self, pos):
+        self.gmin = pos
+
+    def set_gmax(self, pos):
+       self.gmax = pos
 
     def set_vmin(self, pos):
         self.vmin = pos
@@ -122,81 +140,89 @@ class ColorSequence(ROS2OpenCV2):
     #             cv2.inRange(hsv, self.lower_yellow, self.upper_yellow)
     #     return mask
 
-    # def depth_masking(self):
-    #     self.depth_array = np.array(self.depth_image, dtype=np.float32)
-    #     # self.depth_image
-    #     depth_mask = np.zeros((self.frame_height, self.frame_width))
+    def led_sequence_masking(self, frame):
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
-    #     for x in range(self.frame_height):
-    #         for y in range(self.frame_width):
-    #             try:
-    #                 # Get a depth value in meters
-    #                 z = self.depth_array[y, x]
+        # get the white regions out
+        ret, mask_white = cv2.threshold(gray, self.gmin, self.gmax, cv2.THRESH_BINARY)
+        mask_white = self.morphological(mask_white)
+        print "get white mask"
+        # cv2.imshow("gray", mask_white)
 
-    #                 # Check for NaN values returned by the camera driver
-    #                 if isnan(z):
-    #                     continue
+        # apply mask to gray
+        gray_white = gray & mask_white
+        cv2.imshow("gray", gray_white)
 
-    #             except:
-    #                 # It seems to work best if we convert exceptions to big value
-    #                 z = 255
-
-    #             if z < self.depth_threshold:
-    #                 depth_mask[y, x] = 255  # white
-    #             else:
-    #                 depth_mask[y, x] = 0
-    #     return depth_mask
-
-    def find_max_contour(self, mask):
-        # find contours
-        contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+        # find contours inside the gray_white
+        contours, hierarchy = cv2.findContours(gray_white, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         # for multiple contours, find the maximum
         area=list()
         approx=list()
         for i, cnt in enumerate(contours):
             approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
             area.append(cv2.contourArea(cnt))
-        # overwrite selection box by automatic color matching
-        return cv2.boundingRect(approx[np.argmax(area)])
 
-    def find_contours(self, mask):
-        # find contours
-        mask = self.morphological(mask)
-        contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        sorted_area = np.sort(area)[::-1]
+        sorted_idx = np.argsort(area)[::-1]
+
+        for i in sorted_idx[0:9]:
+            if len(approx[i]) == 4:  # find square
+                cv2.drawContours(gray_white, contours[i], color=[0,255,0])
+                return cv2.boundingRect(approx[i])
+
+        cv2.imshow("gray", gray_white)
+
+    # def find_max_contour(self, mask):
+    #     # find contours
+    #     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    #     # for multiple contours, find the maximum
+    #     area=list()
+    #     approx=list()
+    #     for i, cnt in enumerate(contours):
+    #         approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
+    #         area.append(cv2.contourArea(cnt))
+    #     # overwrite selection box by automatic color matching
+    #     return cv2.boundingRect(approx[np.argmax(area)])
+
+    # def find_contours(self, mask):
+    #     # find contours
+    #     mask = self.morphological(mask)
+    #     contours, hierarchy = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 
-        # for multiple contours, find the maximum
-        area=list()
-        approx=list()
-        for i, cnt in enumerate(contours):
-            approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
-            area.append(cv2.contourArea(cnt))
-        # overwrite selection box by automatic color matching
+    #     # for multiple contours, find the maximum
+    #     area=list()
+    #     approx=list()
+    #     for i, cnt in enumerate(contours):
+    #         approx.append(cv2.approxPolyDP(cnt, 0.01 * cv2.arcLength(cnt, True), True))
+    #         area.append(cv2.contourArea(cnt))
+    #     # overwrite selection box by automatic color matching
 
-        self.area_ratio = np.sum(area) / (self.frame_width * self.frame_height)
-        if np.max(area) / np.sum(area) > 0.95:
-            # print "one blob"
-            self.number_blob = 1
-        else:
-            # print "more than one blobs"
-            self.number_blob = 2
+    #     self.area_ratio = np.sum(area) / (self.frame_width * self.frame_height)
+    #     if np.max(area) / np.sum(area) > 0.95:
+    #         # print "one blob"
+    #         self.number_blob = 1
+    #     else:
+    #         # print "more than one blobs"
+    #         self.number_blob = 2
 
-        if len(area) > 1:  # more than one blob, find the ratio of the 1st and 2nd largest
-            area_rev_sorted = np.sort(area)[::-1]
-            self.area_ratio = area_rev_sorted[0] / area_rev_sorted[1]
-        else:  # only one blob found
-            self.area_ratio = 0
+    #     if len(area) > 1:  # more than one blob, find the ratio of the 1st and 2nd largest
+    #         area_rev_sorted = np.sort(area)[::-1]
+    #         self.area_ratio = area_rev_sorted[0] / area_rev_sorted[1]
+    #     else:  # only one blob found
+    #         self.area_ratio = 0
 
-        # print self.area_ratio
+    #     # print self.area_ratio
 
     def morphological(self, mask):
         """ tune the mask """
         # morphological openning (remove small objects from the foreground)
         kernel = np.ones((5, 5), np.uint8)
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-        # # morphological closing (fill small objects from the foreground)
-        kernel = np.ones((10, 10), np.uint8)
+        # morphological closing (fill small objects from the foreground)
+        kernel = np.ones((self.kernel, self.kernel), np.uint8)
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
         return mask
@@ -206,7 +232,10 @@ class ColorSequence(ROS2OpenCV2):
 
         try:
             # First blur the image
-            frame = cv2.blur(cv_image, (5, 5))
+            # full_frame = cv2.bilateralFilter(cv_image, 11, 17, 17)
+            full_frame = cv2.blur(cv_image, (5, 5))
+            # downsize
+            frame = cv2.pyrDown(full_frame)
 
             # Convert from RGB to HSV space
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -220,7 +249,17 @@ class ColorSequence(ROS2OpenCV2):
                 # edge_roi = self.edge_masking()
                 # print "edge mask", edge_mask
                 # create bounding box from the maximum mask
-                self.selection = [self.roi_x_offset, self.roi_y_offset, self.roi_width, self.roi_height]  # in x y w h
+                # gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # ret, mask_white = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+                # mask_white = self.morphological(mask_white)
+                # print "get white mask"
+                # cv2.imshow("gray", gray)
+
+                # apply mask to gray
+                # gray_white = gray & mask_white
+                self.selection = self.led_sequence_masking(frame)
+                # self.selection = [self.roi_x_offset, self.roi_y_offset, self.roi_width, self.roi_height]  # in x y w h
+                # self.selection = [300, 220, 40, 40]  # in x y w h
                 # print "selection", self.selection
                 self.detect_box = self.selection
                 self.track_box = None
@@ -237,7 +276,10 @@ class ColorSequence(ROS2OpenCV2):
                 self.hist = cv2.calcHist( [hsv_roi], [0], mask_roi, [16], [0, 180] )
                 cv2.normalize(self.hist, self.hist, 0, 255, cv2.NORM_MINMAX)
                 self.hist = self.hist.reshape(-1)
-                self.hist_prob = np.argmax(self.hist)
+                if np.sum(self.hist) < 50:  # black or white
+                    self.hist_prob = -1
+                else:  # color
+                    self.hist_prob = np.argmax(self.hist)
                 # print self.hist_prob
                 self.show_hist()
 
@@ -404,7 +446,7 @@ class ColorSequence(ROS2OpenCV2):
                     cv2.rectangle(self.display_image, (pt1_x, pt1_y), (pt1_x + w, pt1_y + h), cv.RGB(50, 255, 50), self.feature_size, 8, 0)
 
         # Publish the ROI
-        self.publish_roi()
+        # self.publish_roi()
         self.publish_sequence()
 
         # Compute the time for this loop and estimate CPS as a running average
@@ -464,6 +506,7 @@ class ColorSequence(ROS2OpenCV2):
         if len(self.hist_list) > self.MAX_LEN:
             self.hist_list.pop(0)
         try:
+            print self.hist_prob
             self.hist_list.append([self.counter, self.hist_prob])
         except:
             pass
@@ -471,17 +514,17 @@ class ColorSequence(ROS2OpenCV2):
         self.counter += 1
         # find distinct hist_prob
         try:
-            kmeans = KMeans(n_clusters=3)
+            kmeans = KMeans(n_clusters=5)
             kmeans.fit(np.array(self.hist_list))
             color_sequence = kmeans.cluster_centers_
             order = np.argsort(color_sequence[:,0])[::-1]
             ordered_sequence = color_sequence[order,1]
-            # print "ordered seq", ordered_sequence
-            color_seq = ["", "", ""]
-            c = 0
-            for i in ordered_sequence:
+            print "ordered seq", ordered_sequence
+            color_seq = ["", "", "", "", ""]
+            for c, i in enumerate(ordered_sequence):
+                print c
                 print i
-                if i< 1 or i > 14:
+                if 0 < i < 1 or i > 14:
                     color_seq[c] = "red"
                 elif 7 < i < 12:
                     color_seq[c] = "blue"
@@ -489,28 +532,55 @@ class ColorSequence(ROS2OpenCV2):
                     color_seq[c] = "yellow"
                 elif 3 < i < 7:
                     color_seq[c] = "green"
-                c += 1
+                elif i < 0:
+                    color_seq[c] = "black"
+                print color_seq[c]
 
             print "color_seq", color_seq
-            a = Vector3()
-            a.x = ordered_sequence[0]
-            a.y = ordered_sequence[1]
-            a.z = ordered_sequence[2]
-            self.sequence_pub.publish(a)
-            rospy.set_param("/gui/color1", color_seq[0])
-            rospy.set_param("/gui/color2", color_seq[1])
-            rospy.set_param("/gui/color3", color_seq[2])
+            # if only one black in the clusters > 3, the sequence is before the black
+            if color_seq[0] == "black":
+                a = Vector3()
+                a.x = ordered_sequence[1]
+                a.y = ordered_sequence[2]
+                a.z = ordered_sequence[3]
+                rospy.set_param("/gui/color1", color_seq[1])
+                rospy.set_param("/gui/color2", color_seq[2])
+                rospy.set_param("/gui/color3", color_seq[3])
+            elif color_seq[1] == "black":
+                a = Vector3()
+                a.x = ordered_sequence[2]
+                a.y = ordered_sequence[3]
+                a.z = ordered_sequence[4]
+                rospy.set_param("/gui/color1", color_seq[2])
+                rospy.set_param("/gui/color2", color_seq[3])
+                rospy.set_param("/gui/color3", color_seq[4])
+            elif color_seq[2] == "black":
+                a = Vector3()
+                a.x = ordered_sequence[2]
+                a.y = ordered_sequence[3]
+                a.z = ordered_sequence[4]
+                self.sequence_pub.publish(a)
+                rospy.set_param("/gui/color1", color_seq[2])
+                rospy.set_param("/gui/color2", color_seq[3])
+                rospy.set_param("/gui/color3", color_seq[4])
 
 
+
+            print "sequence publish success"
+            # if only one black in the clusters < 3, the sequence is after the black
+            # if two blacks in the clusters, the sequence is inbetween
         except:
             print "sequence publish failed"
 
     def roi_callback(self, msg):
         # print msg.x_offset
-        self.roi_x_offset = msg.x_offset
-        self.roi_y_offset = msg.y_offset
-        self.roi_width = msg.width
-        self.roi_height = msg.height
+        width = msg.width
+        height = msg.height
+
+        self.roi_x_offset = msg.x_offset + width/4
+        self.roi_y_offset = msg.y_offset + height/4
+        self.roi_width = msg.width - width/4
+        self.roi_height = msg.height - height/4
 
 
         # try:

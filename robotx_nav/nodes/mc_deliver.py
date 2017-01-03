@@ -23,7 +23,6 @@ import time
 import numpy as np
 import os
 import tf
-import random
 from sklearn.cluster import KMeans
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Point, Pose, Quaternion
@@ -38,7 +37,6 @@ from std_msgs.msg import Int8
 
 class DetectDeliver(object):
 
-	map_dim = [[0, 40], [0, 40]]
 
 	MAX_DATA=3
 	x0, y0, yaw0= 0, 0, 0
@@ -198,30 +196,6 @@ class DetectDeliver(object):
 			self.shooting_complete=True
 		
 
-	def random_walk(self):
-		""" create random walk points and more favor towards center """
-		x = random.gauss(np.mean(self.map_dim[0]), 0.25 * np.ptp(self.map_dim[0]))
-		y = random.gauss(np.mean(self.map_dim[1]), 0.25 * np.ptp(self.map_dim[1]))
-
-		return self.map_constrain(x, y)
-
-	def map_constrain(self, x, y):
-		""" constrain x and y within map """
-		if x > np.max(self.map_dim[0]):
-			x = np.max(self.map_dim[0])
-		elif x < np.min(self.map_dim[0]):
-			x = np.min(self.map_dim[0])
-		else:
-			x = x
-		if y > np.max(self.map_dim[1]):
-			y = np.max(self.map_dim[1])
-		elif y < np.min(self.map_dim[1]):
-			y = np.min(self.map_dim[1])
-		else:
-			y = y
-
-		return [x, y, 0]
-
 	def symbol_callback(self, msg):
 		if len(msg.markers)>0:
 			if self.symbols_counter>self.MAX_DATA:
@@ -268,8 +242,8 @@ class DetectDeliver(object):
 		while not trans_received:
 			try:
 				(trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
-																base_frame,
-																rospy.Time(0))
+										base_frame,
+										rospy.Time(0))
 				trans_received = True
 				return (Point(*trans), Quaternion(*rot))
 			except (tf.LookupException,
