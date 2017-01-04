@@ -1,18 +1,24 @@
 <launch>
-    <arg name="input_rgb_image" default="rgb/image_rect_color" />
-    <arg name="input_depth_image" default="depth/image_rect_color" />
-    <arg name="roi" default="roi" />
-    <arg name="namespace" default="bow" />
-    <arg name="objectname" default="totem" />
-    <arg name="color_under_detect" default="red" />
-    <node pkg="robotx_vision" name="color_sequence_pub" type="color_sequence.py" output="screen" ns="$(arg namespace)" >
+    <arg name="input_rgb_image" default="image_rect_color" />
+    <arg name="roi" default="LED_screen/roi" />
+    <arg name="namespace" default="fixed_cam" />
+    <arg name="color_sequence_roi" default="LED_screen/roi" />
+    <arg name="debug" default="true" />
+    <node pkg="robotx_vision" name="led_sequence" type="color_sequence.py" output="screen" ns="$(arg namespace)" >
         <remap from="input_rgb_image" to="$(arg input_rgb_image)" />
-        <remap from="input_depth_image" to="$(arg input_depth_image)" />
+        <remap from="color_sequence_roi" to="$(arg roi)" />
         <rosparam>
             smin: 85
             vmin: 50
             vmax: 254
             threshold: 50
         </rosparam>
+    </node>
+
+    <node pkg="robotx_vision" name="LED_screen_detection" type="LED_screen_detection" required="true" output="screen" ns="$(arg namespace)" >
+
+        <param name="subscribed_image_topic" value="image_rect_color"/>
+        <param name="published_topic" value="LED_screen/roi"/>
+        <param name="debug" value="false"/>
     </node>
 </launch>

@@ -1,7 +1,7 @@
 image: blank_map.pgm
 
 resolution: 0.15 # meters/pixel
-origin: [-80, -80, 0] # 2-d pose wrt lower left pixel as (x, y, yaw(ccw))
+origin: [-160, -20, 0] # 2-d pose wrt lower left pixel as (x, y, yaw(ccw))
 
 
 occupied_thresh: 0.65 # Pixels with occupancy probability greater than this threshold are considered completely occupied.

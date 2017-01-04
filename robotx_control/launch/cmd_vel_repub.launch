@@ -1,7 +1,5 @@
 <launch>	
 
-    <node pkg="robotx_control" type="cmd_vel_repub" name="cmd_vel_repub" />
+    <node pkg="robotx_control" type="cmd_vel_repub.py" name="cmd_vel_repub" />
     
-    <node pkg="rqt_reconfigure" type="rqt_reconfigure" name="dynamic_reconfigure"/>
-
 </launch>

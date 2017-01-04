@@ -6,11 +6,25 @@ import random
 import time
 import itertools
 
+def map_rotation(map_corners, offset, theta):
+    rotated_point = [[0,0], [0,0], [0,0], [0,0]]
+    count = 0
+    for p in map_corners:
+        op[0] = p[0] + offset[0]
+        op[1] = p[1] + offset[1]
+        rotated_op[count] = [math.cos(theta) * op[0] - math.sin(theta) * op[1],
+                         math.sin(theta) * op[0] + math.cos(theta) * op[1]]
+
+        count += 1
+    return rotated_point
 
 
-def random_walk(map_corners, style, *args, **kwargs):
+def random_walk(map_corners, offset, style, *args, **kwargs):
     """ create random walk points and avoid valid centers """
     target = None
+    map_corners = np.array(map_corners)
+    offset = np.array([offset])
+    nap_corners += offset
     map_center = [np.mean(map_corners[:,0]), np.mean(map_corners[:,1])]
 
     if style == "unif":
@@ -20,14 +34,10 @@ def random_walk(map_corners, style, *args, **kwargs):
         x_range = range(np.min(map_corners[:,0]), np.max(map_corners[:,0]), 5)
         y_range = range(np.min(map_corners[:,1]), np.max(map_corners[:,1]), 5)
         grid = list(itertools.product(x_range, y_range))
-        print grid
         # filter out those who is before the gate line
         while not target:
             candidate_target = random.choice(grid)
-            print candidate_target
             for center in centers:  # too close to the center
-                print center
-                print center[0:2]
                 if center != []:
                     if distance(candidate_target, center[0:2]) < threshold:
                         target = None
@@ -49,7 +59,7 @@ def random_walk(map_corners, style, *args, **kwargs):
 
     elif style == "near_line":  # gate data partially known, need to go around the line area
         delta_y = kwargs["delta"]
-        x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
+        x_range = range(np.min(self.map_corners[:,0]), np.max(self.map_corners[:,1]), 5)
         y_estimate = [self.roughline.predict(x) - delta_y * self.before_roughline_sign for x in x_range]
         choices_idx = range(len(x_range))
         candidate_target_idx = random.choice(choices_idx)

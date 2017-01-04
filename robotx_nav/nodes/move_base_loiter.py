@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 """ movebase loiter
@@ -75,6 +76,7 @@ class Loiter(MoveBaseUtil):
             # heading from boat to center
             self.loiter["heading"] = atan2(self.loiter["target"].y - self.y0, self.loiter["target"].x - self.x0)
 
+
         # create waypoints
         waypoints = self.create_waypoints()
 
@@ -144,7 +146,7 @@ class Loiter(MoveBaseUtil):
 
 
         if self.loiter["mode"] == 2:  # stop and look at the center
-            euler_angles = position_theta
+            euler_angles = atan2(sin(position_theta), cos(position_theta))
         else:  # continuous
             if self.loiter["is_ccw"]:  # counterclockwise
                 euler_angles = [i - 2 * pi / self.loiter["polygon"]
@@ -201,8 +203,8 @@ class Loiter(MoveBaseUtil):
 
 if __name__ == '__main__':
     try:
-        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=False, mode=1)
-        loiter_test.respawn(target=[-15, 15, 0], polygon=5, is_ccw=True)
+        loiter_test = Loiter(nodename="loiter_test", target=None, is_relative=True, mode=1)
+        loiter_test.respawn(target=[10, 0, 0], polygon=6, radius=5, is_ccw=True)
 
 
     except rospy.ROSInterruptException:

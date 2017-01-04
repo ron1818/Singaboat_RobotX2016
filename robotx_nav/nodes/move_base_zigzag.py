@@ -26,7 +26,7 @@ class Zigzag(MoveBaseUtil):
     # initialize boat pose param
     x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, is_newnode=True, quadrant=1, map_length=10, map_width=10, half_period=10, half_amplitude=10, offset=0):
+    def __init__(self, nodename, is_newnode=True, quadrant=0, map_length=40, map_width=40, half_period=5, half_amplitude=10, offset=0, x_offset=10, y_offset=20, theta=pi/4):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
 
@@ -40,14 +40,18 @@ class Zigzag(MoveBaseUtil):
         self.map_half_period = half_period
         self.map_half_amplitude = half_amplitude
         self.map_offset = offset
-
+	self.x_offset=x_offset
+	self.y_offset=y_offset
+	self.theta=theta
 
 	if quadrant is not None:
-	    self.respawn()
+	    self.respawn(self.quadrant, self.map_half_period, self.map_half_amplitude)
 
 
-    def respawn(self, quadrant)
-	self.quadrant=quadrant
+    def respawn(self, quadrant, half_period, half_amplitude):
+    	self.quadrant=quadrant
+        self.map_half_period=half_period
+        self.map_half_amplitude=half_amplitude
 
         # assumption point 0,0 is the left-bottom of map
         if self.quadrant == 1:
@@ -112,32 +116,56 @@ class Zigzag(MoveBaseUtil):
         # Create a list to hold the target points
         vertex = list()
         quaternions = list()
+	
+	x=init_x + offset
+	y=init_y + mid_y
+	x_t=x*cos(self.theta)-y*sin(self.theta)+self.x_offset
+	y_t=x*sin(self.theta)+y*cos(self.theta)+self.y_offset
 
-        vertex.append(Point(init_x + offset, init_y + mid_y, 0))
+        vertex.append(Point(x_t, y_t, 0))
         q_angle = quaternion_from_euler(0, 0, -0.5 * pi)
         q = Quaternion(*q_angle)
         quaternions.append(q)
 
         for i in range(0, N):
-            vertex.append(Point(init_x + offset + i * hp + (hp / 2),
-                          init_y + mid_y + an * ((-1) ** i), 0))
+	    x=init_x + offset + i * hp + (hp / 2)
+	    y=init_y + mid_y + an * ((-1) ** i)
+            x_t=x*cos(self.theta)-y*sin(self.theta)+self.x_offset
+	    y_t=x*sin(self.theta)+y*cos(self.theta)+self.y_offset
+
+            vertex.append(Point(x_t, y_t, 0))
             q_angle = quaternion_from_euler(0, 0, 0)
             q = Quaternion(*q_angle)
             quaternions.append(q)
+	    
+            x=init_x + offset + (i + 1) * hp
+	    y=init_y + mid_y
+            x_t=x*cos(self.theta)-y*sin(self.theta)+self.x_offset
+	    y_t=x*sin(self.theta)+y*cos(self.theta)+self.y_offset
 
-            vertex.append(Point(init_x + offset + (i + 1) * hp, init_y + mid_y, 0))
+            vertex.append(Point(x_t, y_t, 0))
             q_angle = quaternion_from_euler(0, 0, -0.5 * pi * (-1) ** i)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
         for i in range(0, N):
-            vertex.append(Point(init_x + offset + (N - i) * hp - (hp / 2),
-                          init_y + mid_y - an * ((-1) ** i), 0))
+
+	    x=init_x + offset + (N - i) * hp - (hp / 2)
+	    y=init_y + mid_y - an * ((-1) ** i)
+            x_t=x*cos(self.theta)-y*sin(self.theta)+self.x_offset
+	    y_t=x*sin(self.theta)+y*cos(self.theta)+self.y_offset
+
+            vertex.append(Point(x_t, y_t, 0))
             q_angle = quaternion_from_euler(0, 0, -pi)
             q = Quaternion(*q_angle)
             quaternions.append(q)
 
-            vertex.append(Point(init_x + offset + (N - i - 1) * hp, init_y + mid_y, 0))
+	    x=init_x + offset + (N - i - 1) * hp
+	    y=init_y + mid_y
+            x_t=x*cos(self.theta)-y*sin(self.theta)+self.x_offset
+	    y_t=x*sin(self.theta)+y*cos(self.theta)+self.y_offset
+
+            vertex.append(Point(x_t, y_t, 0))
             q_angle = quaternion_from_euler(0, 0, 0.5 * pi * (-1) ** i)
             q = Quaternion(*q_angle)
             quaternions.append(q)

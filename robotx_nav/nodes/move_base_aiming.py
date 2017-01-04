@@ -19,25 +19,33 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
-
+from dynamic_reconfigure.server import Server
+from robotx_nav.cfg import AimConfig
 
 class Aiming(MoveBaseUtil):
     # initialize boat pose param
     # x0, y0, z0, roll0, pitch0, yaw0 = 0, 0, 0, 0, 0, 0
 
-    def __init__(self, nodename, is_newnode=True, target=None, radius=2, duration=200, angle_tolerance=1*pi/180.0, box=[5,0,0]):
+    def __init__(self, nodename, is_newnode=True, target=None, radius=2, duration=0, angle_tolerance=10*pi/180.0, box=[0,0,0]):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         if target is not None:  # shooting range's position
-            self.target = Twist(Point(rospy.get_param("~station_x", target[0]), rospy.get_param("~station_y", target[1]), 0),
-                                    Point(0, 0, rospy.get_param("~station_yaw", target[2])))
+            self.target = Twist(Point(rospy.get_param("~station_x", target[0]), rospy.get_param("~station_y", target[1]), 0), Point(0, 0, rospy.get_param("~station_yaw", target[2])))
         else:  # use boat's current position as the shooting range's position
             self.target = Twist(Point(self.x0, self.y0, 0), Point(0, 0, self.yaw0))
-        self.radius = rospy.get_param("~radius", radius)
-        self.duration = rospy.get_param("~duration", duration)
-        self.angle_tolerance = rospy.get_param("~angle_tolerance", angle_tolerance)
-        self.box = Point(rospy.get_param("~box_x", box[0]), rospy.get_param("~box_y", box[1]), 0)
+        self.radius = radius
+        self.duration = duration
+        self.angle_tolerance = angle_tolerance
+        self.box = box
+	self.srv = Server(AimConfig, self.dynamic_callback)
+        if self.target is not None: # onetime job
+            self.respawn(self.duration, self.box, self.target)
 
+    def respawn(self, duration, box, target):
+        self.box=box
+        self.duration=duration
+        self.target=Twist(Point(target[0], target[1], 0), Point(0, 0, target[2]))
+ 
         q_angle = quaternion_from_euler(0, 0, self.target.angular.z)
         angle = Quaternion(*q_angle)
         station = Pose(self.target.linear, angle)
@@ -54,18 +62,17 @@ class Aiming(MoveBaseUtil):
         while (rospy.get_time() - start_time < self.duration) or not self.duration and not rospy.is_shutdown():
             if (sqrt((self.target.linear.x - self.x0)**2 + (self.target.linear.y - self.y0) ** 2) < self.radius):
                 rospy.loginfo("inside inner radius, corrects orientation to face box")
-                theta = atan2(self.box.y -self.y0, self.box.x - self.x0)
+                theta = atan2(self.box[1] -self.y0, self.box[0] - self.x0)
                 if (abs(atan2(sin(theta - self.yaw0), cos(theta - self.yaw0))) > self.angle_tolerance):
                     print "correcting", theta , self.yaw0
 
-                    aim_target=self.aim_to_box([self.box.x, self.box.y], 30) #recheck condition every 30s
+                    aim_target=self.aim_to_box([self.box[0], self.box[1]], 30) #recheck condition every 30s
 
                     rospy.sleep(1)
 
             else:
                 rospy.loginfo("outside radius")
                 # Intialize the waypoint goal
-                aim_target.shutdown()
 
                 goal = MoveBaseGoal()
 
@@ -102,16 +109,16 @@ class Aiming(MoveBaseUtil):
 
         while not (rospy.get_time() - start_time) < duration:
 
-            pid_cmd_vel_msg.angular.z= self.pid_angular(target)
+            pid_cmd_vel_msg.angular.z= -self.pid_angular(target)
 
             cmd_vel_pub.publish(pid_cmd_vel_msg)
             time.sleep(0.2)
 
 
     def pid_angular(self, target):
-    	#angular PID
+        #angular PID
         angle_error=math.atan2(target[1]-self.y0, target[0]-self.x0)-self.yaw0
-
+	print angle_error
         self.error_angular=atan2(sin(angle_error), cos(angle_error)) #trick to remap to -pi -
         self.P_value_angular=self.angular_kp*self.error_angular
 
@@ -122,33 +129,33 @@ class Aiming(MoveBaseUtil):
         self.Integrator_angular=self.Integrator_angular +self.error_angular
 
         if self.Integrator_angular > self.Integrator_max_angular:
-        	self.Integrator_angular=self.Integrator_max_angular
+            self.Integrator_angular=self.Integrator_max_angular
         elif self.Integrator_angular < self.Integrator_min_angular:
-        	self.Integrator_angular=self.Integrator_min_angular
+            self.Integrator_angular=self.Integrator_min_angular
 
         self.I_value_angular=self.Integrator_angular*self.angular_ki
 
 
-    	pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular
+        pid_angular_z=self.P_value_angular + self.I_value_angular + self.D_value_angular
 
         if pid_angular_z>self.angular_velocity_threshold:
-        	pid_angular_z=self.angular_velocity_threshold
+            pid_angular_z=self.angular_velocity_threshold
         elif pid_angular_z<-self.angular_velocity_threshold:
-        	pid_angular_z=-self.angular_velocity_threshold
+            pid_angular_z=-self.angular_velocity_threshold
 
         return (pid_angular_z)
 
 
     def dynamic_callback(self, config, level):
         rospy.loginfo("""Reconfigure Request: \
-         \
-        {aim_angular_kp}, {aim_angular_ki}, {aim_angular_kd}, {aim_angular_velocity_threshold}  """.format(**config))
+         \ 
+         {aim_angular_kp}, {aim_angular_ki}, {aim_angular_kd}, {aim_angular_velocity_threshold}  """.format(**config))
 
         self.angular_kp = config["aim_angular_kp"]
         self.angular_ki = config["aim_angular_ki"]
         self.angular_kd = config["aim_angular_kd"]
 
-    	self.angular_velocity_threshold=config["aim_angular_velocity_threshold"]
+        self.angular_velocity_threshold=config["aim_angular_velocity_threshold"]
         return config
 
 

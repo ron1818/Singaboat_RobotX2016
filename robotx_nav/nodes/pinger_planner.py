@@ -4,7 +4,7 @@ import itertools
 import rospy
 from visualization_msgs.msg import MarkerArray, Marker
 from geometry_msgs.msg import Point, Quaternion
-from std_msgs.msg import String, Float64
+from std_msgs.msg import Int8, Float64
 import numpy as np
 import math
 from sklearn.cluster import KMeans, DBSCAN
@@ -13,13 +13,16 @@ from sklearn.linear_model import LinearRegression
 from move_base_loiter import Loiter
 from move_base_waypoint import MoveTo
 from nav_msgs.msg import Odometry
+import tf
+from tf.transformations import quaternion_from_euler, euler_from_quaternion
+import planner_utils
 
 
 class Pinger(object):
     """ find coordinate of totem for task1 """
     red_list, green_list, white_list, black_list = list(), list(), list(), list()
-    MAX_LENS = 20 # actually 21
-    map_dim = [[0, 40], [0, 40]]
+    MIN_LENS = 5 # actually 6
+    MAX_LENS = 50 # actually 21
     pinger_list = list()
     pinger_center = list()
     red_center, green_center, black_center, white_center = list(), list(), list(), list()
@@ -31,6 +34,8 @@ class Pinger(object):
         rospy.on_shutdown(self.shutdown)
 
         self.rate = rospy.get_param("~rate", 1)
+        self.tf_listener = tf.TransformListener()
+        self.map_corners = [[0,0], [40,0], [20,40], [0,20]] #[0,0] relative to base_link, need this offset
 
         self.kmeans = KMeans(n_clusters=2)
         self.ocsvm = svm.OneClassSVM(nu=0.1, kernel="rbf", gamma=0.1)
@@ -39,14 +44,15 @@ class Pinger(object):
 
         # Subscribe to marker array publisher
         self.odom_received = False
-        rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=None)
+        rospy.Subscriber("odometry/filtered/global", Odometry, self.odom_callback, queue_size=10)
         while not self.odom_received:
             pass
-        rospy.Subscriber("gate_totem", MarkerArray, self.markerarray_callback, queue_size=10)
-        rospy.Subscriber("pinger", Float64, self.pinger_callback, queue_size=10)
+        rospy.Subscriber("filtered_marker_array", MarkerArray, self.markerarray_callback, queue_size=10)
+        # rospy.Subscriber("pinger", Float64, self.pinger_callback, queue_size=10)
+        rospy.Subscriber("hydrophone", Int8, self.pinger_callback, queue_size=10)
 
 
-        self.pinger_threshold = 65
+        # self.pinger_threshold = 65
         self.entry_distance = 2
         self.exited = False
         self.gate_totem_find = False
@@ -54,8 +60,8 @@ class Pinger(object):
         self.center_gate = list()  # later need to fill in
         self.entry_gate = list()  # later need to fill in
         self.exit_gate = list()  # later need to fill in
-        self.hold_loiter = False
-        self.hold_mv = False
+        # self.hold_loiter = False
+        # self.hold_mv = False
         # while not self.x0:
         self.initial_position = [self.x0, self.y0]
 
@@ -71,18 +77,23 @@ class Pinger(object):
 
         while not self.gate_totem_find:
             if not self.red_center or not self.green_center or len(self.white_center) < 2:
-                print "a"
-                self.moveto.respawn(self.random_walk("before_line"))
+                print "stay to observe"
+                pass  # stay still
+                # self.moveto.respawn(self.random_walk("before_line"))
             else:
-                print "b"
-                self.moveto.respawn(self.random_walk("near_line"))
+                print "survey"
+                kwargs = {"sigma": 5}
+                target = planner_utils.random_walk(self.map_corners, self.initial_position, "gaussian", **kwargs) + [0]
+                self.moveto.respawn(target)
             r.sleep()
         else:  # find the gate totems
             # # get the gate line, done immediatedly after gate totem find
             print "gate totem find"
             while not self.pinger_find:
                 print "go along line"
-                self.moveto.respawn(self.random_walk("along_line"))
+                kwargs = {"line_points": [self.rwl, self.wwl, self.gwl]}
+                target = planner_utils.random_walk(self.map_corners, self.initial_position, "along_line", **kwargs) + [0]
+                self.moveto.respawn(target)
                 r.sleep()
             else:
                 print "pinger find"
@@ -96,7 +107,8 @@ class Pinger(object):
                 while not self.black_totem_find:
                     # need to random walk after line
                     print "find black"
-                    self.moveto.respawn(self.random_walk("after_line"))
+                    kwargs = {"sigma": 5}
+                    self.moveto.respawn(planner_utils.random_walk(self.map_corners, self.entry_gate[0:1], "gaussian", **kwargs))
                     r.sleep()
                 else:  # find the black totem
                     # loiter the black totem
@@ -112,23 +124,45 @@ class Pinger(object):
                     # exit complete
                     print "complete"
 
+    def get_tf(self, fixed_frame, base_frame):
+        """ transform from base_link to map """
+        trans_received = False
+        while not trans_received:
+            try:
+                (trans, rot) = self.tf_listener.lookupTransform(fixed_frame,
+                                                                base_frame,
+                                                                rospy.Time(0))
+                trans_received = True
+                return (Point(*trans), Quaternion(*rot))
+            except (tf.LookupException,
+                    tf.ConnectivityException,
+                    tf.ExtrapolationException):
+                pass
+
     def odom_callback(self, msg):
         """ call back to subscribe, get odometry data:
         pose and orientation of the current boat,
         suffix 0 is for origin """
-        self.x0 = msg.pose.pose.position.x
-        self.y0 = msg.pose.pose.position.y
+        # self.x0 = msg.pose.pose.position.x
+        # self.y0 = msg.pose.pose.position.y
+        trans, rot = self.get_tf("map", "base_link")
+        self.x0 = trans.x
+        self.y0 = trans.y
+        _, _, self.yaw0 = euler_from_quaternion((rot.x, rot.y, rot.z, rot.w))
         self.odom_received = True
 
     def pinger_callback(self, msg):
         """ get pinger information """
-        if msg.data > self.pinger_threshold
+        # if msg.data > self.pinger_threshold
+        if msg.data == 1:
+            if len(self.pinger_list) >= self.MAX_LENS:
+                self.pinger_list.pop(0)
             self.pinger_list.append([self.x0, self.y0])
 
         self.find_pinger_center()
 
     def find_pinger_center(self):
-        if len(self.pinger_list) >= self.MAX_LENS:
+        if len(self.pinger_list) >= self.MIN_LENS:
             self.pinger_center = self.one_class_svm(self.pinger_list)
             self.pinger_find = True
         else:
@@ -163,16 +197,20 @@ class Pinger(object):
     def find_gateline(self):
         # define regions for before, after and along the line
         # find the center
-        if len(self.red_list) >= self.MAX_LENS:
+        if len(self.red_list) >= self.MIN_LENS:
             self.red_center = self.one_class_svm(self.red_list)
-        if len(self.green_list) >= self.MAX_LENS:
+            print "red center", self.red_center
+        if len(self.green_list) >= self.MIN_LENS:
             self.green_center = self.one_class_svm(self.green_list)
-        if len(self.black_list) >= self.MAX_LENS:
+            print "green center", self.green_center
+        if len(self.black_list) >= self.MIN_LENS:
             self.black_center = self.one_class_svm(self.black_list)
+            print "black center", self.black_center
             self.black_totem_find = True  # for planner
-        if len(self.white_list) >= 2 * self.MAX_LENS:
+        if len(self.white_list) >= 2 * self.MIN_LENS:
             self.kmeans.fit(self.white_list)
             self.white_center = self.kmeans.cluster_centers_
+            print "white center", self.white_center
 
         # print self.red_center, self.white_center, self.green_center
 
@@ -184,7 +222,8 @@ class Pinger(object):
             self.gateline = LinearRegression()
             # least square to get the gate line
             self.gateline.fit(coord_x.reshape((coord_x.shape[0],1)), coord_y)
-            # k = self.gateline.coef_, b = self.gateline.intercept_
+            k = self.gateline.coef_,
+            b = self.gateline.intercept_
             # find the gate entry points
             # find the before the line sign:
             # "1" is the area where before line
@@ -192,6 +231,7 @@ class Pinger(object):
             self.before_line_sign = np.sign(self.gateline.predict([self.initial_position[0]]) - self.initial_position[1])
             self.find_gate_entry()
             self.gate_totem_find = True
+            print "totem line", k, b
 
         elif self.red_list or self.green_list or self.white_list:  # use currently available data
             coordinates = [[self.x0, self.y0]]
@@ -223,6 +263,7 @@ class Pinger(object):
             self.gwc = [np.mean([self.white_center[1,0], self.green_center[0]]), np.mean([self.white_center[1,1], self.green_center[1]])]
 
         self.wwc = [np.mean([self.white_center[1,0], self.white_center[0,0]]), np.mean([self.white_center[1,1], self.white_center[0,1]])]
+        print "gateline center", self.rwc, self.wwc, self.gwc
 
         self.rwl, self.wwl, self.gwl, self.rwlm, self.wwlm, self.gwlm = self.find_listen_point()
 
@@ -243,6 +284,7 @@ class Pinger(object):
         self.center_gate = [self.rwc, self.wwc, self.gwc][shortest_d] + [0]
         self.entry_gate = [self.rwlm, self.wwlm, self.gwlm][shortest_d] + [0]
         self.exit_gate = [self.rwl, self.wwl, self.gwl][shortest_d] + [0]
+        print "entry gate", self.center_gate, self.entry_gate, self.exit_gate
 
     def find_listen_point(self):
         # find pinger listening point and mirrored point
@@ -290,55 +332,55 @@ class Pinger(object):
         return [np.mean(sv[:,0]), np.mean(sv[:,1])]
         # return (np.median(sv[:,0]), np.median(sv[:,1]))
 
-    def update_hold_moveto(self, hold_mv):
-        self.hold_mv = hold_mv
+    # def update_hold_moveto(self, hold_mv):
+    #     self.hold_mv = hold_mv
 
-    def update_hold_loiter(self, hold_loiter):
-        self.hold_loiter = hold_loiter
+    # def update_hold_loiter(self, hold_loiter):
+    #     self.hold_loiter = hold_loiter
 
-    def random_walk(self, style):
-        """ create random walk points and avoid valid centers """
-        delta_y = 3
-        target = None
-        if style == "before_line":  # this time no gate data is known
-            # do a gaussian distribution with center be the boat's current position and
-            # sigma to be 5
-            target = [random.gauss(self.x0, 5), random.gauss(self.y0, 5)]
-            # while not target:
-            #     if np.min(self.map_dim[0]) < candidate_target[0] < np.max(self.map_dim[0]) and\
-            #         np.min(self.map_dim[1]) < candidate_target[1] < np.max(self.map_dim[0]):
-            #         # it is after the gateline
-            #         target = candidate_target
-            #     else:
-            #         target = None
-        elif style == "near_line":  # gate data partially known, need to go around the line
-            x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
-            y_estimate = [self.roughline.predict(x) - delta_y * self.before_roughline_sign for x in x_range]
-            choices_idx = range(len(x_range))
-            candidate_target_idx = random.choice(choices_idx)
-            while not target:
-                if np.min(self.map_dim[1]) < y_estimate[candidate_target_idx] < np.max(self.map_dim[1]):
-                    # it is after the gateline
-                    target = [x_range(candidate_target_idx), y_estimate(candidate_target_idx)]
-                else:
-                    target = None
+    # def random_walk(self, style):
+    #     """ create random walk points and avoid valid centers """
+    #     delta_y = 3
+    #     target = None
+    #     if style == "before_line":  # this time no gate data is known
+    #         # do a gaussian distribution with center be the boat's current position and
+    #         # sigma to be 5
+    #         target = [random.gauss(self.x0, 5), random.gauss(self.y0, 5)]
+    #         # while not target:
+    #         #     if np.min(self.map_dim[0]) < candidate_target[0] < np.max(self.map_dim[0]) and\
+    #         #         np.min(self.map_dim[1]) < candidate_target[1] < np.max(self.map_dim[0]):
+    #         #         # it is after the gateline
+    #         #         target = candidate_target
+    #         #     else:
+    #         #         target = None
+    #     elif style == "near_line":  # gate data partially known, need to go around the line
+    #         x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
+    #         y_estimate = [self.roughline.predict(x) - delta_y * self.before_roughline_sign for x in x_range]
+    #         choices_idx = range(len(x_range))
+    #         candidate_target_idx = random.choice(choices_idx)
+    #         while not target:
+    #             if np.min(self.map_dim[1]) < y_estimate[candidate_target_idx] < np.max(self.map_dim[1]):
+    #                 # it is after the gateline
+    #                 target = [x_range(candidate_target_idx), y_estimate(candidate_target_idx)]
+    #             else:
+    #                 target = None
 
-        elif style == "along_line":  # gate data known, need to go to the three listener point
-            target = random.choice([self.rwl, self.wwl, self.gwl])
-        elif style == "after_gate":
-            # do a uniform distribution by grid search
-            x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
-            y_range = range(np.min(self.map_dim[1]), np.max(self.map_dim[1]), 5)
-            grid = list(itertools.product(x_range, y_range))
-            # filter out those who is before the gate line
-            while not target:
-                candidate_target = random.choice(grid)
-                if (self.gateline.predict([candidate_target[0]]) - candidate_target[1]) * self.before_line_sign < 0:
-                    # it is after the gateline
-                    target = candidate_target
-                else:
-                    target = None
-        return target + [0]
+    #     elif style == "along_line":  # gate data known, need to go to the three listener point
+    #         target = random.choice([self.rwl, self.wwl, self.gwl])
+    #     elif style == "after_gate":
+    #         # do a uniform distribution by grid search
+    #         x_range = range(np.min(self.map_dim[0]), np.max(self.map_dim[0]), 5)
+    #         y_range = range(np.min(self.map_dim[1]), np.max(self.map_dim[1]), 5)
+    #         grid = list(itertools.product(x_range, y_range))
+    #         # filter out those who is before the gate line
+    #         while not target:
+    #             candidate_target = random.choice(grid)
+    #             if (self.gateline.predict([candidate_target[0]]) - candidate_target[1]) * self.before_line_sign < 0:
+    #                 # it is after the gateline
+    #                 target = candidate_target
+    #             else:
+    #                 target = None
+    #     return target + [0]
 
     def shutdown(self):
         pass

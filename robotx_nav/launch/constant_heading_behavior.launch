@@ -3,11 +3,11 @@
 
     <arg name="waypoint_separation" default="5.0" />
     <arg name="is_relative" default="true" />
-    <arg name="target_x" default="20" />
+    <arg name="target_x" default="40" />
     <arg name="target_y" default="0" />
     <arg name="isfake" default="false" />
     <arg name="isgazebo" default="false" />
-    <arg name="iswamv" default="false" />
+    <arg name="iswamv" default="true" />
     <arg name="ispvc" default="false" />
     <arg name="cmd_vel_topic" default="move_base_cmd_vel" />
     <param name="/use_sim_time" value="$(arg isgazebo)"/>
