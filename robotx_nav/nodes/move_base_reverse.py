@@ -26,7 +26,7 @@ from move_base_util import MoveBaseUtil
 
 class Reversing(MoveBaseUtil):
 
-    def __init__(self, nodename="reverse", is_newnode=True, mode="timed", speed=-1, duration=10, distance=5):
+    def __init__(self, nodename="reverse", is_newnode=True, mode="timed", speed=-2.3, duration=10, distance=5):
         MoveBaseUtil.__init__(self, nodename, is_newnode)
 
         self.reversing ={}

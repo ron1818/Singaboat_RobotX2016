@@ -37,10 +37,9 @@ using namespace ros;
 using namespace cv;
 using namespace std;
 //ROS params
-std::string subscribed_image_topic, subscribed_depth_topic;
+std::string subscribed_image_topic;
 std::string object_shape, object_color;
-std::string published_roi_topic, published_distance_topic;
-std::string published_topic = "filtered_marker_array";
+std::string published_topic = "/filtered_marker_array";
 double far_dist = 20; //in meters
 double near_dist = 0.5;
 bool debug;
@@ -55,11 +54,19 @@ geometry_msgs::Quaternion def_orientation;
 cv_bridge::CvImagePtr cv_ptr, depth_ptr;
 //ROS to-be-published var
 visualization_msgs::MarkerArray object;
+//Dynamic reconfigure parameters
+int min_area = 300;
+std::string show_screen;
+cv::Scalar blue_low_lim, blue_up_lim;
+cv::Scalar green_low_lim, green_up_lim;
+cv::Scalar yellow_low_lim, yellow_up_lim;
+cv::Scalar red_low_lim, red_up_lim, red_low_lim_wrap, red_up_lim_wrap;
+cv::Scalar black_low_lim, black_up_lim;
+cv::Scalar white_low_lim, white_up_lim;
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
-cv::Mat src, hsv, hls, depth_mat;
-cv::Scalar up_lim, low_lim, up_lim_wrap, low_lim_wrap;
+cv::Mat src, hsv, hls;
 cv::Mat lower_hue_range;
 cv::Mat upper_hue_range;
 cv::Mat color;
@@ -67,8 +74,7 @@ cv::Mat str_el = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(4,4));
 cv::Rect rect;
 cv::RotatedRect mr;
 int height, width;
-int min_area = 300;
-double area, r_area, mr_area;
+double area, r_area, mr_area, hull_area;
 double true_width; //real-size width of the object, in meters
 const double eps = 0.15;
 //Functions
@@ -112,105 +118,127 @@ visualization_msgs::Marker object_return()
 
 void object_found()
 {
+     //type:
+  if(object_shape == "triangle")        object_type = 0;
+  else if(object_shape == "cruciform")  object_type = 1;
+  else if(object_shape == "circle")     object_type = 2;
+  else if(object_shape == "totem")      object_type = 3;
+  else if(object_shape == "rectangle")  object_type = 4;
+  else if(object_shape == "pipe")       
+  {
+    object_type = 5;
+    object_color = "white";
+  }
+    //true_width
+  if(object_shape == "triangle")        true_width = 0.8;
+  else if(object_shape == "cruciform")  true_width = 0.8;
+  else if(object_shape == "circle")     true_width = 0.8;
+  else if(object_shape == "totem")      true_width = 0.26;
+  else if(object_shape == "pipe")       true_width = 0.5;
+  else if(object_shape == "rectangle")  true_width = 0.8;
+    //id:
+  if(object_color == "red")         object_id = 0;
+  else if(object_color == "green")  object_id = 1;
+  else if(object_color == "blue")   object_id = 2;
+  else if(object_color == "black")  object_id = 3;
+  else if(object_color == "white")  object_id = 4;
+  else if(object_color == "yellow") object_id = 5;
+  else if(object_color == "orange") object_id = 6;
+  //Do pushback
   object.markers.push_back(object_return());         //Push the object to the vector
   if(debug) cv::rectangle(src, rect.tl(), rect.br()-cv::Point(1,1), cv::Scalar(0,255,255), 2, 8, 0);
 }
 
-void detect_marker()
+void totem_detect(int i, std::string obj_color)
 {
-  //Filter desired color
+  object_shape = "totem";
   if(object_color == "red")
-  {//In case of red color
-    cv::inRange(hsv, low_lim, up_lim, lower_hue_range);
-    cv::inRange(hsv, low_lim_wrap, up_lim_wrap, upper_hue_range);
-    cv::addWeighted(lower_hue_range,1.0,upper_hue_range,1.0,0.0,color);
-  }
-  else if(object_color == "white")
+    if((((double)rect.height/rect.width > 1.2) && ((double)area/hull_area > (0.95-eps)))
+            || (((double)rect.height/rect.width > 1.4) && (fabs((double)area/mr_area - 1) < eps)))
+      object_found();
+  else 
   {
-    cv::cvtColor(src,hsv,COLOR_BGR2HLS); //hsv is in HSL image type
-    cv::inRange(hsv, low_lim, up_lim, color);
-  }
-  else cv::inRange(hsv, low_lim, up_lim, color);
-  //Reduce noise
-  reduce_noise(&color);
-  //Finding shapes
-  cv::findContours(color.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-  //Detect shape for each contour
-  for (int i = 0; i < contours.size(); i++)
-  {
-    // Skip small objects 
-    if (std::fabs(cv::contourArea(contours[i])) < min_area) continue;
-
-    rect = cv::boundingRect(contours[i]);
-    mr = cv::minAreaRect(contours[i]);
-
-    area = cv::contourArea(contours[i]);
-    r_area = rect.height*rect.width;
-    mr_area = (mr.size).height*(mr.size).width;
-
-    vector<Point> hull;
-    convexHull(contours[i], hull, 0, 1);
-    double hull_area = contourArea(hull);
-    //Detect
-    if(object_color != "red")
-      if((rect.height/rect.width > 1.2) && (area/hull_area > (0.95-eps)))
-        object_found();
-    else 
-    {
-      /*ROS_INFO("Object %d", i);
-      cout << "H/W = " << (float)rect.height/rect.width << endl;
-      cout << "area/min_rect_area = " << (float)area/mr_area << endl;
-      cout << "area/hull_area = " << (float)area/hull_area << endl;
-      cout << "hull_area/mr_area = " << (float)hull_area/mr_area << endl;
-      cout << "H/W = " << (bool)((float)rect.height/rect.width > 1.2) << endl;
-      cout << "area/min_rect_area = " << (bool)(fabs(area/mr_area - 0.5) < eps) << endl;
-      cout << "area/hull_area = " << (bool)(fabs(area/hull_area - 0.68) < eps) << endl;
-      cout << "hull_area/mr_area = " << (bool)(fabs(hull_area/mr_area - 0.72) < eps) << endl;*/
-      if((((float)rect.height/rect.width > 1.4) && (fabs(area/mr_area - 0.5) < eps) && (fabs(area/hull_area - 0.68) < eps) && (fabs(hull_area/mr_area - 0.72) < eps)) 
-              || (((float)rect.height/rect.width > 1.4) && (fabs(area/mr_area - 1) < eps)))
-        object_found();
-    }
-  }
-}
-
-void detect_obstacle()
-{
-  //Filter black color
-  cv::inRange(hsv, low_lim, up_lim, color);
-  //Reduce noise
-  reduce_noise(&color);
-  //Finding shapes
-  cv::findContours(color.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
-  //Detect shape for each contour
-  for (int i = 0; i < contours.size(); i++)
-  {
-    // Skip small or non-convex objects 
-    if ((std::fabs(cv::contourArea(contours[i])) < min_area) /*|| (!cv::isContourConvex(approx))*/) continue;
-    //Find black buoys
-    rect = cv::boundingRect(contours[i]);
-    vector<Point> hull;
-    convexHull(contours[i], hull, 0, 1);
-
-    area = cv::contourArea(contours[i]);
-    r_area = rect.height*rect.width;
-    double hull_area = contourArea(hull);
-
-    if((rect.height > rect.width) || (fabs(area/hull_area - 1) < eps)) continue; //Skip false objects
-    if((std::abs(area/r_area - 3.141593/4) <= 0.1) && (std::abs((double)rect.height/rect.width - 0.833) < 0.2))
+    /*ROS_INFO("Object %d", i);
+    cout << "H/W = " << (float)rect.height/rect.width << endl;
+    cout << "area/min_rect_area = " << (float)area/mr_area << endl;
+    cout << "area/hull_area = " << (float)area/hull_area << endl;
+    cout << "hull_area/mr_area = " << (float)hull_area/mr_area << endl;
+    cout << "H/W = " << (bool)((float)rect.height/rect.width > 1.2) << endl;
+    cout << "area/min_rect_area = " << (bool)(fabs(area/mr_area - 0.5) < eps) << endl;
+    cout << "area/hull_area = " << (bool)(fabs(area/hull_area - 0.68) < eps) << endl;
+    cout << "hull_area/mr_area = " << (bool)(fabs(hull_area/mr_area - 0.72) < eps) << endl;*/
+    if((((double)rect.height/rect.width > 1.4) && (fabs(area/mr_area - 0.5) < eps) && (fabs(area/hull_area - 0.68) < eps) && (fabs(hull_area/mr_area - 0.72) < eps)) 
+            || (((double)rect.height/rect.width > 1.4) && (fabs(area/mr_area - 1) < eps)))
       object_found();
   }
 }
 
-void detect_symbol()
+void obstacle_detect(int i, std::string obj_color)
+{
+  object_shape = "obstacle";
+
+  if((rect.height > rect.width) || (fabs(area/hull_area - 1) < eps)) return; //Skip false objects
+  if((std::abs(area/r_area - 3.141593/4) <= 0.1) && (std::abs((double)rect.height/rect.width - 0.833) < 0.2))
+    object_found();
+}
+
+void pipe_detect(int i, std::string obj_color)
+{
+  object_shape = "pipe";
+  if(((double)rect.width/rect.height > 2) && (fabs(area/mr_area - 1) < eps))
+    object_found();
+}
+
+int tri_detect(int i, std::string obj_color)
+{
+  object_shape = "triangle";
+  if((std::fabs(area/mr_area - 3.141593/4) < 0.1) && (std::fabs(area/hull_area - 1) < 0.05))
+    object_found();
+  return 0;
+}
+
+int cir_detect(int i, std::string obj_color)
+{
+  object_shape = "circle";
+  if((fabs(area/mr_area - 0.5) < 0.07 && (std::fabs(area/hull_area - 1) < 0.05)) /*&& cv::isContourConvex(approx)*/)
+    object_found();
+  return 0;
+}
+
+int cru_detect(int i, std::string obj_color)
+{
+  object_shape = "cruciform";
+  vector<Point> hull;
+  Point2f center(contours[i].size());
+  float radius(contours[i].size());
+  convexHull(contours[i], hull, 0, 1);
+  Point2f hull_center(hull.size());
+  float hull_radius(hull.size());
+  double hull_area = contourArea(hull);
+  minEnclosingCircle(contours[i], center, radius);
+  minEnclosingCircle(hull, hull_center, hull_radius);
+  double cir_area = 3.1416*radius*radius;
+  double hull_cir_area = 3.1416*hull_radius*hull_radius;
+  double eps = (2 - fabs(area/cir_area - 0.5) - fabs(hull_area/hull_cir_area - 0.8))/2-1;
+  if(fabs(eps)<=0.1)
+    object_found();
+  return 0;
+}
+
+
+void do_inrange(std::string obj_color, cv::Scalar up_lim, cv::Scalar low_lim, cv::Scalar up_lim_wrap = cv::Scalar(0,0,0), cv::Scalar low_lim_wrap = cv::Scalar(0,0,0))
 {
   //Filter desired color
-  if(object_color == "red")
+  if(object_color == "white")
+    cv::inRange(hls, up_lim, low_lim, color);
+  else if(up_lim_wrap == low_lim_wrap)
+    cv::inRange(hsv, up_lim, low_lim, color);
+  else
   {//In case of red color
-    cv::inRange(hsv, low_lim, up_lim, lower_hue_range);
-    cv::inRange(hsv, low_lim_wrap, up_lim_wrap, upper_hue_range);
+    cv::inRange(hsv, up_lim, low_lim, lower_hue_range);
+    cv::inRange(hsv, up_lim_wrap, low_lim_wrap, upper_hue_range);
     cv::addWeighted(lower_hue_range,1.0,upper_hue_range,1.0,0.0,color);
   }
-  else cv::inRange(hsv, low_lim, up_lim, color);
   //Reduce noise
   reduce_noise(&color);
   //Finding shapes
@@ -225,38 +253,28 @@ void detect_symbol()
     mr = cv::minAreaRect(contours[i]);
 
     area = cv::contourArea(contours[i]);
+    r_area = rect.height*rect.width;
     mr_area = (mr.size).height*(mr.size).width;
 
     vector<Point> hull;
     convexHull(contours[i], hull, 0, 1);
-    double hull_area = contourArea(hull);
+    hull_area = contourArea(hull);
 
-    if(object_shape == "circle") 
+    if(object_color == "red" || object_color == "blue" || object_color == "green")
     {
-      if((std::fabs(area/mr_area - 3.141593/4) < 0.1) && (std::fabs(area/hull_area - 1) < 0.05))
-        object_found();
+      tri_detect(i, obj_color);
+      cir_detect(i, obj_color);
+      cru_detect(i, obj_color);
     }
-    else if(object_shape == "triangle") 
-    {
-      if((fabs(area/mr_area - 0.5) < 0.07 && (std::fabs(area/hull_area - 1) < 0.05)) /*&& cv::isContourConvex(approx)*/)
-        object_found();
-    }
-    else if(object_shape == "cruciform")
-    {
-      Point2f center(contours[i].size());
-      float radius(contours[i].size());
-      Point2f hull_center(hull.size());
-      float hull_radius(hull.size());
-      minEnclosingCircle(contours[i], center, radius);
-      minEnclosingCircle(hull, hull_center, hull_radius);
-      double cir_area = 3.1416*radius*radius;
-      double hull_cir_area = 3.1416*hull_radius*hull_radius;
-      double eps = (2 - fabs(area/cir_area - 0.5) - fabs(hull_area/hull_cir_area - 0.8))/2-1;
-      if(fabs(eps) <= 0.1)
-        object_found();
-    }
+    if(object_color == "black")
+      obstacle_detect(i, obj_color);
+    if(object_color == "white")
+      pipe_detect(i, obj_color);
+    totem_detect(i, obj_color);
   }
+  if(debug) if(obj_color == show_screen) cv::imshow("color", color);
 }
+
 
 void imageCb(const sensor_msgs::ImageConstPtr& msg)
 {
@@ -271,60 +289,52 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   }
   //Get the image in OpenCV format
   src = cv_ptr->image;
-  if (src.empty() || depth_mat.empty()) return;
+  if (src.empty()) return;
   //Start the shape detection code
   cv::blur(src,src,Size(1,1));
-  cv::cvtColor(src,hsv,COLOR_BGR2HSV);
+  cv::cvtColor(src,hsv,COLOR_BGR2HSV); //HSV out
+  cv::cvtColor(src,hls,COLOR_BGR2HLS); //HSL out
   width = src.cols;
   height = src.rows;
-  //Detect stuffs
-  if(object_shape == "marker" || object_shape == "totem") detect_marker();
-  else if(object_shape == "obstacle") detect_obstacle();
-  else detect_symbol();
+  //Find in each color
+  do_inrange("blue", blue_low_lim, blue_up_lim);
+  do_inrange("green", green_low_lim, green_up_lim);
+  do_inrange("yellow", yellow_low_lim, yellow_up_lim);
+  do_inrange("red", red_low_lim, red_up_lim, red_low_lim_wrap, red_up_lim_wrap);
+  do_inrange("black", black_low_lim, black_up_lim);
+  do_inrange("white", white_low_lim, white_up_lim);
+  
   //Show output on screen in debug mode
   if(debug) 
   {
     cv::imshow("src", src);
-    cv::imshow("color", color);
   }
 }
 
 void dynamic_configCb(robotx_vision::detectionConfig &config, uint32_t level) 
 {
   min_area = config.min_area;
+  show_screen = config.show_screen;
   //Process appropriate parameter for object shape/color
-  if(object_color == "blue") 
-  {
-    low_lim = cv::Scalar(config.blue_H_low,config.blue_S_low,config.blue_V_low);
-    up_lim = cv::Scalar(config.blue_H_high,config.blue_S_high,config.blue_V_high);
-  }
-  else if(object_color == "green")
-  {
-    low_lim = cv::Scalar(config.green_H_low,config.green_S_low,config.green_V_low);
-    up_lim = cv::Scalar(config.green_H_high,config.green_S_high,config.green_V_high);
-  }
-  else if(object_color == "yellow")
-  {
-    low_lim = cv::Scalar(config.yellow_H_low,config.yellow_S_low,config.yellow_V_low);
-    up_lim = cv::Scalar(config.yellow_H_high,config.yellow_S_high,config.yellow_V_high);
-  }
-  else if(object_color == "red")
-  {
-    low_lim = cv::Scalar(config.red_H_low1, config.red_S_low, config.red_V_low);
-    up_lim = cv::Scalar(config.red_H_high1, config.red_S_high, config.red_V_high);
-    low_lim_wrap = cv::Scalar(config.red_H_low2, config.red_S_low, config.red_V_low);
-    up_lim_wrap = cv::Scalar(config.red_H_high2, config.red_S_high, config.red_V_high);
-  }
-  else if(object_color == "white")
-  {
-    low_lim = cv::Scalar(config.white_H_low,config.white_L_low,config.white_S_low);
-    up_lim = cv::Scalar(config.white_H_high,config.white_L_high,config.white_S_high);
-  }
-  else if(object_shape == "obstacle") //obstacles
-  {
-    low_lim = cv::Scalar(config.black_H_low,config.black_S_low,config.black_V_low);
-    up_lim = cv::Scalar(config.black_H_high,config.black_S_high,config.black_V_high);
-  }
+  blue_low_lim = cv::Scalar(config.blue_H_low,config.blue_S_low,config.blue_V_low);
+  blue_up_lim = cv::Scalar(config.blue_H_high,config.blue_S_high,config.blue_V_high);
+
+  green_low_lim = cv::Scalar(config.green_H_low,config.green_S_low,config.green_V_low);
+  green_up_lim = cv::Scalar(config.green_H_high,config.green_S_high,config.green_V_high);
+
+  yellow_low_lim = cv::Scalar(config.yellow_H_low,config.yellow_S_low,config.yellow_V_low);
+  yellow_up_lim = cv::Scalar(config.yellow_H_high,config.yellow_S_high,config.yellow_V_high);
+
+  red_low_lim = cv::Scalar(config.red_H_low1, config.red_S_low, config.red_V_low);
+  red_up_lim = cv::Scalar(config.red_H_high1, config.red_S_high, config.red_V_high);
+  red_low_lim_wrap = cv::Scalar(config.red_H_low2, config.red_S_low, config.red_V_low);
+  red_up_lim_wrap = cv::Scalar(config.red_H_high2, config.red_S_high, config.red_V_high);
+
+  white_low_lim = cv::Scalar(config.white_H_low,config.white_L_low,config.white_S_low);
+  white_up_lim = cv::Scalar(config.white_H_high,config.white_L_high,config.white_S_high);
+
+  black_low_lim = cv::Scalar(config.black_H_low,config.black_S_low,config.black_V_low);
+  black_up_lim = cv::Scalar(config.black_H_high,config.black_S_high,config.black_V_high);
   
   ROS_INFO("Reconfigure Requested.");
 }
@@ -337,9 +347,6 @@ int main(int argc, char** argv)
   ros::NodeHandle pnh("~");
   pnh.getParam("camera_link", camera_link);
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
-  pnh.getParam("subscribed_depth_topic", subscribed_depth_topic);
-  pnh.getParam("object_shape", object_shape);
-  pnh.getParam("object_color", object_color);
   pnh.getParam("published_topic", published_topic);
   pnh.getParam("debug", debug);
   //Processing object parameters for MarkerArray
@@ -347,26 +354,6 @@ int main(int argc, char** argv)
   def_orientation.y = 0;
   def_orientation.z = 0;
   def_orientation.w = 0;
-    //type:
-  if(object_shape == "triangle")        object_type = 0;
-  else if(object_shape == "cruciform")  object_type = 1;
-  else if(object_shape == "circle")     object_type = 2;
-  else if(object_shape == "totem")      object_type = 3;
-  else if(object_shape == "rectangle")  object_type = 4;
-    //true_width
-  if(object_shape == "triangle")        true_width = 0.8;
-  else if(object_shape == "cruciform")  true_width = 0.8;
-  else if(object_shape == "circle")     true_width = 0.8;
-  else if(object_shape == "totem")      true_width = 0.26;
-  else if(object_shape == "rectangle")  true_width = 0.8;
-    //id:
-  if(object_color == "red")         object_id = 0;
-  else if(object_color == "green")  object_id = 1;
-  else if(object_color == "blue")   object_id = 2;
-  else if(object_color == "black")  object_id = 3;
-  else if(object_color == "white")  object_id = 4;
-  else if(object_color == "yellow") object_id = 5;
-  else if(object_color == "orange") object_id = 6;
   //Dynamic reconfigure
   dynamic_reconfigure::Server<robotx_vision::detectionConfig> server;
   dynamic_reconfigure::Server<robotx_vision::detectionConfig>::CallbackType f;

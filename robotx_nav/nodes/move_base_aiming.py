@@ -19,7 +19,8 @@ from tf.transformations import quaternion_from_euler, euler_from_quaternion
 from visualization_msgs.msg import Marker
 from math import radians, pi, sin, cos, atan2, floor, ceil, sqrt
 from move_base_util import MoveBaseUtil
-
+from dynamic_reconfigure.server import Server
+from robotx_nav.cfg import AimConfig
 
 class Aiming(MoveBaseUtil):
     # initialize boat pose param
@@ -36,15 +37,15 @@ class Aiming(MoveBaseUtil):
         self.duration = duration
         self.angle_tolerance = angle_tolerance
         self.box = box
-
+	self.srv = Server(AimConfig, self.dynamic_callback)
         if self.target is not None: # onetime job
-            self.respawn()
+            self.respawn(self.duration, self.box, self.target)
 
     def respawn(self, duration, box, target):
         self.box=box
         self.duration=duration
-        self.target=target
-
+        self.target=Twist(Point(target[0], target[1], 0), Point(0, 0, target[2]))
+ 
         q_angle = quaternion_from_euler(0, 0, self.target.angular.z)
         angle = Quaternion(*q_angle)
         station = Pose(self.target.linear, angle)
@@ -61,18 +62,17 @@ class Aiming(MoveBaseUtil):
         while (rospy.get_time() - start_time < self.duration) or not self.duration and not rospy.is_shutdown():
             if (sqrt((self.target.linear.x - self.x0)**2 + (self.target.linear.y - self.y0) ** 2) < self.radius):
                 rospy.loginfo("inside inner radius, corrects orientation to face box")
-                theta = atan2(self.box.y -self.y0, self.box.x - self.x0)
+                theta = atan2(self.box[1] -self.y0, self.box[0] - self.x0)
                 if (abs(atan2(sin(theta - self.yaw0), cos(theta - self.yaw0))) > self.angle_tolerance):
                     print "correcting", theta , self.yaw0
 
-                    aim_target=self.aim_to_box([self.box.x, self.box.y], 30) #recheck condition every 30s
+                    aim_target=self.aim_to_box([self.box[0], self.box[1]], 30) #recheck condition every 30s
 
                     rospy.sleep(1)
 
             else:
                 rospy.loginfo("outside radius")
                 # Intialize the waypoint goal
-                aim_target.shutdown()
 
                 goal = MoveBaseGoal()
 
@@ -109,7 +109,7 @@ class Aiming(MoveBaseUtil):
 
         while not (rospy.get_time() - start_time) < duration:
 
-            pid_cmd_vel_msg.angular.z= self.pid_angular(target)
+            pid_cmd_vel_msg.angular.z= -self.pid_angular(target)
 
             cmd_vel_pub.publish(pid_cmd_vel_msg)
             time.sleep(0.2)
@@ -118,7 +118,7 @@ class Aiming(MoveBaseUtil):
     def pid_angular(self, target):
         #angular PID
         angle_error=math.atan2(target[1]-self.y0, target[0]-self.x0)-self.yaw0
-
+	print angle_error
         self.error_angular=atan2(sin(angle_error), cos(angle_error)) #trick to remap to -pi -
         self.P_value_angular=self.angular_kp*self.error_angular
 

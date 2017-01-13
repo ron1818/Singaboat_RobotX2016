@@ -9,11 +9,11 @@
         <arg name="mapname" value="blank_map" />
     </include>
 
-    <node pkg="robotx_control" type="cmd_vel_repub.py" name="cmd_vel_repub" >
+    <!--node pkg="robotx_control" type="cmd_vel_repub.py" name="cmd_vel_repub" >
         <remap from="cmd_vel_raw" to="move_base_cmd_vel" />
         <remap from="odom" to="odometry/filtered/global" />
         <remap from="imu/data" to="middle_middle_imu/imu/data" />
         <remap from="cmd_vel" to="cmd_vel" />
-    </node>
+    </node-->
 
 </launch>

@@ -11,13 +11,17 @@ find_package(catkin REQUIRED COMPONENTS
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
 catkin_python_setup()
 
 #generate_dynamic_reconfigure_options(cfg/CalibrateAngular.cfg cfg/CalibrateLinear.cfg)
+
+
+generate_dynamic_reconfigure_options(
+    cfg/Aim.cfg
+)
 
 catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
 
@@ -92,6 +96,8 @@ catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
 #   cfg/DynReconf2.cfg
 # )
 
+
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -107,6 +113,8 @@ catkin_package(
 #  CATKIN_DEPENDS actionlib amcl gmapping move_base roscpp rospy
 #  DEPENDS system_lib
 )
+
+#add_dependencies(move_base_aiming ${Aiming} _gencfg)
 
 ###########
 ## Build ##
@@ -128,6 +136,7 @@ include_directories(
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(robotx_nav ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Declare a C++ executable
 # add_executable(robotx_nav_node src/robotx_nav_node.cpp)

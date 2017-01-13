@@ -1,6 +1,7 @@
 
-#define estopPin 9
+#define estopPin 3
 #define modePin 12
+#define motorPin 6
 
 byte relayPin[4] = {2,7,8,10};
 //D2 -> RELAY1
@@ -22,7 +23,7 @@ void setup(){
 
 void loop() {
   
-    if(digitalRead(estopPin)==HIGH){                   
+    if(digitalRead(estopPin)==HIGH||digitalRead(motorPin)==LOW){                   
         Serial.println("Relay1");
         digitalWrite(relayPin[0],HIGH);
         digitalWrite(relayPin[1],LOW);

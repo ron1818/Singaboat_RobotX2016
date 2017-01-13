@@ -1,7 +1,5 @@
 /*This node funtion(s):
-	+ Detect symbols: red/green/blue circle/triangle/cruciform
-  + Detect markers: red/green/blue/yellow/white (totem) markers
-  + Detect obstacles
+	
 */
 
 //ROS libs
@@ -9,6 +7,7 @@
 #include <ros/console.h>
 #include <image_transport/image_transport.h>
 #include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/RegionOfInterest.h>
 #include <cv_bridge/cv_bridge.h>
 //OpenCV libs
 #include <opencv2/opencv.hpp>
@@ -33,6 +32,8 @@ bool debug;
 cv_bridge::CvImagePtr cv_ptr;
 //ROS var
 vector<sensor_msgs::RegionOfInterest> object;
+//Dynamic reconfigure vars
+int low_threshold, high_threshold;
 //OpenCV image processing method dependent vars 
 std::vector<std::vector<cv::Point> > contours;
 std::vector<cv::Vec4i> hierarchy;
@@ -89,10 +90,12 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
   width = src.cols;
   height = src.rows;
   //Detect stuffs
-  cv::Canny(gray, edge, 0, 50, 5);
+  cv::Canny(gray, edge, 0, 1500, 5);
   //Finding shapes
   cv::findContours(edge.clone(), contours, hierarchy, CV_RETR_TREE, CV_CHAIN_APPROX_SIMPLE);
   //Detect shape for each contour
+  double max_blob_area = 0;
+  int max_blob = 0;
   for (int i = 0; i < contours.size(); i++)
   {
     // Skip small objects 
@@ -109,7 +112,17 @@ void imageCb(const sensor_msgs::ImageConstPtr& msg)
     double hull_area = contourArea(hull);
 
     if((std::fabs(area/mr_area - 1) < 0.1) && (std::fabs(area/hull_area - 1) < 0.05) && ((double)rect.height/rect.width > 1.1))
-      object_found();
+      if(area > max_blob_area)
+      {
+        max_blob_area = area;
+        max_blob = i;
+      }
+  }
+  //Only analyze the biggest blob
+  if(max_blob_area != 0)
+  {
+    rect = cv::boundingRect(contours[max_blob]);
+    object_found();
   }
   //Show output on screen in debug mode
   if(debug) 
@@ -128,15 +141,17 @@ int main(int argc, char** argv)
   pnh.getParam("subscribed_image_topic", subscribed_image_topic);
   pnh.getParam("debug", debug);
   pnh.getParam("published_topic", published_topic);
+  //Dynamic reconfigure
+  
   //Initiate windows
   if(debug)
   {
-    cv::namedWindow("edge",WINDOW_AUTOSIZE);
-    cv::namedWindow("src",WINDOW_AUTOSIZE);
-    /*cv::namedWindow("edge",WINDOW_NORMAL);
+   /* cv::namedWindow("edge",WINDOW_AUTOSIZE);
+    cv::namedWindow("src",WINDOW_AUTOSIZE);*/
+    cv::namedWindow("edge",WINDOW_NORMAL);
     cv::resizeWindow("edge",640,480);
     cv::namedWindow("src",WINDOW_NORMAL);
-    cv::resizeWindow("src",640,480);*/
+    cv::resizeWindow("src",640,480);
     cv::startWindowThread();
   }
   //Start ROS subscriber...

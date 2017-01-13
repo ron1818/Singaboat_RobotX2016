@@ -40,7 +40,7 @@ class DetectDeliver(object):
 
 	map_dim = [[0, 40], [0, 40]]
 
-	MAX_DATA=60
+	MAX_DATA=10
 	x0, y0, yaw0= 0, 0, 0
 	symbol=[0 , 0]
 	symbols=np.zeros((MAX_DATA, 2)) #unordered list
@@ -87,7 +87,7 @@ class DetectDeliver(object):
 
 		print(self.symbol)
 		while not rospy.is_shutdown() and not self.station_seen:
-			self.moveto_obj.respawn(self.random_walk(), )
+			self.moveto_obj.respawn(self.random_walk(), )#forward 
 
 		print("station: ")
 		print(self.station_position)

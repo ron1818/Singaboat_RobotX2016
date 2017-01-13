@@ -37,16 +37,10 @@ from move_base_waypoint import MoveTo
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
 
-def zigzag(quadrant=1, map_length=40, map_width=40, half_period=2, half_amplitude=10, offset=3):
-	print("zigzag starts")
-	zigzag=Zigzag(nodename="zigzag", quadrant=quadrant, map_length=map_length, map_width=map_width, half_period=half_period, half_amplitude=half_amplitude, offset=offset)
-	print("zigzag returns")
-
 
 class CoralSurvey(object):
 
 	x0, y0, yaw0= 0, 0, 0
-
 	shape_counter=0
 	shape_found=[0, 0, 0] #Tri, Cru , Cir
 	current_quadrant=0
@@ -70,11 +64,11 @@ class CoralSurvey(object):
 		print("odom received")
 
 
-		self.zigzag_obj = Zigzag("zigzag", is_newnode=False, quadrant=None, map_length=40, map_width=40, half_period=2, half_amplitude=10, offset=3)
+		self.zigzag_obj = Zigzag("zigzag", is_newnode=False, quadrant=None, map_length=40, map_width=40, half_period=5, half_amplitude=7, offset=3, x_offset=, y_offset=, theta=)
 		self.moveto_obj = MoveTo("moveto", is_newnode=False, target=None, mode=1, mode_param=1, is_relative=False)
 
-		zigzag_half_period=4
-		zigzag_half_amplitude=9
+		zigzag_half_period=5
+		zigzag_half_amplitude=7
 
 		self.quadrant_visited=list()
 		self.doing_zigzag=list()
@@ -93,8 +87,8 @@ class CoralSurvey(object):
 						
 			if self.doing_zigzag[self.current_quadrant]==0:
 				self.zigzag_obj.respawn(quadrant_list[self.current_quadrant], zigzag_half_period, zigzag_half_amplitude) #zigzag only once
-				if self.quadrant_visited[self.current_quadrant]==0 and zigzag_half_period>1:
-					zigzag_half_period-=1
+				self.doing_zigzag[self.current_quadrant]=1
+				self.quadrant_visited[self.current_quadrant]=1
 
 		
 			time.sleep(1)
@@ -107,8 +101,6 @@ class CoralSurvey(object):
 
 
 		if len(msg.markers)>0:
-			#find black totem
-
 			#find underwater shapes during zigzag
 			if msg.markers[0].type == 0 and self.shape_found[0]==0:
 				#triangle
@@ -151,8 +143,13 @@ class CoralSurvey(object):
 				self.quadrant_visited[self.current_quadrant]=1
 				self.doing_zigzag[self.current_quadrant]=1
 				print("found Circle")
-
-
+		else:
+			if self.quadrant_visited[0]==1:
+				rospy.set_param("/gui/shape1", "CIR")
+				self.shape_counter+=1
+			if self.quadrant_visited[1]==1:
+				rospy.set_param("/gui/shape2", "CRU")
+				self.shape_counter+=1				
 
 
 	def get_tf(self, fixed_frame, base_frame):
