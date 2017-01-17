@@ -1,22 +1,20 @@
 Singaboat RobotX2016
 ====================
-
-TASKS
------
-### overview ###
-![topdown list](Documents/Screenshot%20from%202016-09-22%2011:38:49.png)
+###changelog###
++ (2017-01-17): leave ERI@N, tidy up the readme markdown file
++ (2016-12-15): competition in progress
++ (2016-09-30): initialize the repository
 
 Introduction
 ------------
 this repository hosts all the files for [robotx challenge 2016](http://www.robotx.org)
-it is a ROS based projects
+it is a ROS based project
 
-Usage
------
+### overview ###
+![topdown list](Documents/Screenshot%20from%202016-09-22%2011:38:49.png)
+
 ### Installation ###
-+ supports **ros-indigo** with **ubuntu 14.04LTS**
-+ must install `ros-indigo-desktop-full`
-+ dependencies are `robot-localization` `nmea-navsat-driver` `viso2` `gazebo`
+supports **ros-indigo** with **ubuntu 14.04LTS**
 
 #### fork repository ####
 [create](https://help.github.com/categories/collaborating-with-issues-and-pull-requests/)
@@ -29,22 +27,24 @@ useful commands:
 `git checkout xxx`, `git fetch upstream`, `git merge upstream/xxx`
 #### clone repository ####
 ```bash
-mkdir catkin_ws
-cd catkin_ws
-mkdir src
-cd src
+mkdir -p catkin_ws/src
+cd catkin_ws/src
 catkin_init_workspace
 git clone https://github.com/ron1818/Singaboat_RobotX2016
 ```
 
-#### script to install additional packages ####
+#### script to install packages ####
 ```bash
+#### core modules ####
+sudo apt-get install ros-indigo-desktop-full
 sudo apt-get install ros-indigo-gazebo* \
 ros-indigo-amcl ros-indigo-gmapping ros-indigo-move-base ros-indigo-map* \
 ros-indigo-robot-localization ros-indigo-nmea-navsat-driver \
 ros-indigo-stereo-image*
 #### install python and opencv ####
-sudo apt-get install python-numpy python-scipy python-serial
+sudo apt-get install python-numpy python-scipy python-serial \
+libopencv-dev python-opencv ros-indigo-vision-opencv
+#### other ros modules ####
 sudo apt-get install ros-indigo-turtlebot-bringup \
 ros-indigo-turtlebot-create-desktop ros-indigo-openni-* \
 ros-indigo-openni2-* ros-indigo-freenect-* \
@@ -54,12 +54,13 @@ ros-indigo-pocketsphinx ros-indigo-slam-gmapping \
 ros-indigo-joystick-drivers python-rosinstall \
 ros-indigo-orocos-kdl ros-indigo-python-orocos-kdl \
 python-setuptools ros-indigo-dynamixel-motor-* \
-libopencv-dev python-opencv ros-indigo-vision-opencv \
 ros-indigo-depthimage-to-laserscan ros-indigo-arbotix-* \
 ros-indigo-turtlebot-teleop ros-indigo-move-base \
 ros-indigo-map-server ros-indigo-fake-localization ros-indigo-hector* \
-ros-indigo-gazebo-ros* ros-indigo-serial \
-git subversion mercurial
+ros-indigo-gazebo-ros* ros-indigo-serial
+sudo apt-get install ros-indigo-myahrs-driver
+#### version control ####
+sudo apt-get install git subversion mercurial
 ```
 
 #### install other packages from source ####
@@ -97,3 +98,13 @@ sudo make install
 2. clone your forked respository to your catkin workspace
 3. create branch and do your work
 4. create pull request if you want to contribute to the main branch
+
+Usage
+-----
+
+### PVC prototype ###
+
+### kayak prototype ###
+
+### wamv competition boat ###
+
