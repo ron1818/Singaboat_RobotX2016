@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!-- modified by ren ye on 2016-07-22 -->
+
+<robot name="auv_gazebo" xmlns:xacro="http://ros.org/wiki/xacro" >
+    <xacro:property name="update_rate" value="100"/>
+    <xacro:property name="wheel_separation" value="0.5" /> 
+    <xacro:property name="wheel_radius" value="0.12" /> 
+
+    <gazebo>
+        <plugin name="object_controller" filename="libgazebo_ros_planar_move.so">
+            <commandTopic>cmd_vel</commandTopic>
+            <odometryTopic>odom</odometryTopic>
+            <odometryFrame>odom</odometryFrame>
+            <odometryRate>20.0</odometryRate>
+            <robotBaseFrame>base_link</robotBaseFrame>
+        </plugin>
+    </gazebo>
+
+<!-- base_link -->
+    <gazebo reference="base_link">
+        <material>Gazebo/Green</material>
+        <turnGravityOff>false</turnGravityOff>
+    </gazebo>
+
+    <!-- main thruster -->
+    <gazebo reference="main_thruster_link">
+        <material>Gazebo/White</material>
+    </gazebo>
+
+    <!-- thruster -->
+    <gazebo reference="front_left_thruster_link">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <gazebo reference="front_right_thruster_link">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <gazebo reference="rear_left_thruster_link">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <gazebo reference="rear_right_thruster_link">
+        <material>Gazebo/Black</material>
+    </gazebo>
+
+    <!-- sensor box -->
+    <gazebo reference="sensor_box_link">
+        <material>Gazebo/Yellow</material>
+    </gazebo>
+
+    <!-- adcp -->
+    <gazebo reference="adcp_link">
+        <material>Gazebo/Grey</material>
+    </gazebo>
+
+
+</robot>

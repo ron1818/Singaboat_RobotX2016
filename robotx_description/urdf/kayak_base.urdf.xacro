@@ -1,0 +1,220 @@
+<?xml version="1.0"?>
+<!-- Revolute-Revolute Manipulator -->
+<robot name="kayak" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <!-- Constants for robot dimensions -->
+    <xacro:property name="PI" value="3.1415926535897931"/>
+    <xacro:property name="kayak_mass" value="10" /> 
+    <xacro:property name="kayak_length" value="1.8" /> 
+    <xacro:property name="kayak_width" value="0.8" /> 
+    <xacro:property name="kayak_thickness" value="0.4" /> 
+    <xacro:property name="kayak_drift" value="0.1" /> 
+    <xacro:property name="propeller_mass" value="1.5" /> 
+    <xacro:property name="propeller_length" value="0.40" /> 
+    <xacro:property name="propeller_radius" value="0.1" /> 
+    <xacro:property name="adcp_mass" value="20" /> 
+    <xacro:property name="adcp_length" value="0.30" /> 
+    <xacro:property name="adcp_radius" value="0.09" /> 
+    <xacro:property name="fake_adcp_radius" value="0.5" /> 
+    <xacro:property name="thruster_mass" value="0.1" /> 
+    <xacro:property name="thruster_length" value="0.12" /> 
+    <xacro:property name="thruster_radius" value="0.045" /> 
+    <xacro:property name="sensor_box_mass" value="0.5" /> 
+    <xacro:property name="sensor_box_length" value="0.4" /> 
+    <xacro:property name="sensor_box_width" value="0.2" /> 
+    <xacro:property name="sensor_box_thickness" value="0.2" /> 
+
+    <!-- Import all Gazebo-customization elements, including Gazebo colors -->
+    <!--xacro:include filename="materials.xacro" /-->
+
+    <!-- macro for thrusters -->
+    <xacro:macro name="thruster" params="position">
+        <link name="${position}_thruster_link">
+            <collision>
+                <origin xyz="0.1 ${thruster_radius} ${-1*thruster_radius} " rpy="0 ${PI/2} 0"/>
+                <geometry>
+                    <cylinder length="${thruster_length}" radius="${thruster_radius}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+                <geometry>
+                    <mesh filename="package://auv_ros_description/meshes/T200-THRUSTER-BLUEESC-R1.dae"
+                        scale="0.001 0.001 0.001"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+                <mass value="${thruster_mass}"/>
+                <inertia
+                    ixx="${thruster_mass / 12.0 * (3*thruster_radius*thruster_radius + thruster_length*thruster_length)}" ixy="0.0" ixz="0.0"
+                    iyy="${thruster_mass / 12.0 * (3*thruster_radius*thruster_radius + thruster_length*thruster_length)}" iyz="0.0"
+                    izz="${thruster_mass / 2.0 * thruster_radius*thruster_radius}"/>
+            </inertial>
+        </link>
+    </xacro:macro>
+
+
+    <!-- Base Link -->
+    <link name="base_link">
+        <collision>
+            <origin xyz="0 0 ${kayak_drift}" rpy="0 0 0"/>
+            <geometry>
+                <box size="${kayak_length} ${kayak_width} ${kayak_thickness}"/>
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="${kayak_length/2} ${kayak_width/2} -${kayak_thickness}" rpy="${PI/2} 0 -${PI/2}"/>
+            <geometry>
+                <!--box size="${kayak_length} ${kayak_width} ${kayak_thickness}"/-->
+                <mesh filename="package://auv_ros_description/meshes/Kayak.STL" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+
+        <inertial>
+            <origin xyz="0 0 ${kayak_drift}" rpy="0 0 0"/>
+            <mass value="${kayak_mass}"/>
+            <inertia
+                ixx="${kayak_mass / 12.0 * (kayak_length*kayak_length + kayak_thickness*kayak_thickness)}" ixy="0.0" ixz="0.0"
+                iyy="${kayak_mass / 12.0 * (kayak_length*kayak_length + kayak_width*kayak_width)}" iyz="0.0"
+                izz="${kayak_mass / 12.0 * (kayak_width*kayak_width + kayak_thickness*kayak_thickness)}"/>
+        </inertial>
+    </link>
+
+    <!-- main thruster -->
+    <joint name="main_thruster_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="main_thruster_link"/>
+        <origin xyz="-${kayak_length/2} 0 -${kayak_thickness/2+propeller_radius}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="main_thruster_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+            <geometry>
+                <cylinder length="${propeller_length}" radius="${propeller_radius}" />
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="-0.2 -0.15 -${3*propeller_radius}" rpy="-${PI/24} 0 0"/>
+            <geometry>
+                <mesh filename="package://auv_ros_description/meshes/Propeller.dae" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 ${PI/2} 0"/>
+            <mass value="${propeller_mass}"/>
+            <inertia
+                ixx="${propeller_mass / 12.0 * (3*propeller_radius*propeller_radius + propeller_length*propeller_length)}" ixy="0.0" ixz="0.0"
+                iyy="${propeller_mass / 12.0 * (3*propeller_radius*propeller_radius + propeller_length*propeller_length)}" iyz="0.0"
+                izz="${propeller_mass / 2.0 * propeller_radius*propeller_radius}"/>
+        </inertial>
+    </link>
+
+    <!-- left thruster joint -->
+    <joint name="front_left_thruster_joint" type="fixed">
+        <axis xyz="1 0 0" />
+        <parent link="base_link"/>
+        <child link="front_left_thruster_link"/>
+        <origin xyz="${kayak_length/4} ${kayak_width/2} ${-0.5*kayak_thickness-thruster_radius}" rpy="${PI/2} 0 ${PI/4}"/>
+    </joint>
+
+    <joint name="rear_left_thruster_joint" type="fixed">
+        <axis xyz="1 0 0" />
+        <parent link="base_link"/>
+        <child link="rear_left_thruster_link"/>
+        <origin xyz="-${kayak_length/4} ${kayak_width/2} ${-0.5*kayak_thickness-thruster_radius}" rpy="${PI/2} 0 -${PI/4}"/>
+    </joint>
+
+    <!-- left thruster Link -->
+    <xacro:thruster position="front_left"/>
+    <xacro:thruster position="rear_left"/>
+
+    <!-- right thruster joint -->
+    <joint name="front_right_thruster_joint" type="fixed">
+        <axis xyz="1 0 0" />
+        <parent link="base_link"/>
+        <child link="front_right_thruster_link"/>
+        <origin xyz="${kayak_length/4} -${kayak_width/2} ${-0.5*kayak_thickness-thruster_radius}" rpy="${PI/2} 0 -${PI/4}"/>
+    </joint>
+
+    <joint name="rear_right_thruster_joint" type="fixed">
+        <axis xyz="1 0 0" />
+        <parent link="base_link"/>
+        <child link="rear_right_thruster_link"/>
+        <origin xyz="-${kayak_length/4} -${kayak_width/2} ${-0.5*kayak_thickness-thruster_radius}" rpy="${PI/2} 0 ${PI/4}"/>
+    </joint>
+
+    <!-- right thruster Link -->
+    <xacro:thruster position="front_right"/>
+    <xacro:thruster position="rear_right"/>
+
+    <!-- sensor box joint-->
+    <joint name="sensor_box_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="sensor_box_link"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
+
+    <!-- sensor box -->
+    <link name="sensor_box_link">
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${sensor_box_length} ${sensor_box_width} ${sensor_box_thickness}"/>
+            </geometry>
+        </collision>
+
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${sensor_box_length} ${sensor_box_width} ${sensor_box_thickness}"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="${sensor_box_mass}"/>
+            <inertia
+                ixx="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_thickness*sensor_box_thickness)}" ixy="0.0" ixz="0.0"
+                iyy="${sensor_box_mass / 12.0 * (sensor_box_length*sensor_box_length + sensor_box_width*sensor_box_width)}" iyz="0.0"
+                izz="${sensor_box_mass / 12.0 * (sensor_box_width*sensor_box_width + sensor_box_thickness*sensor_box_thickness)}"/>
+        </inertial>
+    </link>
+
+    <!-- adcp joint-->
+    <joint name="adcp_joint" type="fixed">
+        <parent link="base_link"/>
+        <child link="adcp_link"/>
+        <origin xyz="0 0 -${kayak_thickness/2}" rpy="0 0 0"/>
+    </joint>
+
+    <link name="adcp_link">
+        <collision>
+            <origin xyz="0 0 -${kayak_thickness/2}" rpy="0 0 0"/>
+            <geometry>
+                <cylinder length="${adcp_length}" radius="${fake_adcp_radius}" />
+            </geometry>
+        </collision>
+        <visual>
+            <origin xyz="-${adcp_radius} -${adcp_radius} 0" rpy="-${PI/2} 0 0"/>
+            <geometry>
+                <mesh filename="package://auv_ros_description/meshes/ADCP.STL" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0"/>
+            <mass value="${adcp_mass}"/>
+            <inertia
+                ixx="${adcp_mass / 12.0 * (3*adcp_radius*adcp_radius + adcp_length*adcp_length)}" ixy="0.0" ixz="0.0"
+                iyy="${adcp_mass / 12.0 * (3*adcp_radius*adcp_radius + adcp_length*adcp_length)}" iyz="0.0"
+                izz="${adcp_mass / 2.0 * adcp_radius*adcp_radius}"/>
+        </inertial>
+    </link>
+</robot>
